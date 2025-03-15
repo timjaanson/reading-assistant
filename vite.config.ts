@@ -27,11 +27,14 @@ export default defineConfig({
         options: resolve(__dirname, "options.html"),
         background: resolve(
           __dirname,
-          "src/chrome-extension/background/background.ts"
+          "src/chrome-extension/background/index.ts"
         ),
+        content: resolve(__dirname, "src/chrome-extension/content/index.ts"),
       },
       output: {
-        entryFileNames: "[name].js",
+        entryFileNames: () => {
+          return `[name].js`;
+        },
       },
     },
   },

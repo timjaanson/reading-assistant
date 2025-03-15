@@ -73,7 +73,21 @@ This will create a production-ready build in the `dist` (or similar) directory.
 
 ## Usage
 
-[Add information about how to use the extension here]
+### Text Selection Feature
+
+The extension adds a tooltip whenever you highlight text on a webpage:
+
+1. Select any text on a webpage by clicking and dragging with your mouse
+2. A tooltip will appear above the selected text
+3. Click on the "Summary" button in the tooltip
+4. Currently, this will log the selected text to the console (visible in developer tools)
+
+This feature is designed to be extensible, allowing for more actions to be added in the future, such as:
+
+- Generating explanations
+- Looking up definitions
+- Providing translations
+- Creating summaries
 
 ## Contributing
 
