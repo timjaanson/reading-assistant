@@ -26,7 +26,9 @@ const MessageBubble = ({ role, content, showRole }: MessageBubbleProps) => {
       {showRole && <span className="text-sm mb-1">{role}</span>}
       <div className={`p-2 rounded-lg ${bubbleColor} whitespace-pre-line`}>
         {typeof content === "string" ? (
-          <ReactMarkdown>{content}</ReactMarkdown>
+          <span>
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </span>
         ) : Array.isArray(content) ? (
           content.map((part, idx) => {
             if (part && typeof part === "object" && "type" in part) {
@@ -51,7 +53,11 @@ const MessageBubble = ({ role, content, showRole }: MessageBubbleProps) => {
               // For other parts, use JSON stringification
               return <span key={idx}>{JSON.stringify(part)}</span>;
             }
-            return <span key={idx}>{String(part)}</span>;
+            return (
+              <span key={idx}>
+                <ReactMarkdown>{String(part)}</ReactMarkdown>
+              </span>
+            );
           })
         ) : (
           <ReactMarkdown>{String(content)}</ReactMarkdown>

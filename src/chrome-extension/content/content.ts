@@ -17,8 +17,7 @@ class SelectionTooltip {
     document.addEventListener("mousedown", this.handleMouseDown.bind(this));
   }
 
-  private handleMouseUp(event: MouseEvent): void {
-    console.log("Mouse up event", event);
+  private handleMouseUp(): void {
     const selection = window.getSelection();
 
     // Check if there's selected text
@@ -55,14 +54,15 @@ class SelectionTooltip {
     Object.assign(this.tooltip.style, {
       position: "absolute",
       zIndex: "10000",
-      backgroundColor: "white",
-      border: "1px solid #ccc",
-      borderRadius: "4px",
-      padding: "4px 8px",
-      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      border: "none",
+      borderRadius: "6px",
+      padding: "6px 10px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
       fontSize: "14px",
       display: "flex",
-      gap: "8px",
+      gap: "12px",
+      backdropFilter: "blur(8px)",
     });
 
     // Add action buttons
@@ -76,20 +76,21 @@ class SelectionTooltip {
 
       // Style the button
       Object.assign(button.style, {
-        backgroundColor: "#f0f0f0",
+        backgroundColor: "transparent",
         border: "none",
-        borderRadius: "4px",
-        padding: "4px 8px",
+        padding: "4px 12px",
         cursor: "pointer",
         fontSize: "12px",
+        color: "white",
+        transition: "background-color 0.2s ease",
       });
 
       button.addEventListener("mouseover", () => {
-        button.style.backgroundColor = "#e0e0e0";
+        button.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
       });
 
       button.addEventListener("mouseout", () => {
-        button.style.backgroundColor = "#f0f0f0";
+        button.style.backgroundColor = "transparent";
       });
 
       if (this.tooltip) {
