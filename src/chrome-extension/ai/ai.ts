@@ -21,6 +21,9 @@ You are currently in a Chrome extension that is for assisted reading.
 The user can ask to summarize text, explain it or something else.
 The user may also ask other unrelated questions that you should answer.
 
+## Response format
+You should respond in markdown format.
+
 ## Context about the user
 The user's current time is ${getLocalDateTimeWithWeekday()}.
 `;
