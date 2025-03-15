@@ -12,6 +12,24 @@ export type MessageBubbleProps = {
   showRole: boolean;
 };
 
+const getCustomMarkdown = (content: string) => {
+  return (
+    <ReactMarkdown
+      components={{
+        ol: ({ children }) => (
+          <ol className="py-2 pl-6 list-decimal">{children}</ol>
+        ),
+        ul: ({ children }) => (
+          <ul className="py-2 pl-6 list-disc">{children}</ul>
+        ),
+        li: ({ children }) => <li className="my-1">{children}</li>,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+};
+
 const MessageBubble = ({ role, content, showRole }: MessageBubbleProps) => {
   // If role is "user" then use the off-white style, otherwise blue
   const bubbleColor =
@@ -24,16 +42,14 @@ const MessageBubble = ({ role, content, showRole }: MessageBubbleProps) => {
     >
       {/* Container aligning based on role */}
       {showRole && <span className="text-sm mb-1">{role}</span>}
-      <div className={`p-2 rounded-lg ${bubbleColor} whitespace-pre-line`}>
+      <div className={`p-2 rounded-lg ${bubbleColor}`}>
         {typeof content === "string" ? (
-          <span>
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </span>
+          <span>{getCustomMarkdown(content)}</span>
         ) : Array.isArray(content) ? (
           content.map((part, idx) => {
             if (part && typeof part === "object" && "type" in part) {
               if (part.type === "text")
-                return <span key={idx}>{part.text}</span>;
+                return <span key={idx}>{getCustomMarkdown(part.text)}</span>;
               if (part.type === "image")
                 return part.image instanceof URL ? (
                   <img
@@ -53,14 +69,10 @@ const MessageBubble = ({ role, content, showRole }: MessageBubbleProps) => {
               // For other parts, use JSON stringification
               return <span key={idx}>{JSON.stringify(part)}</span>;
             }
-            return (
-              <span key={idx}>
-                <ReactMarkdown>{String(part)}</ReactMarkdown>
-              </span>
-            );
+            return <span key={idx}>{getCustomMarkdown(String(part))}</span>;
           })
         ) : (
-          <ReactMarkdown>{String(content)}</ReactMarkdown>
+          getCustomMarkdown(String(content))
         )}
       </div>
     </div>
