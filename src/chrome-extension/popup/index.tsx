@@ -8,7 +8,7 @@ export const Popup = () => {
   const [activeTab, setActiveTab] = useState<"chat" | "settings">("chat");
 
   return (
-    <div className="w-[400px] h-[500px] bg-white">
+    <div className="w-full h-[500px] bg-white">
       {/* Navigation */}
       <nav className="border-b border-gray-200">
         <div className="flex space-x-4 px-4">
