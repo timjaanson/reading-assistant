@@ -264,6 +264,7 @@ class SelectionTooltip {
       <Chat
         initialUserMessage={selectedText}
         systemPrompt={summarizeTextSystemMessage()}
+        collapseInitialMessage={true}
       />
     );
   }

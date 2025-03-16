@@ -8,6 +8,7 @@ type ChatProps = {
   onMessagesChange?: (messages: CoreMessage[]) => void;
   systemPrompt?: string;
   initialUserMessage?: string;
+  collapseInitialMessage?: boolean;
 };
 
 export const Chat = ({
@@ -15,6 +16,7 @@ export const Chat = ({
   onMessagesChange,
   systemPrompt,
   initialUserMessage,
+  collapseInitialMessage = false,
 }: ChatProps) => {
   const [messages, setMessages] = useState<CoreMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -116,6 +118,9 @@ export const Chat = ({
               role={message.role}
               content={message.content}
               showRole={showRole}
+              isCollapsible={
+                collapseInitialMessage && index === 0 && message.role === "user"
+              }
             />
           );
         })}
