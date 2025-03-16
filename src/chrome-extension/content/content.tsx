@@ -194,12 +194,10 @@ class SelectionTooltip {
     this.floatingSummary.className = "floating-summary";
     Object.assign(this.floatingSummary.style, {
       all: "unset",
-      position: "fixed",
-      left: "20px",
-      right: "20px",
+      position: "absolute",
       minWidth: "150px",
       maxWidth: "40vw",
-      width: "100%",
+      width: "400px",
       height: "400px",
       backgroundColor: "#fff",
       color: "#000",
@@ -210,12 +208,27 @@ class SelectionTooltip {
       display: "flex",
       flexDirection: "column",
     });
-    // Set top position based on last selection if available.
+
+    // Calculate position based on viewport and scroll position
+    const viewportWidth = window.innerWidth;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    // Position the window near the selection or in the middle of viewport
     if (this.lastSelectionRect) {
-      const topPosition = this.lastSelectionRect.top + window.scrollY + 10;
+      const topPosition = this.lastSelectionRect.top + scrollY;
+      const leftPosition = Math.min(
+        this.lastSelectionRect.left + scrollX,
+        scrollX + viewportWidth - 420 // account for window width + margin
+      );
       this.floatingSummary.style.top = `${topPosition}px`;
+      this.floatingSummary.style.left = `${leftPosition}px`;
     } else {
-      this.floatingSummary.style.top = "20px";
+      // Fallback to center of viewport
+      this.floatingSummary.style.top = `${scrollY + 100}px`;
+      this.floatingSummary.style.left = `${
+        scrollX + (viewportWidth / 2 - 200)
+      }px`;
     }
     document.body.appendChild(this.floatingSummary);
 
