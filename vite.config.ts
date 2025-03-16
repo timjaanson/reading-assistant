@@ -14,6 +14,7 @@ export default defineConfig({
         { src: "src/chrome-extension/public/32.png", dest: "./public" },
         { src: "src/chrome-extension/public/48.png", dest: "./public" },
         { src: "src/chrome-extension/public/192.png", dest: "./public" },
+        { src: "public/cmaps", dest: "." },
       ],
     }),
   ],
@@ -25,6 +26,7 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, "popup.html"),
         options: resolve(__dirname, "options.html"),
+        "pdf-viewer": resolve(__dirname, "pdf-viewer.html"),
         background: resolve(
           __dirname,
           "src/chrome-extension/background/index.ts"

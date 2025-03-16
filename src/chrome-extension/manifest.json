@@ -6,14 +6,14 @@
     "default_popup": "popup.html"
   },
   "options_page": "options.html",
-  "description": "Extension to provide summaries, explanations, and other actions for text",
+  "description": "Extension to provide summaries, explanations, and other actions for text including PDFs",
   "icons": {
     "16": "public/16.png",
     "32": "public/32.png",
     "48": "public/48.png",
     "192": "public/192.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs", "webNavigation", "downloads"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
