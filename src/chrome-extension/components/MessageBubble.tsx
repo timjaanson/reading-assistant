@@ -42,7 +42,9 @@ const MessageBubble = ({
 
   // If role is "user" then use the off-white style, otherwise blue
   const bubbleColor =
-    role === "user" ? "bg-gray-200 text-gray-900" : "bg-blue-500 text-white";
+    role === "user"
+      ? "bg-gray-200/85 text-gray-900"
+      : "bg-blue-500/85 text-white";
 
   const renderContent = () => {
     if (!isCollapsible) {
@@ -83,11 +85,7 @@ const MessageBubble = ({
       <div className="w-full">
         <div
           className={`cursor-pointer mb-1 flex items-center gap-1 ${
-            !isCollapsed
-              ? `py-1 px-2 rounded ${
-                  role === "user" ? "bg-gray-300" : "bg-blue-600"
-                }`
-              : ""
+            !isCollapsed ? "py-1 px-2 rounded bg-white/85 backdrop-blur-sm" : ""
           }`}
           onClick={() => setIsCollapsed(!isCollapsed)}
         >

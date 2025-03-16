@@ -199,7 +199,8 @@ class SelectionTooltip {
       maxWidth: "40vw",
       width: "400px",
       height: "400px",
-      backgroundColor: "#fff",
+      backgroundColor: "rgba(255, 255, 255, 0.3)",
+      backdropFilter: "blur(8px)",
       color: "#000",
       borderRadius: "8px",
       boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
@@ -238,10 +239,11 @@ class SelectionTooltip {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "8px 12px",
-      backgroundColor: "#f1f1f1",
-      borderBottom: "1px solid #ccc",
-      fontSize: "14px",
+      padding: "2px 4px",
+      backgroundColor: "rgba(255,255,255,0.2)",
+      backdropFilter: "blur(8px)",
+      //borderBottom: "1px solid rgba(204,204,204,0.5)",
+      fontSize: "12px",
       fontWeight: "bold",
       color: "#333",
     });
@@ -253,9 +255,11 @@ class SelectionTooltip {
       cursor: "pointer",
       background: "transparent",
       border: "none",
-      fontSize: "16px",
+      fontSize: "12px",
       lineHeight: "1",
       color: "#333",
+      padding: "2px 2px",
+      marginRight: "2px",
     });
     closeButton.addEventListener("click", () => this.closeSummaryWindow());
     header.appendChild(title);
@@ -267,7 +271,7 @@ class SelectionTooltip {
     Object.assign(contentContainer.style, {
       flex: "1",
       overflowY: "auto",
-      padding: "8px",
+      padding: "0px",
     });
     this.floatingSummary.appendChild(contentContainer);
 
