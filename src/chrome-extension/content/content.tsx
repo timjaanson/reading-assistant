@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import Chat from "../components/Chat";
 import { summarizeTextSystemMessage } from "../ai/prompts";
+import { ContentSelectionTooltip } from "./ContentSelectionTooltip";
 
 // Import the built global.css asset via Vite so that we get the hashed filename.
 import globalCssUrl from "../global.css?url";
@@ -14,6 +15,9 @@ import globalCssUrl from "../global.css?url";
   link.type = "text/css";
   document.head.appendChild(link);
 })();
+
+// Initialize the selection tooltip
+new ContentSelectionTooltip();
 
 // Tooltip class for managing UI and interactions
 class SelectionTooltip {
