@@ -20,12 +20,18 @@ const getCustomMarkdown = (content: string) => {
     <ReactMarkdown
       components={{
         ol: ({ children }) => (
-          <ol className="py-2 pl-6 list-decimal">{children}</ol>
+          <ol className="py-2 pl-6 list-decimal break-words whitespace-normal">
+            {children}
+          </ol>
         ),
         ul: ({ children }) => (
-          <ul className="py-2 pl-6 list-disc">{children}</ul>
+          <ul className="py-2 pl-6 list-disc break-words whitespace-normal">
+            {children}
+          </ul>
         ),
-        li: ({ children }) => <li className="my-1">{children}</li>,
+        li: ({ children }) => (
+          <li className="my-1 break-words whitespace-normal">{children}</li>
+        ),
       }}
     >
       {content}
@@ -45,8 +51,8 @@ const MessageBubble = ({
   // If role is "user" then use the off-white style, otherwise blue
   const bubbleColor =
     role === "user"
-      ? "bg-gray-200/85 text-gray-900"
-      : "bg-blue-500/85 text-white";
+      ? "bg-gray-200/85 !text-gray-900"
+      : "bg-blue-500/85 !text-white";
 
   // Use smaller padding for the main bubble if compact
   const bubblePadding = compact ? "p-1" : "p-2";
