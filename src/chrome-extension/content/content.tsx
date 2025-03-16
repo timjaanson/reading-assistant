@@ -24,6 +24,8 @@ class SelectionTooltip {
   private summaryRoot: ReturnType<typeof createRoot> | null = null;
   // New property to store selection rectangle
   private lastSelectionRect: DOMRect | null = null;
+  private isDragging: boolean = false;
+  private dragOffset: { x: number; y: number } = { x: 0, y: 0 };
 
   constructor() {
     // Add initial action with the new handler signature.
@@ -177,6 +179,7 @@ class SelectionTooltip {
     }
     this.floatingSummary = null;
     this.summaryRoot = null;
+    this.isDragging = false;
   }
 
   // New method that renders a React component with the selected text.
@@ -242,13 +245,80 @@ class SelectionTooltip {
       padding: "2px 4px",
       backgroundColor: "rgba(255,255,255,0.2)",
       backdropFilter: "blur(8px)",
-      //borderBottom: "1px solid rgba(204,204,204,0.5)",
       fontSize: "12px",
       fontWeight: "bold",
       color: "#333",
+      cursor: "grab",
+      userSelect: "none",
     });
-    const title = document.createElement("span");
-    title.textContent = "Summary";
+
+    // Add drag functionality
+    const handleDragStart = (e: MouseEvent) => {
+      if (this.floatingSummary) {
+        this.isDragging = true;
+        // Account for scroll position when calculating offset
+        this.dragOffset = {
+          x: e.pageX - parseInt(this.floatingSummary.style.left),
+          y: e.pageY - parseInt(this.floatingSummary.style.top),
+        };
+
+        header.style.cursor = "grabbing";
+        e.preventDefault();
+      }
+    };
+
+    const handleDrag = (e: MouseEvent) => {
+      if (this.isDragging && this.floatingSummary) {
+        // Use pageX/pageY instead of clientX/clientY to account for scroll
+        const newX = e.pageX - this.dragOffset.x;
+        const newY = e.pageY - this.dragOffset.y;
+
+        // Get document dimensions instead of viewport
+        const docWidth = Math.max(
+          document.documentElement.clientWidth,
+          document.documentElement.scrollWidth
+        );
+        const docHeight = Math.max(
+          document.documentElement.clientHeight,
+          document.documentElement.scrollHeight
+        );
+
+        // Get window dimensions
+        const windowWidth = this.floatingSummary.offsetWidth;
+        const windowHeight = this.floatingSummary.offsetHeight;
+
+        // Calculate bounds relative to document size, not viewport
+        const maxX = docWidth - windowWidth;
+        const maxY = docHeight - windowHeight;
+
+        // Constrain position to document bounds
+        const constrainedX = Math.max(0, Math.min(newX, maxX));
+        const constrainedY = Math.max(0, Math.min(newY, maxY));
+
+        this.floatingSummary.style.left = `${constrainedX}px`;
+        this.floatingSummary.style.top = `${constrainedY}px`;
+      }
+    };
+
+    const handleDragEnd = () => {
+      this.isDragging = false;
+      if (header) {
+        header.style.cursor = "grab";
+      }
+    };
+
+    // Add mouse event listeners
+    header.addEventListener("mousedown", handleDragStart);
+    document.addEventListener("mousemove", handleDrag);
+    document.addEventListener("mouseup", handleDragEnd);
+
+    // Clean up event listeners when window is closed
+    const cleanup = () => {
+      document.removeEventListener("mousemove", handleDrag);
+      document.removeEventListener("mouseup", handleDragEnd);
+    };
+
+    // Add cleanup to existing close button
     const closeButton = document.createElement("button");
     closeButton.textContent = "✖";
     Object.assign(closeButton.style, {
@@ -261,7 +331,13 @@ class SelectionTooltip {
       padding: "2px 2px",
       marginRight: "2px",
     });
-    closeButton.addEventListener("click", () => this.closeSummaryWindow());
+    closeButton.addEventListener("click", () => {
+      cleanup();
+      this.closeSummaryWindow();
+    });
+
+    const title = document.createElement("span");
+    title.textContent = "Summary";
     header.appendChild(title);
     header.appendChild(closeButton);
     this.floatingSummary.appendChild(header);

@@ -21,6 +21,7 @@ export const summarizeTextSystemMessage = () => `## Your role
 ## Task
 * Summarize the text in a way that is easy to understand.
 * You must be concise and to the point.
+* You can only summarize the text that has been presented to you. You must not make up any information or make assumptions.
 * Mention the main points and the most important details - including but not limited to:
   - Key points
   - Key dates

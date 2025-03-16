@@ -20,17 +20,20 @@ const getCustomMarkdown = (content: string) => {
     <ReactMarkdown
       components={{
         ol: ({ children }) => (
-          <ol className="py-2 pl-6 list-decimal break-words whitespace-normal">
+          <ol className="py-1 pl-3 list-decimal break-words whitespace-normal">
             {children}
           </ol>
         ),
         ul: ({ children }) => (
-          <ul className="py-2 pl-6 list-disc break-words whitespace-normal">
+          <ul className="py-1 pl-3 list-disc break-words whitespace-normal">
             {children}
           </ul>
         ),
         li: ({ children }) => (
           <li className="my-1 break-words whitespace-normal">{children}</li>
+        ),
+        code: ({ children }) => (
+          <code className="bg-gray-200/85 text-gray-700 p-1">{children}</code>
         ),
       }}
     >
