@@ -1,7 +1,10 @@
+import { createRoot } from "react-dom/client";
+
 // Tooltip class for managing UI and interactions
 class SelectionTooltip {
   private tooltip: HTMLElement | null = null;
   private actions: { name: string; handler: () => void }[] = [];
+  private floatingSummary: HTMLElement | null = null;
 
   constructor() {
     // Add initial action
@@ -17,7 +20,16 @@ class SelectionTooltip {
     document.addEventListener("mousedown", this.handleMouseDown.bind(this));
   }
 
-  private handleMouseUp(): void {
+  private handleMouseUp(event: MouseEvent): void {
+    if (
+      this.tooltip &&
+      event.target instanceof Node &&
+      this.tooltip.contains(event.target)
+    ) {
+      // If the mouseup was within the tooltip (for example, a click on the Summary button),
+      // do not re-show (or re-create) the tooltip to allow the click event handler to fire.
+      return;
+    }
     const selection = window.getSelection();
 
     // Check if there's selected text
@@ -95,11 +107,18 @@ class SelectionTooltip {
 
       if (this.tooltip) {
         this.tooltip.appendChild(button);
-      } else {
-        console.error("Tooltip not found");
-        throw new Error("Tooltip not found");
       }
     });
+
+    // Ensure floatingSummary exists and is appended once
+    if (!this.floatingSummary) {
+      this.floatingSummary = document.createElement("div");
+      this.floatingSummary.className = "floating-summary";
+    }
+    this.tooltip.appendChild(this.floatingSummary);
+    console.log("Floating summary element found");
+    const root = createRoot(this.floatingSummary);
+    root.render(<div>Hello</div>);
 
     // Position the tooltip above the selection
     const range = selection.getRangeAt(0);

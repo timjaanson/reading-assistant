@@ -30,6 +30,10 @@ export default defineConfig({
           "src/chrome-extension/background/index.ts"
         ),
         content: resolve(__dirname, "src/chrome-extension/content/index.ts"),
+        "content-main": resolve(
+          __dirname,
+          "src/chrome-extension/content/content.tsx"
+        ),
       },
       output: {
         entryFileNames: () => {
