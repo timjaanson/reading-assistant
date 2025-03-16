@@ -144,7 +144,11 @@ const MessageBubble = ({
         role === "user" ? "items-end" : "items-start"
       }`}
     >
-      {showRole && <span className="text-sm mb-1">{role}</span>}
+      {showRole && (
+        <span className="text-sm mb-1">
+          {role.charAt(0).toUpperCase() + role.slice(1)}
+        </span>
+      )}
       <div className={`p-2 rounded-lg ${bubbleColor}`}>{renderContent()}</div>
     </div>
   );
