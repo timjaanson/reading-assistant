@@ -38,29 +38,32 @@ class SelectionTooltip {
   }
 
   private handleMouseUp(event: MouseEvent): void {
+    // Do not show tooltip if summary window is open.
+    if (this.floatingSummary) {
+      return;
+    }
     if (
       this.tooltip &&
       event.target instanceof Node &&
       this.tooltip.contains(event.target)
     ) {
-      // If the mouseup was within the tooltip, do nothing.
+      // If mouseup occurred within the tooltip, do nothing.
       return;
     }
     const selection = window.getSelection();
-
-    // Check if there's selected text
+    // Check that there is selected text.
     if (
       selection &&
       !selection.isCollapsed &&
       selection.toString().trim().length > 0
     ) {
-      // Create tooltip near the selection
-      this.showTooltip(selection);
+      // Pass the mouse event so we can use its position.
+      this.showTooltip(selection, event);
     }
   }
 
   private handleMouseDown(event: MouseEvent): void {
-    // Check if click is outside tooltip
+    // Only hide tooltip if summary window is not open.
     if (
       this.tooltip &&
       event.target instanceof Node &&
@@ -70,25 +73,25 @@ class SelectionTooltip {
     }
   }
 
-  private showTooltip(selection: Selection): void {
-    // Remove existing tooltip if any
+  private showTooltip(selection: Selection, event: MouseEvent): void {
+    // Remove any existing tooltip.
     this.hideTooltip();
 
-    // Capture the selected text (since it may be lost on click)
+    // Capture the selected text.
     const capturedText = selection.toString();
 
-    // Create tooltip element
+    // Create tooltip element.
     this.tooltip = document.createElement("div");
     this.tooltip.className = "assisted-reading-tooltip";
 
-    // Style the tooltip
+    // Style the tooltip.
     Object.assign(this.tooltip.style, {
       position: "absolute",
       zIndex: "10000",
-      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      backgroundColor: "transparent",
       border: "none",
       borderRadius: "6px",
-      padding: "6px 10px",
+      padding: "0",
       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
       fontSize: "14px",
       display: "flex",
@@ -102,68 +105,57 @@ class SelectionTooltip {
     buttonContainer.style.display = "flex";
     buttonContainer.style.gap = "12px";
 
-    // Add action button(s)
+    // Add the action button(s)
     this.actions.forEach((action) => {
       const button = document.createElement("button");
       button.textContent = action.name;
       button.addEventListener("click", () => {
-        // Call the action handler with the captured selected text.
         action.handler(capturedText);
       });
-      // Style the button
+      // Style the button.
       Object.assign(button.style, {
-        backgroundColor: "transparent",
+        backgroundColor: "rgba(255, 255, 255, 0.3)",
         border: "none",
-        padding: "4px 12px",
+        padding: "4px 8px",
         cursor: "pointer",
         fontSize: "12px",
-        color: "white",
-        transition: "background-color 0.2s ease",
+        color: "#333",
+        transition: "background-color 0.2s ease, opacity 0.2s ease",
       });
-
       button.addEventListener("mouseover", () => {
-        button.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+        button.style.backgroundColor = "rgba(255, 255, 255, 0.5)";
       });
-
       button.addEventListener("mouseout", () => {
-        button.style.backgroundColor = "transparent";
+        button.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
       });
-
       buttonContainer.appendChild(button);
     });
     this.tooltip.appendChild(buttonContainer);
 
-    // Ensure floatingSummary exists and append it to the tooltip
-    if (!this.floatingSummary) {
-      this.floatingSummary = document.createElement("div");
-      this.floatingSummary.className = "floating-summary";
-    }
-    this.tooltip.appendChild(this.floatingSummary);
+    // Note: We no longer append any floatingSummary element here.
+    // This prevents any leftover persistent element from interfering with new summaries.
 
-    // Position the tooltip above the selection
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    // Save the selection rect for later positioning of the summary window
-    this.lastSelectionRect = rect;
+    // Position the tooltip relative to the mouse position.
+    // Initially set the top using an estimate; we will adjust it below.
     this.tooltip.style.left = `${
-      rect.left +
-      window.scrollX +
-      rect.width / 2 -
-      (this.tooltip.offsetWidth || 0) / 2
+      event.clientX + window.scrollX - (this.tooltip.offsetWidth || 0) / 2
     }px`;
-    this.tooltip.style.top = `${rect.top + window.scrollY - 40}px`;
+    // Temporary top; will update after tooltip is rendered.
+    this.tooltip.style.top = `${event.clientY + window.scrollY - 10}px`;
 
-    // Add tooltip to the DOM
+    // Add tooltip to the DOM.
     document.body.appendChild(this.tooltip);
 
-    // Adjust position after adding to DOM to get accurate width
+    // After the tooltip is rendered, adjust the top so that
+    // its bottom edge is 10px above the mouse pointer.
     requestAnimationFrame(() => {
       if (this.tooltip) {
+        const tooltipHeight = this.tooltip.offsetHeight;
         this.tooltip.style.left = `${
-          rect.left +
-          window.scrollX +
-          rect.width / 2 -
-          this.tooltip.offsetWidth / 2
+          event.clientX + window.scrollX - this.tooltip.offsetWidth / 2
+        }px`;
+        this.tooltip.style.top = `${
+          event.clientY + window.scrollY - tooltipHeight - 10
         }px`;
       }
     });
@@ -173,56 +165,101 @@ class SelectionTooltip {
     if (this.tooltip && this.tooltip.parentNode) {
       this.tooltip.parentNode.removeChild(this.tooltip);
       this.tooltip = null;
-      // Reset floatingSummary, summaryRoot, and lastSelectionRect
-      this.floatingSummary = null;
-      this.summaryRoot = null;
-      this.lastSelectionRect = null;
     }
+    // Do not reset floatingSummary or summaryRoot here; they persist until explicitly closed.
+    this.lastSelectionRect = null;
+  }
+
+  // New method that closes the summary window when X is pressed.
+  private closeSummaryWindow(): void {
+    if (this.floatingSummary && this.floatingSummary.parentNode) {
+      this.floatingSummary.parentNode.removeChild(this.floatingSummary);
+    }
+    this.floatingSummary = null;
+    this.summaryRoot = null;
   }
 
   // New method that renders a React component with the selected text.
   private showSummaryReact(selectedText: string): void {
-    // Close tooltip since we want a separate summary window.
+    // Close the tooltip if it's visible.
     this.hideTooltip();
 
-    // Create floatingSummary as a standalone container if it doesn't exist.
-    if (!this.floatingSummary) {
-      this.floatingSummary = document.createElement("div");
-      this.floatingSummary.className = "floating-summary";
-      // Override any inherited styles and apply dynamic sizing:
-      Object.assign(this.floatingSummary.style, {
-        all: "unset",
-        position: "fixed",
-        left: "20px",
-        right: "20px",
-        // Remove bottom; we'll set top based on the selection position.
-        minWidth: "150px",
-        maxWidth: "40vw", // changed from 80vw to 40vw
-        width: "100%",
-        height: "400px",
-        backgroundColor: "#fff",
-        color: "#000",
-        borderRadius: "8px",
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-        zIndex: "10000",
-        // Allow vertical scrolling if content overflows.
-        overflowY: "auto",
-        padding: "16px",
-        border: "1px solid #ccc",
-      });
-      // Set top position based on the last selection's vertical position (if available)
-      if (this.lastSelectionRect) {
-        const topPosition = this.lastSelectionRect.top + window.scrollY + 10; // 10px offset below the selection
-        this.floatingSummary.style.top = `${topPosition}px`;
-      } else {
-        this.floatingSummary.style.top = "20px"; // fallback position
-      }
-      document.body.appendChild(this.floatingSummary);
+    // If a summary window already exists, do not recreate or update it.
+    if (this.floatingSummary) {
+      return;
     }
-    if (!this.summaryRoot) {
-      this.summaryRoot = createRoot(this.floatingSummary);
+
+    // Create the summary window container.
+    this.floatingSummary = document.createElement("div");
+    this.floatingSummary.className = "floating-summary";
+    Object.assign(this.floatingSummary.style, {
+      all: "unset",
+      position: "fixed",
+      left: "20px",
+      right: "20px",
+      minWidth: "150px",
+      maxWidth: "40vw",
+      width: "100%",
+      height: "400px",
+      backgroundColor: "#fff",
+      color: "#000",
+      borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+      zIndex: "10000",
+      border: "1px solid #ccc",
+      display: "flex",
+      flexDirection: "column",
+    });
+    // Set top position based on last selection if available.
+    if (this.lastSelectionRect) {
+      const topPosition = this.lastSelectionRect.top + window.scrollY + 10;
+      this.floatingSummary.style.top = `${topPosition}px`;
+    } else {
+      this.floatingSummary.style.top = "20px";
     }
-    // Render the Chat component with the selected text.
+    document.body.appendChild(this.floatingSummary);
+
+    // Create a header bar for the summary window.
+    const header = document.createElement("div");
+    Object.assign(header.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "8px 12px",
+      backgroundColor: "#f1f1f1",
+      borderBottom: "1px solid #ccc",
+      fontSize: "14px",
+      fontWeight: "bold",
+      color: "#333",
+    });
+    const title = document.createElement("span");
+    title.textContent = "Summary";
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "✖";
+    Object.assign(closeButton.style, {
+      cursor: "pointer",
+      background: "transparent",
+      border: "none",
+      fontSize: "16px",
+      lineHeight: "1",
+      color: "#333",
+    });
+    closeButton.addEventListener("click", () => this.closeSummaryWindow());
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    this.floatingSummary.appendChild(header);
+
+    // Create a content container for the Chat component.
+    const contentContainer = document.createElement("div");
+    Object.assign(contentContainer.style, {
+      flex: "1",
+      overflowY: "auto",
+      padding: "8px",
+    });
+    this.floatingSummary.appendChild(contentContainer);
+
+    // Render the Chat component into the content container.
+    this.summaryRoot = createRoot(contentContainer);
     this.summaryRoot.render(
       <Chat
         initialUserMessage={selectedText}
@@ -231,7 +268,7 @@ class SelectionTooltip {
     );
   }
 
-  // Public method to add new actions
+  // Public method to add new actions.
   public addAction(
     name: string,
     handler: (selectedText: string) => void
@@ -240,8 +277,8 @@ class SelectionTooltip {
   }
 }
 
-// Initialize the tooltip
+// Initialize the tooltip.
 const selectionTooltip = new SelectionTooltip();
 
-// Export for potential use in other extension scripts
+// Export for potential use in other extension scripts.
 export default selectionTooltip;
