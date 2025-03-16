@@ -282,6 +282,7 @@ class SelectionTooltip {
         initialUserMessage={selectedText}
         systemPrompt={summarizeTextSystemMessage()}
         collapseInitialMessage={true}
+        compact={true}
       />
     );
   }

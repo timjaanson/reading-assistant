@@ -12,6 +12,7 @@ export type MessageBubbleProps = {
     | ToolContent;
   showRole: boolean;
   isCollapsible?: boolean;
+  compact?: boolean;
 };
 
 const getCustomMarkdown = (content: string) => {
@@ -37,6 +38,7 @@ const MessageBubble = ({
   content,
   showRole,
   isCollapsible,
+  compact = false,
 }: MessageBubbleProps) => {
   const [isCollapsed, setIsCollapsed] = useState(isCollapsible);
 
@@ -45,6 +47,9 @@ const MessageBubble = ({
     role === "user"
       ? "bg-gray-200/85 text-gray-900"
       : "bg-blue-500/85 text-white";
+
+  // Use smaller padding for the main bubble if compact
+  const bubblePadding = compact ? "p-1" : "p-2";
 
   const renderContent = () => {
     if (!isCollapsible) {
@@ -85,7 +90,11 @@ const MessageBubble = ({
       <div className="w-full">
         <div
           className={`cursor-pointer mb-1 flex items-center gap-1 ${
-            !isCollapsed ? "py-1 px-2 rounded bg-white/85 backdrop-blur-sm" : ""
+            !isCollapsed
+              ? compact
+                ? "py-0.5 px-1 rounded bg-white/85 backdrop-blur-sm text-sm"
+                : "py-1 px-2 rounded bg-white/85 backdrop-blur-sm"
+              : ""
           }`}
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
@@ -140,14 +149,16 @@ const MessageBubble = ({
     <div
       className={`flex flex-col ${
         role === "user" ? "items-end" : "items-start"
-      }`}
+      } ${compact ? "text-sm" : ""}`}
     >
-      {showRole && (
-        <span className="text-sm mb-1">
+      {!compact && showRole && (
+        <span className={`mb-1 ${compact ? "text-xs" : "text-sm"}`}>
           {role.charAt(0).toUpperCase() + role.slice(1)}
         </span>
       )}
-      <div className={`p-2 rounded-lg ${bubbleColor}`}>{renderContent()}</div>
+      <div className={`${bubblePadding} rounded-lg ${bubbleColor}`}>
+        {renderContent()}
+      </div>
     </div>
   );
 };

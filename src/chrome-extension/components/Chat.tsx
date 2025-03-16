@@ -9,6 +9,7 @@ type ChatProps = {
   systemPrompt?: string;
   initialUserMessage?: string;
   collapseInitialMessage?: boolean;
+  compact?: boolean;
 };
 
 export const Chat = ({
@@ -17,6 +18,7 @@ export const Chat = ({
   systemPrompt,
   initialUserMessage,
   collapseInitialMessage = false,
+  compact = false,
 }: ChatProps) => {
   const [messages, setMessages] = useState<CoreMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -101,12 +103,29 @@ export const Chat = ({
     }
   }, []);
 
+  // Define conditional classes for messages container based on compact prop
+  const messagesContainerClasses = compact
+    ? "flex-1 overflow-y-auto p-2 space-y-1 bg-transparent"
+    : "flex-1 overflow-y-auto p-4 space-y-4 bg-transparent";
+
+  // Define conditional classes for input section based on compact prop
+  const inputContainerClasses = compact
+    ? "flex-shrink-0 bg-transparent p-[1px] border-t border-gray-300"
+    : "flex-shrink-0 bg-transparent p-4 border-t border-gray-300";
+  const inputFlexClasses = compact ? "flex space-x-1" : "flex space-x-2";
+  const textareaClasses = compact
+    ? "flex-1 border border-gray-300 rounded-md p-1 resize-none bg-white/50 text-sm"
+    : "flex-1 border border-gray-300 rounded-md p-2 resize-none bg-white/50";
+  const buttonClasses = compact
+    ? "bg-blue-500/85 text-white rounded-md px-2 py-1 text-sm"
+    : "bg-blue-500/85 text-white rounded-md px-4 py-2";
+
   return (
     <div className="flex flex-col h-full w-full max-w-[800px] mx-auto relative">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent"
+        className={messagesContainerClasses}
         onScroll={handleScroll}
       >
         {messages.map((message, index) => {
@@ -121,6 +140,7 @@ export const Chat = ({
               isCollapsible={
                 collapseInitialMessage && index === 0 && message.role === "user"
               }
+              compact={compact}
             />
           );
         })}
@@ -133,6 +153,7 @@ export const Chat = ({
               messages.length === 0 ||
               messages[messages.length - 1].role !== "assistant"
             }
+            compact={compact}
           />
         )}
       </div>
@@ -147,8 +168,8 @@ export const Chat = ({
       )}
 
       {/* Input Container */}
-      <div className="flex-shrink-0 bg-transparent p-4">
-        <div className="flex space-x-2">
+      <div className={inputContainerClasses}>
+        <div className={inputFlexClasses}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -159,19 +180,19 @@ export const Chat = ({
               }
             }}
             placeholder="Type your message"
-            className="flex-1 border border-gray-300 rounded-md p-2 resize-none bg-white/50"
-            rows={2}
+            className={textareaClasses}
+            rows={compact ? 1 : 2}
           />
           <button
             type="button"
             onClick={handleSendMessage}
-            className="bg-blue-500/85 text-white rounded-md px-4 py-2"
+            className={buttonClasses}
           >
             Send
           </button>
         </div>
-        {isLoading && <p className="text-gray-500 mt-2">Loading...</p>}
-        {error && <p className="text-red-500 mt-2">{error}</p>}
+        {isLoading && <p className="text-gray-500 mt-2 text-sm">Loading...</p>}
+        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
       </div>
     </div>
   );
