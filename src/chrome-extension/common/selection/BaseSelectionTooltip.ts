@@ -1,8 +1,9 @@
 import { createRoot } from "react-dom/client";
+import { FloatingSummary } from "./FloatingSummary";
 
 export interface TooltipAction {
   name: string;
-  handler: (selectedText: string) => void;
+  handler: (selectedText: string, clickEvent?: MouseEvent) => void;
 }
 
 export abstract class BaseSelectionTooltip {
@@ -83,8 +84,8 @@ export abstract class BaseSelectionTooltip {
     this.actions.forEach((action) => {
       const button = document.createElement("button");
       button.textContent = action.name;
-      button.addEventListener("click", () => {
-        action.handler(capturedText);
+      button.addEventListener("click", (e: MouseEvent) => {
+        action.handler(capturedText, e);
       });
       Object.assign(button.style, {
         backgroundColor: "rgba(255, 255, 255, 0.3)",
@@ -138,18 +139,30 @@ export abstract class BaseSelectionTooltip {
     }
   }
 
-  protected closeSummaryWindow(): void {
-    if (this.floatingSummary && this.floatingSummary.parentNode) {
-      this.floatingSummary.parentNode.removeChild(this.floatingSummary);
+  protected showSummaryReact(selectedText: string): void {
+    // Close the tooltip if it's visible
+    this.hideTooltip();
+
+    // Calculate position near selection if available
+    let position = undefined;
+    if (this.lastSelectionRect) {
+      position = {
+        top: this.lastSelectionRect.top + window.scrollY,
+        left: Math.min(
+          this.lastSelectionRect.left + window.scrollX,
+          window.scrollX + window.innerWidth - 420
+        ),
+      };
     }
-    this.floatingSummary = null;
-    this.summaryRoot = null;
-    this.isDragging = false;
+
+    // Create a new floating summary instance
+    const summary = new FloatingSummary();
+    summary.show(selectedText, position);
   }
 
   public addAction(
     name: string,
-    handler: (selectedText: string) => void
+    handler: (selectedText: string, clickEvent?: MouseEvent) => void
   ): void {
     this.actions.push({ name, handler });
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -16,7 +16,7 @@ interface PdfViewerProps {
 const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1.0);
+  const [scale, setScale] = useState<number>(1.2);
 
   const pdfOptions = useMemo(
     () => ({
@@ -26,17 +26,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
     []
   );
 
-  console.log(`Rendering PDFViewer - Page ${pageNumber} of ${numPages}`);
-
-  useEffect(() => {
-    console.log(`Page changed to ${pageNumber}`);
-    // You could add any cleanup here if needed
-  }, [pageNumber]);
-
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     console.log(`Document loaded successfully with ${numPages} pages`);
     setNumPages(numPages);
-    //setPageNumber(1);
   }
 
   function changePage(offset: number) {
@@ -101,18 +93,22 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
           }}
           options={pdfOptions}
         >
-          <Page
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-            onRenderSuccess={() =>
-              console.log(`Page ${pageNumber} rendered successfully`)
-            }
-            onRenderError={(error) =>
-              console.error(`Error rendering page ${pageNumber}:`, error)
-            }
-          />
+          {numPages &&
+            Array.from({ length: numPages }, (_, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                scale={scale}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                onRenderSuccess={() =>
+                  console.log(`Page ${index + 1} rendered successfully`)
+                }
+                onRenderError={(error) =>
+                  console.error(`Error rendering page ${index + 1}:`, error)
+                }
+              />
+            ))}
         </Document>
       </div>
     </div>

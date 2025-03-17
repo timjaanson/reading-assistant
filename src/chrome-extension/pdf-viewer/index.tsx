@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import PdfViewer from "../components/PdfViewer";
 import "../global.css";
-import { PdfSelectionTooltip } from "./PdfSelectionTooltip";
 import globalCssUrl from "../global.css?url";
+import { PdfSelectionTooltip } from "./PdfSelectionTooltip";
 
 // Add some basic styling for the PDF viewer
 const styles = `

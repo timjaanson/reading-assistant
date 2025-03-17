@@ -115,35 +115,34 @@ export class FloatingSummary {
 
   private setupDragHandlers(): void {
     const handleDragStart = (e: MouseEvent) => {
-      if (
-        e.target instanceof HTMLElement &&
-        e.target.closest(".floating-summary-header")
-      ) {
+      if (e.target instanceof HTMLElement && this.header.contains(e.target)) {
         this.isDragging = true;
-        const rect = this.element.getBoundingClientRect();
+        const elementLeft =
+          parseFloat(this.element.style.left) ||
+          this.element.getBoundingClientRect().left + window.scrollX;
+        const elementTop =
+          parseFloat(this.element.style.top) ||
+          this.element.getBoundingClientRect().top + window.scrollY;
         this.dragOffset = {
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
+          x: e.pageX - elementLeft,
+          y: e.pageY - elementTop,
         };
         this.header.style.cursor = "grabbing";
+        e.preventDefault();
       }
     };
 
     const handleDrag = (e: MouseEvent) => {
       if (!this.isDragging) return;
-
-      const newLeft = e.clientX - this.dragOffset.x;
-      const newTop = e.clientY - this.dragOffset.y;
-
-      // Ensure the window stays within viewport bounds
-      const maxLeft = window.innerWidth - this.element.offsetWidth;
-      const maxTop = window.innerHeight - this.element.offsetHeight;
-
-      this.element.style.left = `${Math.max(0, Math.min(maxLeft, newLeft))}px`;
-      this.element.style.top = `${Math.max(0, Math.min(maxTop, newTop))}px`;
+      const newLeft = e.pageX - this.dragOffset.x;
+      const newTop = e.pageY - this.dragOffset.y;
+      this.element.style.left = `${newLeft}px`;
+      this.element.style.top = `${newTop}px`;
+      e.preventDefault();
     };
 
     const handleDragEnd = () => {
+      if (!this.isDragging) return;
       this.isDragging = false;
       this.header.style.cursor = "grab";
     };
