@@ -1,4 +1,25 @@
-import { UserSettings, defaultSettings } from "../types/settings";
+import { UserSettings } from "../types/settings";
+
+export const defaultSettings: UserSettings = {
+  settings: [
+    {
+      provider: "openai",
+      apiKey: "",
+      model: "gpt-4o-mini",
+    },
+    {
+      provider: "anthropic",
+      apiKey: "",
+      model: "claude-3-5-sonnet-latest",
+    },
+    {
+      provider: "ollama",
+      url: "http://localhost:11434/api",
+      apiKey: "",
+      model: "llama3.1:8b",
+    },
+  ],
+};
 
 export class SettingsStorage {
   static async saveSettings(settings: UserSettings): Promise<void> {

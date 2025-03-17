@@ -1,17 +1,11 @@
 export interface ProviderSettings {
+  provider: string;
+  url?: string;
   apiKey: string;
   model: string;
 }
 
 export interface UserSettings {
-  provider: string;
-  settings: ProviderSettings;
+  settings: ProviderSettings[];
+  activeProviderSettings?: ProviderSettings;
 }
-
-export const defaultSettings: UserSettings = {
-  provider: "openai",
-  settings: {
-    apiKey: "",
-    model: "gpt-4o-mini",
-  },
-};

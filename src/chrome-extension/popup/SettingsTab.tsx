@@ -1,57 +1,81 @@
-import React, { useState, useEffect } from "react";
-import { SettingsStorage } from "../storage/settings";
-import { UserSettings, defaultSettings } from "../types/settings";
+import React, { useEffect, useState } from "react";
+import { defaultSettings, SettingsStorage } from "../storage/settings";
+import { UserSettings } from "../types/settings";
 
 export const SettingsTab = () => {
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [isLoading, setIsLoading] = useState(true);
+  const [userLoadedSettings, setUserLoadedSettings] =
+    useState<UserSettings>(defaultSettings);
+  const [selectedProviderIndex, setSelectedProviderIndex] = useState<number>(0);
+
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSettings();
+    const loadUserSettings = async () => {
+      const settings = await SettingsStorage.loadSettings();
+      setUserLoadedSettings(settings);
+      setSelectedProviderIndex(
+        settings.activeProviderSettings
+          ? settings.settings.findIndex(
+              (s) => s.provider === settings.activeProviderSettings!.provider
+            )
+          : 0
+      );
+    };
+    loadUserSettings();
   }, []);
 
-  const loadSettings = async () => {
-    try {
-      setIsLoading(true);
-      const savedSettings = await SettingsStorage.loadSettings();
-      setSettings(savedSettings);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load settings");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleProviderSelectChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setSelectedProviderIndex(Number(e.target.value));
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  const handleProviderFieldChange = (
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
-    if (name === "provider") {
-      setSettings((prev) => ({
+    setUserLoadedSettings((prev) => {
+      const newSettingsArray = [...prev.settings];
+      const updatedProvider = {
+        ...newSettingsArray[selectedProviderIndex],
+        [name]: value,
+      };
+      newSettingsArray[selectedProviderIndex] = updatedProvider;
+      const isActive =
+        prev.activeProviderSettings?.provider === updatedProvider.provider;
+      return {
         ...prev,
-        provider: value,
-      }));
-    } else {
-      setSettings((prev) => ({
-        ...prev,
-        settings: {
-          ...prev.settings,
-          [name]: value,
-        },
-      }));
-    }
+        settings: newSettingsArray,
+        activeProviderSettings: isActive
+          ? updatedProvider
+          : prev.activeProviderSettings,
+      };
+    });
+  };
+
+  const handleActiveProviderChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const checked = e.target.checked;
+    setUserLoadedSettings((prev) => ({
+      ...prev,
+      activeProviderSettings: checked
+        ? prev.settings[selectedProviderIndex]
+        : undefined,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
-      await SettingsStorage.saveSettings(settings);
+      await SettingsStorage.saveSettings(userLoadedSettings);
       setError(null);
     } catch (err) {
       setError("Failed to save settings");
     }
+    setIsLoading(false);
   };
 
   if (isLoading) {
@@ -78,12 +102,35 @@ export const SettingsTab = () => {
           <select
             id="provider"
             name="provider"
-            value={settings.provider}
-            onChange={handleChange}
+            value={selectedProviderIndex}
+            onChange={handleProviderSelectChange}
             className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="openai">OpenAI</option>
+            {userLoadedSettings.settings.map((setting, index) => (
+              <option key={setting.provider} value={index}>
+                {setting.provider}
+              </option>
+            ))}
           </select>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            id="activeProvider"
+            type="checkbox"
+            checked={
+              userLoadedSettings.activeProviderSettings?.provider ===
+              userLoadedSettings.settings[selectedProviderIndex].provider
+            }
+            onChange={handleActiveProviderChange}
+            className="mr-2"
+          />
+          <label
+            htmlFor="activeProvider"
+            className="text-sm font-medium text-gray-700"
+          >
+            Active Provider
+          </label>
         </div>
 
         <div className="space-y-2">
@@ -97,8 +144,10 @@ export const SettingsTab = () => {
             type="password"
             id="apiKey"
             name="apiKey"
-            value={settings.settings.apiKey}
-            onChange={handleChange}
+            value={
+              userLoadedSettings.settings[selectedProviderIndex].apiKey || ""
+            }
+            onChange={handleProviderFieldChange}
             placeholder="Enter your API key"
             className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -115,12 +164,36 @@ export const SettingsTab = () => {
             type="text"
             id="model"
             name="model"
-            value={settings.settings.model}
-            onChange={handleChange}
+            value={
+              userLoadedSettings.settings[selectedProviderIndex].model || ""
+            }
+            onChange={handleProviderFieldChange}
             placeholder="Enter model name (e.g. gpt-4o-mini)"
             className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
+
+        {"url" in userLoadedSettings.settings[selectedProviderIndex] && (
+          <div className="space-y-2">
+            <label
+              htmlFor="url"
+              className="block text-sm font-medium text-gray-700"
+            >
+              URL
+            </label>
+            <input
+              type="text"
+              id="url"
+              name="url"
+              value={
+                userLoadedSettings.settings[selectedProviderIndex].url || ""
+              }
+              onChange={handleProviderFieldChange}
+              placeholder="Enter URL"
+              className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        )}
 
         <button
           type="submit"

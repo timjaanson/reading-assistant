@@ -12,7 +12,7 @@ export const TabButton = ({ isActive, onClick, children }: TabButtonProps) => {
       onClick={onClick}
       className={`px-4 py-2 font-medium text-sm ${
         isActive
-          ? "border-b-2 border-blue-500 text-blue-600"
+          ? "border-b-2 border-gray-800 text-gray-800"
           : "text-gray-500 hover:text-gray-700"
       }`}
     >
