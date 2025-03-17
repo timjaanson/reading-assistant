@@ -1,15 +1,13 @@
 import { createRoot } from "react-dom/client";
-import Chat from "../../components/Chat";
-import { summarizeTextSystemMessage } from "../../ai/prompts";
 
-export interface FloatingSummaryOptions {
-  width?: string;
-  height?: string;
-  minWidth?: string;
-  maxWidth?: string;
+export interface FloatingEmbeddedWindowOptions {
+  width: string;
+  height: string;
+  minWidth: string;
+  maxWidth: string;
 }
 
-export class FloatingSummary {
+export class FloatingEmbeddedWindow {
   public isClosed: boolean = false;
 
   private element: HTMLElement;
@@ -18,15 +16,17 @@ export class FloatingSummary {
   private dragOffset: { x: number; y: number } = { x: 0, y: 0 };
   private header: HTMLElement;
   private contentContainer: HTMLElement;
+  private options: FloatingEmbeddedWindowOptions = {
+    width: "400px",
+    height: "400px",
+    minWidth: "150px",
+    maxWidth: "40vw",
+  };
 
-  constructor(
-    private options: FloatingSummaryOptions = {
-      width: "400px",
-      height: "400px",
-      minWidth: "150px",
-      maxWidth: "40vw",
-    }
-  ) {
+  private title: string;
+
+  constructor(title: string) {
+    this.title = title;
     this.element = this.createContainer();
     this.header = this.createHeader();
     this.contentContainer = this.createContentContainer();
@@ -42,7 +42,7 @@ export class FloatingSummary {
 
   private createContentContainer(): HTMLElement {
     const container = document.createElement("div");
-    container.className = "floating-summary-content";
+    container.className = `floating-${this.title}-content`;
     Object.assign(container.style, {
       flex: "1",
       overflow: "hidden",
@@ -54,23 +54,23 @@ export class FloatingSummary {
 
   private createHeader(): HTMLElement {
     const header = document.createElement("div");
-    header.className = "floating-summary-header";
+    header.className = `floating-${this.title}-header`;
     Object.assign(header.style, {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       padding: "2px 4px",
-      backgroundColor: "rgba(255,255,255,0.2)",
-      backdropFilter: "blur(8px)",
+      backgroundColor: "transparent",
       fontSize: "12px",
       fontWeight: "bold",
-      color: "#333",
+      color: "#FAFAFA",
       cursor: "grab",
       userSelect: "none",
     });
 
     const title = document.createElement("span");
-    title.textContent = "Summary";
+    title.textContent =
+      this.title.charAt(0).toUpperCase() + this.title.slice(1);
 
     const closeButton = document.createElement("button");
     closeButton.textContent = "✕";
@@ -79,7 +79,7 @@ export class FloatingSummary {
       border: "none",
       cursor: "pointer",
       fontSize: "14px",
-      color: "#666",
+      color: "#FAFAFA",
       padding: "0 4px",
     });
     closeButton.addEventListener("click", () => this.close());
@@ -92,7 +92,7 @@ export class FloatingSummary {
 
   private createContainer(): HTMLElement {
     const container = document.createElement("div");
-    container.className = "floating-summary";
+    container.className = `floating-${this.title}`;
     Object.assign(container.style, {
       all: "unset",
       position: "absolute",
@@ -100,13 +100,13 @@ export class FloatingSummary {
       height: this.options.height,
       minWidth: this.options.minWidth,
       maxWidth: this.options.maxWidth,
-      backgroundColor: "rgba(255, 255, 255, 0.3)",
+      backgroundColor: "rgba(70, 70, 70, 0.4)",
       backdropFilter: "blur(8px)",
-      color: "#000",
+      color: "#FAFAFA",
       borderRadius: "8px",
       boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
       zIndex: "10000",
-      border: "1px solid #ccc",
+      border: "1px solid #333",
       display: "flex",
       flexDirection: "column",
     });
@@ -163,20 +163,21 @@ export class FloatingSummary {
     (this.element as any)._cleanup = cleanup;
   }
 
-  public show(
-    selectedText: string,
-    position?: { top: number; left: number }
-  ): void {
+  public renderComponent(options: {
+    selectedText: string;
+    renderedComponent: React.ReactNode;
+    position?: { top: number; left: number };
+  }): void {
     // Position the window
-    if (position) {
-      this.element.style.top = `${position.top}px`;
-      this.element.style.left = `${position.left}px`;
+    if (options.position) {
+      this.element.style.top = `${options.position.top}px`;
+      this.element.style.left = `${options.position.left}px`;
     } else {
       // Center in viewport
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const width = parseInt(this.options.width || "400");
-      const height = parseInt(this.options.height || "400");
+      const width = parseInt(this.options.width.split("px")[0]);
+      const height = parseInt(this.options.height.split("px")[0]);
 
       this.element.style.top = `${Math.max(
         0,
@@ -191,14 +192,7 @@ export class FloatingSummary {
     }
 
     // Render the Chat component
-    this.root.render(
-      <Chat
-        initialUserMessage={selectedText}
-        systemPrompt={summarizeTextSystemMessage()}
-        collapseInitialMessage={true}
-        compact={true}
-      />
-    );
+    this.root.render(options.renderedComponent);
   }
 
   public close(): void {
@@ -213,22 +207,5 @@ export class FloatingSummary {
     }
     // Mark as closed so that callers know this instance is dead.
     this.isClosed = true;
-  }
-
-  public updateContent(selectedText: string): void {
-    // Render the Chat component with new content
-    this.root.render(
-      <Chat
-        initialUserMessage={selectedText}
-        systemPrompt={summarizeTextSystemMessage()}
-        collapseInitialMessage={true}
-        compact={true}
-      />
-    );
-  }
-
-  public updatePosition(position: { top: number; left: number }): void {
-    this.element.style.top = `${position.top}px`;
-    this.element.style.left = `${position.left}px`;
   }
 }

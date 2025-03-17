@@ -6,7 +6,11 @@ export class PdfSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
     super();
     this.addAction("Summary", (selectedText: string) => {
-      this.showSummaryReact(selectedText);
+      this.showSummaryWindow(selectedText);
+    });
+
+    this.addAction("Explain", (selectedText: string) => {
+      this.showExplainWindow(selectedText);
     });
 
     // Create the observer instance

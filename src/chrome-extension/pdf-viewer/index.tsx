@@ -67,10 +67,11 @@ function PdfViewerApp() {
     if (url) {
       // Log the URL being loaded
       console.log("Attempting to load PDF from URL:", url);
-      console.log("Decoded URL:", decodeURIComponent(url));
+      const decodedUrl = decodeURIComponent(url);
+      console.log("Decoded URL:", decodedUrl);
 
       // Decode the URL if it's encoded
-      setPdfUrl(decodeURIComponent(url));
+      setPdfUrl(decodedUrl);
     } else {
       console.error("No PDF URL provided in query parameters");
     }

@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
-import { FloatingSummary } from "./FloatingSummary";
+import { FloatingSummaryWindow } from "../floating/FloatingSummaryWindow";
+import { FloatingExplainWindow } from "../floating/FloatingExplainWindow";
 
 export interface TooltipAction {
   name: string;
@@ -9,7 +10,6 @@ export interface TooltipAction {
 export abstract class BaseSelectionTooltip {
   protected tooltip: HTMLElement | null = null;
   protected actions: TooltipAction[] = [];
-  protected floatingSummary: HTMLElement | null = null;
   protected summaryRoot: ReturnType<typeof createRoot> | null = null;
   protected lastSelectionRect: DOMRect | null = null;
   protected isDragging: boolean = false;
@@ -23,9 +23,6 @@ export abstract class BaseSelectionTooltip {
   protected abstract setupEventListeners(): void;
 
   protected handleMouseUp(event: MouseEvent): void {
-    if (this.floatingSummary) {
-      return;
-    }
     if (
       this.tooltip &&
       event.target instanceof Node &&
@@ -79,7 +76,7 @@ export abstract class BaseSelectionTooltip {
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "flex";
-    buttonContainer.style.gap = "12px";
+    buttonContainer.style.gap = "4px";
 
     this.actions.forEach((action) => {
       const button = document.createElement("button");
@@ -90,7 +87,7 @@ export abstract class BaseSelectionTooltip {
       Object.assign(button.style, {
         backgroundColor: "rgba(255, 255, 255, 0.3)",
         border: "none",
-        padding: "4px 8px",
+        padding: "2px 4px",
         cursor: "pointer",
         fontSize: "12px",
         color: "#333",
@@ -139,14 +136,35 @@ export abstract class BaseSelectionTooltip {
     }
   }
 
-  protected showSummaryReact(selectedText: string): void {
+  protected showSummaryWindow(selectedText: string): void {
     // Close the tooltip if it's visible
     this.hideTooltip();
 
-    // Calculate position near selection if available
-    let position = undefined;
+    // Create a new floating summary instance
+    const summary = new FloatingSummaryWindow();
+    summary.show({
+      selectedText,
+      position: this.calculatePositionForWindowBasedOnTooltip(),
+    });
+  }
+
+  protected showExplainWindow(selectedText: string): void {
+    // Close the tooltip if it's visible
+    this.hideTooltip();
+
+    // Create a new floating explain instance
+    const explain = new FloatingExplainWindow();
+    explain.show({
+      selectedText,
+      position: this.calculatePositionForWindowBasedOnTooltip(),
+    });
+  }
+
+  private calculatePositionForWindowBasedOnTooltip():
+    | { top: number; left: number }
+    | undefined {
     if (this.lastSelectionRect) {
-      position = {
+      return {
         top: this.lastSelectionRect.top + window.scrollY,
         left: Math.min(
           this.lastSelectionRect.left + window.scrollX,
@@ -154,10 +172,6 @@ export abstract class BaseSelectionTooltip {
         ),
       };
     }
-
-    // Create a new floating summary instance
-    const summary = new FloatingSummary();
-    summary.show(selectedText, position);
   }
 
   public addAction(

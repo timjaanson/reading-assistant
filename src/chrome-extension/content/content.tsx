@@ -16,7 +16,11 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
     super();
     this.addAction("Summary", (selectedText: string) => {
-      this.showSummaryReact(selectedText);
+      this.showSummaryWindow(selectedText);
+    });
+
+    this.addAction("Explain", (selectedText: string) => {
+      this.showExplainWindow(selectedText);
     });
   }
 

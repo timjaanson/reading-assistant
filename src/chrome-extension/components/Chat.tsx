@@ -110,15 +110,15 @@ export const Chat = ({
 
   // Define conditional classes for input section based on compact prop
   const inputContainerClasses = compact
-    ? "flex-shrink-0 bg-transparent p-[1px] border-t border-gray-300"
-    : "flex-shrink-0 bg-transparent p-4 border-t border-gray-300";
+    ? "flex-shrink-0 bg-transparent p-1 border-t border-gray-900"
+    : "flex-shrink-0 bg-transparent p-4 border-t border-gray-900";
   const inputFlexClasses = compact ? "flex space-x-1" : "flex space-x-2";
   const textareaClasses = compact
-    ? "flex-1 border border-gray-300 rounded-md p-1 resize-none bg-white/50 text-sm"
-    : "flex-1 border border-gray-300 rounded-md p-2 resize-none bg-white/50";
+    ? "flex-1 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm"
+    : "flex-1 border border-gray-800 rounded-md p-2 resize-none bg-[#1f1f1f]/50";
   const buttonClasses = compact
-    ? "bg-blue-500/85 text-white rounded-md px-2 py-1 text-sm"
-    : "bg-blue-500/85 text-white rounded-md px-4 py-2";
+    ? "bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
+    : "bg-gray-200/80 text-gray-900 rounded-md px-4 py-2";
 
   return (
     <div className="flex flex-col h-full w-full max-w-[800px] mx-auto relative">
@@ -163,7 +163,7 @@ export const Chat = ({
           onClick={scrollToBottom}
           className={`absolute left-1/2 ${
             compact ? "bottom-[40px]" : "bottom-[88px]"
-          } -translate-x-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10`}
+          } -translate-x-1/2 bg-gray-300/65 hover:bg-gray-300/80 text-gray-900 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10`}
         >
           ↓
         </div>

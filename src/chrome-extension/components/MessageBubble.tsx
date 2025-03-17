@@ -54,11 +54,11 @@ const MessageBubble = ({
   // If role is "user" then use the off-white style, otherwise blue
   const bubbleColor =
     role === "user"
-      ? "bg-gray-200/85 !text-gray-900"
-      : "bg-blue-500/85 !text-white";
+      ? "bg-gray-200/80 !text-gray-900"
+      : "bg-[#1f1f1f]/85 !text-white-200";
 
   // Use smaller padding for the main bubble if compact
-  const bubblePadding = compact ? "p-1" : "p-2";
+  const bubblePadding = "p-2";
 
   const renderContent = () => {
     if (!isCollapsible) {
@@ -101,8 +101,8 @@ const MessageBubble = ({
           className={`cursor-pointer mb-1 flex items-center gap-1 ${
             !isCollapsed
               ? compact
-                ? "py-0.5 px-1 rounded bg-white/85 backdrop-blur-sm text-sm"
-                : "py-1 px-2 rounded bg-white/85 backdrop-blur-sm"
+                ? "rounded bg-white/85 backdrop-blur-sm text-sm"
+                : "py-0.5 px-1 rounded bg-white/85 backdrop-blur-sm"
               : ""
           }`}
           onClick={() => setIsCollapsed(!isCollapsed)}
