@@ -42,6 +42,82 @@ const getCustomMarkdown = (content: string) => {
   );
 };
 
+// New constants for think markers
+const THINK_START = "<think>";
+const THINK_END = "</think>";
+
+// Helper to render a text string; if it starts with a think tag, process it specially.
+const renderTextContent = (text: string) => {
+  if (text.startsWith(THINK_START)) {
+    return renderThinkContent(text);
+  }
+  return getCustomMarkdown(text);
+};
+
+// Helper to extract the think part and any normal content that follows.
+const renderThinkContent = (text: string) => {
+  const startIndex = 0;
+  //include THINK_START AND THINK_END in the thinkPart
+  const endTagIndex = text.indexOf(THINK_END);
+  if (endTagIndex !== -1) {
+    const thinkPart = text.substring(
+      startIndex,
+      endTagIndex + THINK_END.length
+    );
+    const normalPart = text.substring(endTagIndex + THINK_END.length);
+    return <ThinkCollapsible thinkPart={thinkPart} normalPart={normalPart} />;
+  } else {
+    const thinkPart = text.substring(startIndex);
+    return <ThinkCollapsible thinkPart={thinkPart} normalPart="" />;
+  }
+};
+
+// New component for handling the collapsible think content with the specified bg and text colors.
+const ThinkCollapsible = ({
+  thinkPart,
+  normalPart,
+  compact = false,
+}: {
+  thinkPart: string;
+  normalPart: string;
+  compact?: boolean;
+}) => {
+  const [isThinkCollapsed, setIsThinkCollapsed] = useState(true);
+  return (
+    <div className="w-full">
+      <div
+        className={`cursor-pointer mb-1 flex items-center gap-1 ${
+          !isThinkCollapsed
+            ? compact
+              ? "rounded text-sm"
+              : "py-0.5 px-1 rounded"
+            : ""
+        }`}
+        onClick={() => setIsThinkCollapsed(!isThinkCollapsed)}
+      >
+        <span
+          className="transform transition-transform duration-200"
+          style={{
+            display: "inline-block",
+            transform: isThinkCollapsed ? "rotate(0deg)" : "rotate(90deg)",
+          }}
+        >
+          ▶
+        </span>
+        {isThinkCollapsed ? "Show reasoning" : "Hide reasoning"}
+      </div>
+      {!isThinkCollapsed && (
+        <div className="p-2 rounded bg-[#1f1f1f] text-white/90">
+          {getCustomMarkdown(thinkPart)}
+        </div>
+      )}
+      {normalPart && (
+        <div className="mt-2">{getCustomMarkdown(normalPart)}</div>
+      )}
+    </div>
+  );
+};
+
 const MessageBubble = ({
   role,
   content,
@@ -54,21 +130,22 @@ const MessageBubble = ({
   // If role is "user" then use the off-white style, otherwise blue
   const bubbleColor =
     role === "user"
-      ? "bg-gray-200/80 !text-gray-900"
-      : "bg-[#1f1f1f]/85 !text-white-200";
+      ? "bg-gray-200/80 text-gray-900"
+      : "bg-[#1f1f1f]/85 text-white/90";
 
   // Use smaller padding for the main bubble if compact
   const bubblePadding = "p-2";
 
+  // Updated renderContent to handle think messages
   const renderContent = () => {
     if (!isCollapsible) {
       return typeof content === "string" ? (
-        <span>{getCustomMarkdown(content)}</span>
+        <span>{renderTextContent(content)}</span>
       ) : Array.isArray(content) ? (
         content.map((part, idx) => {
           if (part && typeof part === "object" && "type" in part) {
             if (part.type === "text")
-              return <span key={idx}>{getCustomMarkdown(part.text)}</span>;
+              return <span key={idx}>{renderTextContent(part.text)}</span>;
             if (part.type === "image")
               return part.image instanceof URL ? (
                 <img
@@ -88,15 +165,15 @@ const MessageBubble = ({
             // For other parts, use JSON stringification
             return <span key={idx}>{JSON.stringify(part)}</span>;
           }
-          return <span key={idx}>{getCustomMarkdown(String(part))}</span>;
+          return <span key={idx}>{renderTextContent(String(part))}</span>;
         })
       ) : (
-        getCustomMarkdown(String(content))
+        renderTextContent(String(content))
       );
     }
 
     return (
-      <div className="w-full">
+      <div className={`w-full`}>
         <div
           className={`cursor-pointer mb-1 flex items-center gap-1 ${
             !isCollapsed
@@ -120,12 +197,12 @@ const MessageBubble = ({
         </div>
         {!isCollapsed &&
           (typeof content === "string" ? (
-            <span>{getCustomMarkdown(content)}</span>
+            <span>{renderTextContent(content)}</span>
           ) : Array.isArray(content) ? (
             content.map((part, idx) => {
               if (part && typeof part === "object" && "type" in part) {
                 if (part.type === "text")
-                  return <span key={idx}>{getCustomMarkdown(part.text)}</span>;
+                  return <span key={idx}>{renderTextContent(part.text)}</span>;
                 if (part.type === "image")
                   return part.image instanceof URL ? (
                     <img
@@ -145,10 +222,10 @@ const MessageBubble = ({
                 // For other parts, use JSON stringification
                 return <span key={idx}>{JSON.stringify(part)}</span>;
               }
-              return <span key={idx}>{getCustomMarkdown(String(part))}</span>;
+              return <span key={idx}>{renderTextContent(String(part))}</span>;
             })
           ) : (
-            getCustomMarkdown(String(content))
+            renderTextContent(String(content))
           ))}
       </div>
     );

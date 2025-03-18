@@ -3,8 +3,6 @@ import { createRoot } from "react-dom/client";
 export interface FloatingEmbeddedWindowOptions {
   width: string;
   height: string;
-  minWidth: string;
-  maxWidth: string;
 }
 
 export class FloatingEmbeddedWindow {
@@ -17,10 +15,8 @@ export class FloatingEmbeddedWindow {
   private header: HTMLElement;
   private contentContainer: HTMLElement;
   private options: FloatingEmbeddedWindowOptions = {
-    width: "400px",
+    width: "600px",
     height: "400px",
-    minWidth: "150px",
-    maxWidth: "40vw",
   };
 
   private title: string;
@@ -38,6 +34,7 @@ export class FloatingEmbeddedWindow {
     // Create root in content container instead of main element
     this.root = createRoot(this.contentContainer);
     this.setupDragHandlers();
+    this.addResizeHandles();
   }
 
   private createContentContainer(): HTMLElement {
@@ -98,8 +95,6 @@ export class FloatingEmbeddedWindow {
       position: "absolute",
       width: this.options.width,
       height: this.options.height,
-      minWidth: this.options.minWidth,
-      maxWidth: this.options.maxWidth,
       backgroundColor: "rgba(70, 70, 70, 0.4)",
       backdropFilter: "blur(8px)",
       color: "#FAFAFA",
@@ -161,6 +156,105 @@ export class FloatingEmbeddedWindow {
 
     // Store cleanup function for later use
     (this.element as any)._cleanup = cleanup;
+  }
+
+  private addResizeHandles(): void {
+    // Create bottom-right handle
+    const handleBottomRight = document.createElement("div");
+    handleBottomRight.className = `floating-${this.title}-resize-handle-bottom-right`;
+    Object.assign(handleBottomRight.style, {
+      position: "absolute",
+      right: "0px",
+      bottom: "0px",
+      width: "10px",
+      height: "10px",
+      cursor: "se-resize",
+      background: "transparent",
+    });
+    handleBottomRight.addEventListener("mousedown", (e) =>
+      this.initResize(e, "bottom-right")
+    );
+
+    // Create bottom-left handle
+    const handleBottomLeft = document.createElement("div");
+    handleBottomLeft.className = `floating-${this.title}-resize-handle-bottom-left`;
+    Object.assign(handleBottomLeft.style, {
+      position: "absolute",
+      left: "0px",
+      bottom: "0px",
+      width: "10px",
+      height: "10px",
+      cursor: "sw-resize",
+      background: "transparent",
+    });
+    handleBottomLeft.addEventListener("mousedown", (e) =>
+      this.initResize(e, "bottom-left")
+    );
+
+    // Append the handles to the container element
+    this.element.appendChild(handleBottomRight);
+    this.element.appendChild(handleBottomLeft);
+  }
+
+  private initResize(
+    event: MouseEvent,
+    handlePosition: "bottom-right" | "bottom-left"
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const initialMouseX = event.clientX;
+    const initialMouseY = event.clientY;
+    const rect = this.element.getBoundingClientRect();
+    const initialWidth = rect.width;
+    const initialHeight = rect.height;
+    const initialLeft = rect.left;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      let newWidth = initialWidth;
+      let newHeight = initialHeight;
+      let newLeft = initialLeft;
+
+      if (handlePosition === "bottom-right") {
+        // For the bottom-right, add the mouse movement to width and height
+        newWidth = initialWidth + (moveEvent.clientX - initialMouseX);
+        newHeight = initialHeight + (moveEvent.clientY - initialMouseY);
+      } else if (handlePosition === "bottom-left") {
+        // For the bottom-left, subtract horizontal movement from width and update left position
+        newWidth = initialWidth - (moveEvent.clientX - initialMouseX);
+        newHeight = initialHeight + (moveEvent.clientY - initialMouseY);
+        newLeft = initialLeft + (moveEvent.clientX - initialMouseX);
+      }
+
+      // Optionally enforce minimum dimensions (using minWidth from options and a preset minHeight)
+      const minWidth = 100;
+      const minHeight = 100; // default minimum height
+      if (newWidth < minWidth) {
+        if (handlePosition === "bottom-left") {
+          // Adjust left so that the width remains at minWidth
+          newLeft = initialLeft + (initialWidth - minWidth);
+        }
+        newWidth = minWidth;
+      }
+      if (newHeight < minHeight) {
+        newHeight = minHeight;
+      }
+
+      // Update the container style so that the window size remains changed
+      this.element.style.width = `${newWidth}px`;
+      this.element.style.height = `${newHeight}px`;
+      if (handlePosition === "bottom-left") {
+        this.element.style.left = `${newLeft}px`;
+      }
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   }
 
   public renderComponent(options: {

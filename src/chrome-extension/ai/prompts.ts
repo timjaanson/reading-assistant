@@ -9,7 +9,7 @@ The user may also ask other unrelated questions that you should answer.
 You should respond in markdown format.
 
 ## Context about the user
-The user's current time is ${getLocalDateTimeWithWeekday()}.
+The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 `;
 
 export const summarizeTextSystemMessage = () => `## Your role
@@ -31,7 +31,7 @@ export const summarizeTextSystemMessage = () => `## Your role
   - Key recommendations
 
 ## Context about the user
-The user's current time is ${getLocalDateTimeWithWeekday()}.
+The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 `;
 
 export const explainTextSystemMessage = () => `## Your role
@@ -52,5 +52,5 @@ Other than specific words, you should also explain the context of the text as a 
 Give short and concise explanations about the text.
 
 ## Context about the user
-The user's current time is ${getLocalDateTimeWithWeekday()}.
+The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 `;

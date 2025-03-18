@@ -2,6 +2,7 @@ import { CoreMessage } from "ai";
 import { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { getStreamedTextResponse } from "../ai/ai";
+import { Spinner } from "../common/Spinner";
 
 type ChatProps = {
   initialMessages?: CoreMessage[];
@@ -114,8 +115,8 @@ export const Chat = ({
     : "flex-shrink-0 bg-transparent p-4 border-t border-gray-900";
   const inputFlexClasses = compact ? "flex space-x-1" : "flex space-x-2";
   const textareaClasses = compact
-    ? "flex-1 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm"
-    : "flex-1 border border-gray-800 rounded-md p-2 resize-none bg-[#1f1f1f]/50";
+    ? "flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm"
+    : "flex-1 text-gray-200 border border-gray-800 rounded-md p-2 resize-none bg-[#1f1f1f]/50";
   const buttonClasses = compact
     ? "bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
     : "bg-gray-200/80 text-gray-900 rounded-md px-4 py-2";
@@ -187,13 +188,19 @@ export const Chat = ({
           />
           <button
             type="button"
+            disabled={isLoading}
             onClick={handleSendMessage}
             className={buttonClasses}
           >
-            Send
+            {isLoading ? (
+              <span className="mx-1">
+                <Spinner size={5} />
+              </span>
+            ) : (
+              "Send"
+            )}
           </button>
         </div>
-        {isLoading && <p className="text-gray-500 mt-2 text-sm">Loading...</p>}
         {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
       </div>
     </div>
