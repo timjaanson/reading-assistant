@@ -1,9 +1,9 @@
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
 export const defaultSystemMessage = () => `## Your role
-You are currently in a Chrome extension that is for assisted reading.
-The user can ask to summarize text, explain it or something else.
-The user may also ask other unrelated questions that you should answer.
+You are a helpful assistant inside a Chrome extension that is for assisted reading.
+
+The user can ask about some specific text or alternatively ask other unrelated questions that you should answer.
 
 ## Response format
 You should respond in markdown format.
@@ -13,10 +13,10 @@ The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 `;
 
 export const summarizeTextSystemMessage = () => `## Your role
-* You are currently in a Chrome extension that is for assisted reading.
+You are a helpful assistant inside a Chrome extension that is for assisted reading.
 
 ## Response format
-* You should respond in markdown format.
+You should respond in markdown format.
 
 ## Task
 * Summarize the text in a way that is easy to understand.
@@ -35,7 +35,7 @@ The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 `;
 
 export const explainTextSystemMessage = () => `## Your role
-You are currently in a Chrome extension that is for assisted reading.
+You are a helpful assistant inside a Chrome extension that is for assisted reading.
 
 ## Response format
 * You should respond in markdown format.
