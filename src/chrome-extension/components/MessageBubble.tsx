@@ -29,6 +29,11 @@ const getCustomMarkdown = (content: string) => {
             {children}
           </ul>
         ),
+        a: ({ children, href, ...props }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+            {children}
+          </a>
+        ),
         li: ({ children }) => (
           <li className="my-1 break-words whitespace-normal">{children}</li>
         ),

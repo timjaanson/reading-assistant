@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -17,6 +17,46 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.2);
+  const [visiblePage, setVisiblePage] = useState<number>(1);
+  const visiblePageRef = useRef(1);
+  useEffect(() => {
+    visiblePageRef.current = visiblePage;
+  }, [visiblePage]);
+
+  const pageRefs = useRef(new Map<number, HTMLDivElement | null>());
+  const registerRef = (pageNum: number) => (el: HTMLDivElement | null) => {
+    pageRefs.current.set(pageNum, el);
+  };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let maxRatio = 0;
+        let mostVisible = visiblePageRef.current;
+        entries.forEach((entry) => {
+          const page = parseInt(
+            entry.target.getAttribute("data-page-number") || "0",
+            10
+          );
+          if (entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio;
+            mostVisible = page;
+          }
+        });
+        if (mostVisible !== visiblePageRef.current) {
+          setVisiblePage(mostVisible);
+        }
+      },
+      // { threshold: [0, 0.25, 0.5, 0.75, 1] }
+      { threshold: 0.5 }
+    );
+
+    pageRefs.current.forEach((node) => {
+      if (node) observer.observe(node);
+    });
+
+    return () => observer.disconnect();
+  }, [numPages]);
 
   const pdfOptions = useMemo(
     () => ({
@@ -97,21 +137,40 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
           options={pdfOptions}
         >
           {numPages &&
-            Array.from({ length: numPages }, (_, index) => (
-              <Page
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                scale={scale}
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-                onRenderSuccess={() =>
-                  console.log(`Page ${index + 1} rendered successfully`)
-                }
-                onRenderError={(error) =>
-                  console.error(`Error rendering page ${index + 1}:`, error)
-                }
-              />
-            ))}
+            Array.from({ length: numPages }, (_, index) => {
+              const pageNumberValue = index + 1;
+              return (
+                <div
+                  key={`page_container_${pageNumberValue}`}
+                  className="relative"
+                  data-page-number={pageNumberValue}
+                  ref={registerRef(pageNumberValue)}
+                  id={
+                    pageNumberValue === visiblePage
+                      ? "ar-pdf-viewer-most-visible-page"
+                      : undefined
+                  }
+                >
+                  <Page
+                    pageNumber={pageNumberValue}
+                    scale={scale}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                    onRenderSuccess={() =>
+                      console.log(
+                        `Page ${pageNumberValue} rendered successfully`
+                      )
+                    }
+                    onRenderError={(error) =>
+                      console.error(
+                        `Error rendering page ${pageNumberValue}:`,
+                        error
+                      )
+                    }
+                  />
+                </div>
+              );
+            })}
         </Document>
       </div>
     </div>

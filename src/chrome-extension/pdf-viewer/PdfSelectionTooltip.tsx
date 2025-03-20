@@ -6,7 +6,7 @@ export class PdfSelectionTooltip extends BaseSelectionTooltip {
   private observer: MutationObserver;
 
   constructor() {
-    super("pdf-document-container");
+    super("ar-pdf-viewer-most-visible-page");
     this.addAction("Summary", (selectedText: string) => {
       this.showFloatingWindow(FloatingSummaryWindow, selectedText);
     });
