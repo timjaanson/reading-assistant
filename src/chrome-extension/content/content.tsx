@@ -1,4 +1,6 @@
 // Import the built global.css asset via Vite so that we get the hashed filename.
+import { FloatingSummaryWindow } from "../common/floating/FloatingSummaryWindow";
+import { FloatingExplainWindow } from "../common/floating/FloatingExplainWindow";
 import { BaseSelectionTooltip } from "../common/selection/BaseSelectionTooltip";
 import globalCssUrl from "../global.css?url";
 
@@ -16,11 +18,11 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
     super();
     this.addAction("Summary", (selectedText: string) => {
-      this.showSummaryWindow(selectedText);
+      this.showFloatingWindow(FloatingSummaryWindow, selectedText);
     });
 
     this.addAction("Explain", (selectedText: string) => {
-      this.showExplainWindow(selectedText);
+      this.showFloatingWindow(FloatingExplainWindow, selectedText);
     });
   }
 

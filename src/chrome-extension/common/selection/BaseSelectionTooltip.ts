@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { FloatingSummaryWindow } from "../floating/FloatingSummaryWindow";
-import { FloatingExplainWindow } from "../floating/FloatingExplainWindow";
+import { AbstractFloatingEmbeddedWindow } from "../floating/AbstractFloatingEmbeddedWindow";
 
 export interface TooltipAction {
   name: string;
@@ -11,11 +10,13 @@ export abstract class BaseSelectionTooltip {
   protected tooltip: HTMLElement | null = null;
   protected actions: TooltipAction[] = [];
   protected summaryRoot: ReturnType<typeof createRoot> | null = null;
-  protected lastSelectionRect: DOMRect | null = null;
+  protected lastMousePosition: { x: number; y: number } | null = null;
   protected isDragging: boolean = false;
   protected dragOffset: { x: number; y: number } = { x: 0, y: 0 };
+  private parentId: string | undefined;
 
-  constructor() {
+  constructor(parentId?: string) {
+    this.parentId = parentId;
     this.setupEventListeners();
   }
 
@@ -37,7 +38,7 @@ export abstract class BaseSelectionTooltip {
       !selection.isCollapsed &&
       selection.toString().trim().length > 0
     ) {
-      this.lastSelectionRect = selection.getRangeAt(0).getBoundingClientRect();
+      this.lastMousePosition = { x: event.clientX, y: event.clientY };
       this.showTooltip(selection, event);
     }
   }
@@ -136,42 +137,27 @@ export abstract class BaseSelectionTooltip {
     }
   }
 
-  protected showSummaryWindow(selectedText: string): void {
-    // Close the tooltip if it's visible
-    this.hideTooltip();
-
-    // Create a new floating summary instance
-    const summary = new FloatingSummaryWindow();
-    summary.show({
-      selectedText,
-      position: this.calculatePositionForWindowBasedOnTooltip(),
-    });
-  }
-
-  protected showExplainWindow(selectedText: string): void {
-    // Close the tooltip if it's visible
-    this.hideTooltip();
-
-    // Create a new floating explain instance
-    const explain = new FloatingExplainWindow();
-    explain.show({
-      selectedText,
-      position: this.calculatePositionForWindowBasedOnTooltip(),
-    });
-  }
-
   private calculatePositionForWindowBasedOnTooltip():
-    | { top: number; left: number }
+    | { x: number; y: number }
     | undefined {
-    if (this.lastSelectionRect) {
+    if (this.lastMousePosition) {
       return {
-        top: this.lastSelectionRect.top + window.scrollY,
-        left: Math.min(
-          this.lastSelectionRect.left + window.scrollX,
-          window.scrollX + window.innerWidth - 420
-        ),
+        x: this.lastMousePosition.x + window.scrollX,
+        y: this.lastMousePosition.y + window.scrollY,
       };
     }
+  }
+
+  protected showFloatingWindow<T extends AbstractFloatingEmbeddedWindow>(
+    WindowClass: new (parentId?: string) => T,
+    selectedText: string
+  ): void {
+    this.hideTooltip();
+    const window = new WindowClass(this.parentId);
+    window.show({
+      selectedText,
+      anchorPoint: this.calculatePositionForWindowBasedOnTooltip(),
+    });
   }
 
   public addAction(

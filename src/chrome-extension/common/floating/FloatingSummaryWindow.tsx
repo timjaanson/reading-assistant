@@ -1,15 +1,15 @@
 import { summarizeTextSystemMessage } from "../../ai/prompts";
 import Chat from "../../components/Chat";
-import { FloatingEmbeddedWindow } from "./FloatingWindow";
+import { AbstractFloatingEmbeddedWindow } from "./AbstractFloatingEmbeddedWindow";
 
-export class FloatingSummaryWindow extends FloatingEmbeddedWindow {
-  constructor() {
-    super("summary");
+export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
+  constructor(parentId?: string) {
+    super("summary", { parentId });
   }
 
   public show(options: {
     selectedText: string;
-    position?: { top: number; left: number };
+    anchorPoint?: { x: number; y: number };
   }): void {
     super.renderComponent({
       ...options,

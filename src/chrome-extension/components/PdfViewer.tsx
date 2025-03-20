@@ -77,7 +77,10 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
         <button onClick={zoomIn}>Zoom +</button>
       </div>
 
-      <div className="pdf-document-container">
+      <div
+        id="pdf-document-container"
+        className="pdf-document-container relative"
+      >
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}

@@ -3,9 +3,15 @@ import { createRoot } from "react-dom/client";
 export interface FloatingEmbeddedWindowOptions {
   width: string;
   height: string;
+  parentId?: string;
 }
 
-export class FloatingEmbeddedWindow {
+export interface FloatingWindowShowOptions {
+  selectedText: string;
+  anchorPoint?: { x: number; y: number };
+}
+
+export abstract class AbstractFloatingEmbeddedWindow {
   public isClosed: boolean = false;
 
   private element: HTMLElement;
@@ -21,8 +27,9 @@ export class FloatingEmbeddedWindow {
 
   private title: string;
 
-  constructor(title: string) {
+  constructor(title: string, options?: Partial<FloatingEmbeddedWindowOptions>) {
     this.title = title;
+    this.options = { ...this.options, ...options };
     this.element = this.createContainer();
     this.header = this.createHeader();
     this.contentContainer = this.createContentContainer();
@@ -36,6 +43,8 @@ export class FloatingEmbeddedWindow {
     this.setupDragHandlers();
     this.addResizeHandles();
   }
+
+  public abstract show(options: FloatingWindowShowOptions): void;
 
   private createContentContainer(): HTMLElement {
     const container = document.createElement("div");
@@ -105,6 +114,27 @@ export class FloatingEmbeddedWindow {
       display: "flex",
       flexDirection: "column",
     });
+
+    // If we have a parent element, verify it has valid positioning
+    if (this.options.parentId) {
+      const parent = document.getElementById(this.options.parentId);
+      if (parent) {
+        const parentPosition = window.getComputedStyle(parent).position;
+        // If parent doesn't have valid positioning, remove the parentId option
+        if (!["relative", "absolute", "fixed"].includes(parentPosition)) {
+          console.warn(
+            `Parent element #${this.options.parentId} does not have valid positioning (relative, absolute, or fixed). Falling back to document.body`
+          );
+          this.options.parentId = undefined;
+        }
+      } else {
+        console.warn(
+          `Parent element #${this.options.parentId} not found. Falling back to document.body`
+        );
+        this.options.parentId = undefined;
+      }
+    }
+
     return container;
   }
 
@@ -257,35 +287,93 @@ export class FloatingEmbeddedWindow {
     document.addEventListener("mouseup", onMouseUp);
   }
 
-  public renderComponent(options: {
+  protected renderComponent(options: {
     selectedText: string;
     renderedComponent: React.ReactNode;
-    position?: { top: number; left: number };
+    anchorPoint?: { x: number; y: number };
   }): void {
-    // Position the window
-    if (options.position) {
-      this.element.style.top = `${options.position.top}px`;
-      this.element.style.left = `${options.position.left}px`;
+    // Position the window relative to anchor point
+    if (options.anchorPoint) {
+      console.log(
+        "Anchor point provided, using anchor point positioning",
+        options.anchorPoint
+      );
+      requestAnimationFrame(() => {
+        // Wait for element to be in DOM to get its dimensions
+        const width = this.element.offsetWidth;
+        const height = this.element.offsetHeight;
+
+        // Calculate position so anchor point is in the middle
+        let left = options.anchorPoint!.x - width / 2;
+        let top = options.anchorPoint!.y - height / 2;
+
+        // Adjust if window would go outside viewport
+        const rightEdge = window.scrollX + window.innerWidth;
+        const bottomEdge = window.scrollY + window.innerHeight;
+
+        // Prevent going off right edge
+        if (left + width > rightEdge) {
+          left = rightEdge - width - 10; // 10px padding
+        }
+
+        // Prevent going off left edge
+        if (left < window.scrollX) {
+          left = window.scrollX + 10;
+        }
+
+        // Prevent going off bottom edge
+        if (top + height > bottomEdge) {
+          top = bottomEdge - height - 10;
+        }
+
+        // Prevent going off top edge
+        if (top < window.scrollY) {
+          top = window.scrollY + 10;
+        }
+
+        this.element.style.left = `${left}px`;
+        this.element.style.top = `${top}px`;
+      });
     } else {
-      // Center in viewport
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const width = parseInt(this.options.width.split("px")[0]);
-      const height = parseInt(this.options.height.split("px")[0]);
+      console.log("No anchor point provided, using center-screen fallback");
+      // Keep existing center-screen fallback positioning
+      // Get the container (either parent element or window)
+      const container = this.options.parentId
+        ? document.getElementById(this.options.parentId)
+        : window;
+
+      const containerWidth =
+        container instanceof Window
+          ? container.innerWidth
+          : container!.clientWidth;
+
+      const containerHeight =
+        container instanceof Window
+          ? container.innerHeight
+          : container!.clientHeight;
+
+      const width = parseInt(this.options.width);
+      const height = parseInt(this.options.height);
 
       this.element.style.top = `${Math.max(
         0,
-        (viewportHeight - height) / 2
+        (containerHeight - height) / 2
       )}px`;
-      this.element.style.left = `${Math.max(0, (viewportWidth - width) / 2)}px`;
+      this.element.style.left = `${Math.max(
+        0,
+        (containerWidth - width) / 2
+      )}px`;
     }
 
-    // Add to DOM if not already present
-    if (!document.body.contains(this.element)) {
-      document.body.appendChild(this.element);
+    // Add to DOM and render component
+    const parent = this.options.parentId
+      ? document.getElementById(this.options.parentId)
+      : document.body;
+
+    if (!parent?.contains(this.element)) {
+      parent?.appendChild(this.element);
     }
 
-    // Render the Chat component
     this.root.render(options.renderedComponent);
   }
 

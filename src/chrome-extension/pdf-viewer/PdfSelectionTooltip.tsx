@@ -1,16 +1,18 @@
 import { BaseSelectionTooltip } from "../common/selection/BaseSelectionTooltip";
+import { FloatingExplainWindow } from "../common/floating/FloatingExplainWindow";
+import { FloatingSummaryWindow } from "../common/floating/FloatingSummaryWindow";
 
 export class PdfSelectionTooltip extends BaseSelectionTooltip {
   private observer: MutationObserver;
 
   constructor() {
-    super();
+    super("pdf-document-container");
     this.addAction("Summary", (selectedText: string) => {
-      this.showSummaryWindow(selectedText);
+      this.showFloatingWindow(FloatingSummaryWindow, selectedText);
     });
 
     this.addAction("Explain", (selectedText: string) => {
-      this.showExplainWindow(selectedText);
+      this.showFloatingWindow(FloatingExplainWindow, selectedText);
     });
 
     // Create the observer instance
