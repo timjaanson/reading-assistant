@@ -1,11 +1,12 @@
 import { CoreMessage } from "ai";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import MessageBubble from "./MessageBubble";
 import { getStreamedTextResponse } from "../ai/ai";
 import { Spinner } from "../common/Spinner";
+import { MessageCollection, createMessageCollection } from "../types/chat";
 
 type ChatProps = {
-  initialMessages?: CoreMessage[];
+  initialMessages: MessageCollection;
   onMessagesChange?: (messages: CoreMessage[]) => void;
   systemPrompt?: string;
   initialUserMessage?: string;
@@ -14,20 +15,30 @@ type ChatProps = {
 };
 
 export const Chat = ({
-  initialMessages = [],
+  initialMessages,
   onMessagesChange,
   systemPrompt,
   initialUserMessage,
   collapseInitialMessage = false,
   compact = false,
 }: ChatProps) => {
-  const [messages, setMessages] = useState<CoreMessage[]>(initialMessages);
+  const messageCollection = Array.isArray(initialMessages)
+    ? createMessageCollection(initialMessages)
+    : initialMessages;
+
+  const [messages, setMessages] = useState<CoreMessage[]>(
+    messageCollection.messages
+  );
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [streamedMessage, setStreamedMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const lastCollectionIdRef = useRef<string | number | null>(
+    messageCollection.id
+  );
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -46,8 +57,25 @@ export const Chat = ({
   };
 
   useEffect(() => {
-    console.log("messages", JSON.stringify(messages, null, 2));
+    console.log("messages", messages.length);
+    // Auto-scroll to bottom when messages change
+    setTimeout(scrollToBottom, 100);
   }, [messages]);
+
+  useEffect(() => {
+    const collection = Array.isArray(initialMessages)
+      ? createMessageCollection(initialMessages)
+      : initialMessages;
+
+    const idChanged = collection.id !== lastCollectionIdRef.current;
+    const isArray = Array.isArray(initialMessages);
+
+    if (idChanged || isArray) {
+      console.log("Message collection changed, updating chat");
+      setMessages(collection.messages);
+      lastCollectionIdRef.current = collection.id;
+    }
+  }, [initialMessages]);
 
   useEffect(() => {
     const messagesContainer = messagesContainerRef.current;
@@ -58,51 +86,54 @@ export const Chat = ({
     }
   }, []);
 
-  const sendMessage = async (messageText: string) => {
-    try {
-      setIsLoading(true);
-      setStreamedMessage("");
-      const userMessage: CoreMessage = { role: "user", content: messageText };
-      const newMessages = [...messages, userMessage];
-      setMessages(newMessages);
-      const streamedResponse = await getStreamedTextResponse(newMessages, {
-        systemPrompt: systemPrompt,
-      });
+  const sendMessage = useCallback(
+    async (messageText: string) => {
+      try {
+        setIsLoading(true);
+        setStreamedMessage("");
+        const userMessage: CoreMessage = { role: "user", content: messageText };
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
+        const streamedResponse = await getStreamedTextResponse(newMessages, {
+          systemPrompt: systemPrompt,
+        });
 
-      let completeText = "";
-      for await (const textChunk of streamedResponse.textStream) {
-        completeText += textChunk;
-        setStreamedMessage(completeText);
+        let completeText = "";
+        for await (const textChunk of streamedResponse.textStream) {
+          completeText += textChunk;
+          setStreamedMessage(completeText);
+        }
+
+        const finalResponse = await streamedResponse.response;
+        const updatedMessages = [...newMessages, ...finalResponse.messages];
+        setMessages(updatedMessages);
+        onMessagesChange?.(updatedMessages);
+        setStreamedMessage("");
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError(`An unknown error occurred: ${JSON.stringify(error)}`);
+        }
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [messages, systemPrompt, onMessagesChange]
+  );
 
-      const finalResponse = await streamedResponse.response;
-      const updatedMessages = [...newMessages, ...finalResponse.messages];
-      setMessages(updatedMessages);
-      onMessagesChange?.(updatedMessages);
-      setStreamedMessage("");
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError(`An unknown error occurred: ${JSON.stringify(error)}`);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!input.trim()) return;
     const messageText = input;
     setInput("");
     await sendMessage(messageText);
-  };
+  }, [input, sendMessage]);
 
   useEffect(() => {
     if (initialUserMessage?.trim() && messages.length === 0) {
       sendMessage(initialUserMessage);
     }
-  }, []);
+  }, [initialUserMessage, messages.length, sendMessage]);
 
   // Define conditional classes for messages container based on compact prop
   const messagesContainerClasses = compact

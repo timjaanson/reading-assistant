@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# React components with .tsx filetype
+Never separately import React for .tsx components, unless you use something from there directly via React.someValue

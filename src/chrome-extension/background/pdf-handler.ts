@@ -7,7 +7,8 @@ function isPdfUrl(url: string): boolean {
     url.includes(".pdf?") || // PDF with query params
     url.includes(".PDF?") ||
     url.includes("content-type=application/pdf") || // Content-type in URL
-    (url.includes("content-disposition=inline") && url.includes(".pdf")) // Inline disposition
+    (url.includes("content-disposition=inline") && url.includes(".pdf")) || // Inline disposition
+    url.includes("https://arxiv.org/pdf/")
   );
 }
 

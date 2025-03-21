@@ -1,5 +1,5 @@
-export const getLocalDateTimeWithWeekday = (): string => {
-  const now = new Date();
+export const getLocalDateTimeWithWeekday = (date?: Date): string => {
+  const now = date || new Date();
   let locale;
 
   try {
@@ -20,5 +20,26 @@ export const getLocalDateTimeWithWeekday = (): string => {
     second: "numeric",
 
     timeZoneName: "short",
+  });
+};
+
+export const getCompactLocaleDateTime = (date?: Date): string => {
+  const now = date || new Date();
+  let locale;
+
+  try {
+    locale = navigator && navigator.language ? navigator.language : undefined;
+  } catch (error) {
+    locale = undefined;
+  }
+
+  return now.toLocaleString(locale, {
+    weekday: "short",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
   });
 };

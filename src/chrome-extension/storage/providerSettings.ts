@@ -4,6 +4,12 @@ import { StorageKeys } from "./settings";
 export const defaultProviderSettings: ProviderSettings = {
   all: [
     {
+      provider: "ollama",
+      url: "http://localhost:11434/api",
+      apiKey: "",
+      model: "llama3.1:8b",
+    },
+    {
       provider: "openai",
       apiKey: "",
       model: "gpt-4o-mini",
@@ -12,12 +18,6 @@ export const defaultProviderSettings: ProviderSettings = {
       provider: "anthropic",
       apiKey: "",
       model: "claude-3-5-sonnet-latest",
-    },
-    {
-      provider: "ollama",
-      url: "http://localhost:11434/api",
-      apiKey: "",
-      model: "llama3.1:8b",
     },
   ],
   active: null,
