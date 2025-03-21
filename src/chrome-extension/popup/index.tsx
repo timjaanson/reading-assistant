@@ -2,10 +2,12 @@ import "../global.css";
 import { useState } from "react";
 import { TabButton } from "./TabButton";
 import { ChatTab } from "./ChatTab";
-import { SettingsTab } from "./SettingsTab";
+import { ProviderSettingsTab } from "./ProviderSettingsTab";
 
 export const Popup = () => {
-  const [activeTab, setActiveTab] = useState<"chat" | "settings">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "providerSettings">(
+    "chat"
+  );
 
   return (
     <div className="w-full h-[500px]">
@@ -19,17 +21,17 @@ export const Popup = () => {
             Chat
           </TabButton>
           <TabButton
-            isActive={activeTab === "settings"}
-            onClick={() => setActiveTab("settings")}
+            isActive={activeTab === "providerSettings"}
+            onClick={() => setActiveTab("providerSettings")}
           >
-            Settings
+            Providers
           </TabButton>
         </div>
       </nav>
 
       {/* Content */}
       <div className="h-[calc(100%-48px)] overflow-y-auto">
-        {activeTab === "chat" ? <ChatTab /> : <SettingsTab />}
+        {activeTab === "chat" ? <ChatTab /> : <ProviderSettingsTab />}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { CoreMessage, generateText, streamText } from "ai";
-import { SettingsStorage } from "../storage/settings";
+import { SettingsStorage } from "../storage/providerSettings";
 import { createOpenAI } from "@ai-sdk/openai";
 import { defaultSystemMessage } from "./prompts";
 import { createOllama } from "ollama-ai-provider";
@@ -9,31 +9,31 @@ export type GetStreamedTextResponseOptions = {
   systemPrompt?: string;
 };
 
-const getSettings = async () => {
-  const settings = await SettingsStorage.loadSettings();
+const getProviderSettings = async () => {
+  const settings = await SettingsStorage.loadProviderSettings();
   return settings;
 };
 
 const getLanguageModel = async () => {
-  const userSettings = await getSettings();
-  if (!userSettings.activeProviderSettings) {
+  const providerSettings = await getProviderSettings();
+  if (!providerSettings.active) {
     throw new Error("No active provider settings found");
   }
   let provider;
-  switch (userSettings.activeProviderSettings.provider) {
+  switch (providerSettings.active.provider) {
     case "openai":
       provider = createOpenAI({
-        apiKey: userSettings.activeProviderSettings.apiKey,
+        apiKey: providerSettings.active.apiKey,
       });
       break;
     case "ollama":
       provider = createOllama({
-        baseURL: userSettings.activeProviderSettings.url,
+        baseURL: providerSettings.active.url,
       });
       break;
     case "anthropic":
       provider = createAnthropic({
-        apiKey: userSettings.activeProviderSettings.apiKey,
+        apiKey: providerSettings.active.apiKey,
         headers: {
           "anthropic-dangerous-direct-browser-access": "true",
         },
@@ -43,7 +43,7 @@ const getLanguageModel = async () => {
       throw new Error("Invalid provider from userSettings");
   }
 
-  return provider.languageModel(userSettings.activeProviderSettings.model);
+  return provider.languageModel(providerSettings.active.model);
 };
 
 export const getStreamedTextResponse = async (

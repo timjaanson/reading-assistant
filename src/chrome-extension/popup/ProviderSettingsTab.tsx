@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { defaultSettings, SettingsStorage } from "../storage/settings";
-import { UserSettings } from "../types/settings";
+import {
+  defaultProviderSettings,
+  SettingsStorage,
+} from "../storage/providerSettings";
+import { ProviderSettings } from "../types/settings";
 
-export const SettingsTab = () => {
-  const [userLoadedSettings, setUserLoadedSettings] =
-    useState<UserSettings>(defaultSettings);
+export const ProviderSettingsTab = () => {
+  const [loadedProviderSettings, setLoadedProviderSettings] =
+    useState<ProviderSettings>(defaultProviderSettings);
   const [selectedProviderIndex, setSelectedProviderIndex] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -12,12 +15,12 @@ export const SettingsTab = () => {
 
   useEffect(() => {
     const loadUserSettings = async () => {
-      const settings = await SettingsStorage.loadSettings();
-      setUserLoadedSettings(settings);
+      const settings = await SettingsStorage.loadProviderSettings();
+      setLoadedProviderSettings(settings);
       setSelectedProviderIndex(
-        settings.activeProviderSettings
-          ? settings.settings.findIndex(
-              (s) => s.provider === settings.activeProviderSettings!.provider
+        settings.active
+          ? settings.all.findIndex(
+              (s) => s.provider === settings.active!.provider
             )
           : 0
       );
@@ -35,21 +38,18 @@ export const SettingsTab = () => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
-    setUserLoadedSettings((prev) => {
-      const newSettingsArray = [...prev.settings];
+    setLoadedProviderSettings((prev) => {
+      const newSettingsArray = [...prev.all];
       const updatedProvider = {
         ...newSettingsArray[selectedProviderIndex],
         [name]: value,
       };
       newSettingsArray[selectedProviderIndex] = updatedProvider;
-      const isActive =
-        prev.activeProviderSettings?.provider === updatedProvider.provider;
+      const isActive = prev.active?.provider === updatedProvider.provider;
       return {
         ...prev,
-        settings: newSettingsArray,
-        activeProviderSettings: isActive
-          ? updatedProvider
-          : prev.activeProviderSettings,
+        all: newSettingsArray,
+        active: isActive ? updatedProvider : prev.active,
       };
     });
   };
@@ -58,11 +58,9 @@ export const SettingsTab = () => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const checked = e.target.checked;
-    setUserLoadedSettings((prev) => ({
+    setLoadedProviderSettings((prev) => ({
       ...prev,
-      activeProviderSettings: checked
-        ? prev.settings[selectedProviderIndex]
-        : undefined,
+      active: checked ? prev.all[selectedProviderIndex] : null,
     }));
   };
 
@@ -70,7 +68,7 @@ export const SettingsTab = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await SettingsStorage.saveSettings(userLoadedSettings);
+      await SettingsStorage.saveProviderSettings(loadedProviderSettings);
       setError(null);
     } catch (err) {
       setError("Failed to save settings");
@@ -84,7 +82,6 @@ export const SettingsTab = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Settings</h2>
       {error && (
         <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
@@ -106,7 +103,7 @@ export const SettingsTab = () => {
             onChange={handleProviderSelectChange}
             className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            {userLoadedSettings.settings.map((setting, index) => (
+            {loadedProviderSettings.all.map((setting, index) => (
               <option key={setting.provider} value={index}>
                 {setting.provider}
               </option>
@@ -119,8 +116,8 @@ export const SettingsTab = () => {
             id="activeProvider"
             type="checkbox"
             checked={
-              userLoadedSettings.activeProviderSettings?.provider ===
-              userLoadedSettings.settings[selectedProviderIndex].provider
+              loadedProviderSettings.active?.provider ===
+              loadedProviderSettings.all[selectedProviderIndex].provider
             }
             onChange={handleActiveProviderChange}
             className="mr-2"
@@ -145,7 +142,7 @@ export const SettingsTab = () => {
             id="apiKey"
             name="apiKey"
             value={
-              userLoadedSettings.settings[selectedProviderIndex].apiKey || ""
+              loadedProviderSettings.all[selectedProviderIndex].apiKey || ""
             }
             onChange={handleProviderFieldChange}
             placeholder="Enter your API key"
@@ -165,7 +162,7 @@ export const SettingsTab = () => {
             id="model"
             name="model"
             value={
-              userLoadedSettings.settings[selectedProviderIndex].model || ""
+              loadedProviderSettings.all[selectedProviderIndex].model || ""
             }
             onChange={handleProviderFieldChange}
             placeholder="Enter model name (e.g. gpt-4o-mini)"
@@ -173,7 +170,7 @@ export const SettingsTab = () => {
           />
         </div>
 
-        {"url" in userLoadedSettings.settings[selectedProviderIndex] && (
+        {"url" in loadedProviderSettings.all[selectedProviderIndex] && (
           <div className="space-y-2">
             <label
               htmlFor="url"
@@ -186,7 +183,7 @@ export const SettingsTab = () => {
               id="url"
               name="url"
               value={
-                userLoadedSettings.settings[selectedProviderIndex].url || ""
+                loadedProviderSettings.all[selectedProviderIndex].url || ""
               }
               onChange={handleProviderFieldChange}
               placeholder="Enter URL"
