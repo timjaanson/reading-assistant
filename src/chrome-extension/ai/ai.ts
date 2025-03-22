@@ -4,6 +4,8 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { defaultSystemMessage } from "./prompts";
 import { createOllama } from "ollama-ai-provider";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { z } from "zod";
+import { AiTools } from "../types/ai-tools";
 
 export type GetStreamedTextResponseOptions = {
   systemPrompt?: string;
@@ -20,6 +22,7 @@ const getLanguageModel = async () => {
     throw new Error("No active provider settings found");
   }
   let provider;
+  let options = {};
   switch (providerSettings.active.provider) {
     case "openai":
       provider = createOpenAI({
@@ -30,6 +33,10 @@ const getLanguageModel = async () => {
       provider = createOllama({
         baseURL: providerSettings.active.url,
       });
+      options = {
+        // Ollama does not support native streaming tool calls, so enable simulated streaming if tool calls are enabled
+        simulateStreaming: providerSettings.active.enableToolCalls,
+      };
       break;
     case "anthropic":
       provider = createAnthropic({
@@ -43,7 +50,10 @@ const getLanguageModel = async () => {
       throw new Error("Invalid provider from userSettings");
   }
 
-  return provider.languageModel(providerSettings.active.model);
+  return {
+    model: provider.languageModel(providerSettings.active.model, options),
+    toolUse: providerSettings.active.enableToolCalls,
+  };
 };
 
 export const getStreamedTextResponse = async (
@@ -53,10 +63,13 @@ export const getStreamedTextResponse = async (
   console.log("getStreamedTextResponse", messages);
   try {
     const languageModel = await getLanguageModel();
+
     const stream = streamText({
-      model: languageModel,
+      model: languageModel.model,
       system: options.systemPrompt || defaultSystemMessage(),
       messages,
+      tools: languageModel.toolUse ? getTools().tools : undefined,
+      maxSteps: 10,
     });
 
     return stream;
@@ -66,10 +79,31 @@ export const getStreamedTextResponse = async (
   }
 };
 
+const getTools = () => {
+  const tools: AiTools = {
+    tools: {
+      getInterestingInformation: {
+        description: "Get interesting information for current date",
+        parameters: z.object({
+          date: z
+            .string()
+            .describe("The current date in ISO 8601 format - YYYY-MM-DD"),
+        }),
+        execute: async (parameters: unknown) => {
+          console.log("getInterestingInformation", parameters);
+          return "It is currently one day before the user's favorite day - a friends birtday";
+        },
+      },
+    },
+    toolChoice: "auto",
+  };
+  return tools;
+};
+
 export const getSyncTextResponse = async (messages: CoreMessage[]) => {
   const languageModel = await getLanguageModel();
   const response = await generateText({
-    model: languageModel,
+    model: languageModel.model,
     system: defaultSystemMessage(),
     messages,
   });

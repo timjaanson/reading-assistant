@@ -6,6 +6,7 @@ export interface ProviderSettings {
 export interface LLMProviderSettings {
   provider: string;
   url?: string;
+  enableToolCalls: boolean;
   apiKey: string;
   model: string;
 }

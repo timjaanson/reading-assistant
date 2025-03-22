@@ -91,23 +91,33 @@ export const ChatTab = () => {
 
   // Save current chat without causing loops
   const saveChat = useCallback(async () => {
-    // Skip saving if not needed
-    if (
-      isSaving ||
-      !shouldSaveRef.current ||
-      messagesRef.current.length === 0
-    ) {
+    // Skip saving if not needed, but log for debugging
+    if (isSaving) {
+      console.log("Skipping save - already saving");
+      return;
+    }
+
+    if (!shouldSaveRef.current) {
+      console.log("Skipping save - shouldSave is false");
+      return;
+    }
+
+    if (messagesRef.current.length === 0) {
+      console.log("Skipping save - no messages to save");
       return;
     }
 
     setIsSaving(true);
     try {
-      console.log("Saving chat with messages:", messagesRef.current.length);
+      const messagesToSave = [...messagesRef.current]; // Create a copy to avoid race conditions
+      console.log("Saving chat with messages:", messagesToSave.length);
 
       if (currentChatId) {
-        await chatDb.updateChat(currentChatId, chatName, messagesRef.current);
+        await chatDb.updateChat(currentChatId, chatName, messagesToSave);
+        console.log("Updated existing chat:", currentChatId);
       } else {
-        const id = await chatDb.insertChat(chatName, messagesRef.current);
+        const id = await chatDb.insertChat(chatName, messagesToSave);
+        console.log("Created new chat with ID:", id);
         setCurrentChatId(id);
       }
       await refreshChatList();
@@ -116,7 +126,7 @@ export const ChatTab = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [currentChatId, chatName, refreshChatList]);
+  }, [currentChatId, chatName, refreshChatList, isSaving]);
 
   // Create new chat
   const createNewChat = useCallback(() => {
@@ -171,18 +181,27 @@ export const ChatTab = () => {
   // Handle changes to messages from Chat component
   const handleMessagesChange = useCallback(
     (newMessages: CoreMessage[]) => {
+      console.log("Messages changed:", newMessages.length);
+
       // Update both the state and our ref to track the latest messages
       setMessages(newMessages);
       messagesRef.current = newMessages;
 
-      // Clear previous timeout if it exists
+      // Always clear previous timeout if it exists
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
       }
 
       // Schedule a save with debounce
       if (newMessages.length > 0 && shouldSaveRef.current) {
+        console.log("Scheduling save for", newMessages.length, "messages");
         saveTimeoutRef.current = setTimeout(() => {
+          console.log(
+            "Executing scheduled save for",
+            messagesRef.current.length,
+            "messages"
+          );
           saveChat();
           saveTimeoutRef.current = null;
         }, 1000);
@@ -274,6 +293,7 @@ export const ChatTab = () => {
         <Chat
           initialMessages={createMessageCollection(messages, currentChatId)}
           onMessagesChange={handleMessagesChange}
+          key={`chat-${currentChatId || "new"}-${messagesRef.current.length}`}
         />
       </div>
     </div>

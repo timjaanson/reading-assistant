@@ -45,6 +45,26 @@ export const ProviderSettingsTab = () => {
         [name]: value,
       };
       newSettingsArray[selectedProviderIndex] = updatedProvider;
+
+      const isActive = prev.active?.provider === updatedProvider.provider;
+      return {
+        ...prev,
+        all: newSettingsArray,
+        active: isActive ? updatedProvider : prev.active,
+      };
+    });
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setLoadedProviderSettings((prev) => {
+      const newSettingsArray = [...prev.all];
+      const updatedProvider = {
+        ...newSettingsArray[selectedProviderIndex],
+        [name]: checked,
+      };
+      newSettingsArray[selectedProviderIndex] = updatedProvider;
+
       const isActive = prev.active?.provider === updatedProvider.provider;
       return {
         ...prev,
@@ -111,23 +131,44 @@ export const ProviderSettingsTab = () => {
           </select>
         </div>
 
-        <div className="flex items-center">
-          <input
-            id="activeProvider"
-            type="checkbox"
-            checked={
-              loadedProviderSettings.active?.provider ===
-              loadedProviderSettings.all[selectedProviderIndex].provider
-            }
-            onChange={handleActiveProviderChange}
-            className="mr-2"
-          />
-          <label
-            htmlFor="activeProvider"
-            className="text-sm font-medium text-gray-700"
-          >
-            Active Provider
-          </label>
+        <div className="flex items-center gap-x-2">
+          <div className="flex">
+            <input
+              id="activeProvider"
+              type="checkbox"
+              checked={
+                loadedProviderSettings.active?.provider ===
+                loadedProviderSettings.all[selectedProviderIndex].provider
+              }
+              onChange={handleActiveProviderChange}
+              className="mr-2"
+            />
+            <label
+              htmlFor="activeProvider"
+              className="text-sm font-medium text-gray-700"
+            >
+              Active Provider
+            </label>
+          </div>
+          <div className="flex">
+            <input
+              id="enableToolCalls"
+              name="enableToolCalls"
+              type="checkbox"
+              checked={
+                loadedProviderSettings.all[selectedProviderIndex]
+                  .enableToolCalls
+              }
+              onChange={handleCheckboxChange}
+              className="mr-2"
+            />
+            <label
+              htmlFor="enableToolCalls"
+              className="text-sm font-medium text-gray-700"
+            >
+              Enable Tool Calls
+            </label>
+          </div>
         </div>
 
         <div className="space-y-2">

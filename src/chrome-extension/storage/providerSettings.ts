@@ -6,17 +6,20 @@ export const defaultProviderSettings: ProviderSettings = {
     {
       provider: "ollama",
       url: "http://localhost:11434/api",
+      enableToolCalls: false,
       apiKey: "",
       model: "llama3.1:8b",
     },
     {
       provider: "openai",
       apiKey: "",
+      enableToolCalls: true,
       model: "gpt-4o-mini",
     },
     {
       provider: "anthropic",
       apiKey: "",
+      enableToolCalls: true,
       model: "claude-3-5-sonnet-latest",
     },
   ],

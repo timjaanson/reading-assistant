@@ -1,6 +1,7 @@
 import { CoreMessage } from "ai";
 import { useState, useRef, useEffect, useCallback } from "react";
 import MessageBubble from "./MessageBubble";
+import MessageGroup from "./MessageGroup";
 import { getStreamedTextResponse } from "../ai/ai";
 import { Spinner } from "../common/Spinner";
 import { MessageCollection, createMessageCollection } from "../types/chat";
@@ -69,9 +70,17 @@ export const Chat = ({
 
     const idChanged = collection.id !== lastCollectionIdRef.current;
     const isArray = Array.isArray(initialMessages);
+    const messagesLengthChanged =
+      collection.messages.length !== messages.length;
 
-    if (idChanged || isArray) {
-      console.log("Message collection changed, updating chat");
+    // Update if collection ID changed, it's a new array, or messages length changed
+    if (idChanged || isArray || messagesLengthChanged) {
+      console.log("Message collection changed, updating chat", {
+        idChanged,
+        isArray,
+        messagesLengthChanged,
+        messageCount: collection.messages.length,
+      });
       setMessages(collection.messages);
       lastCollectionIdRef.current = collection.id;
     }
@@ -92,8 +101,20 @@ export const Chat = ({
         setIsLoading(true);
         setStreamedMessage("");
         const userMessage: CoreMessage = { role: "user", content: messageText };
+
+        // Create a message array with the new user message
         const newMessages = [...messages, userMessage];
+
+        // Update local state immediately
         setMessages(newMessages);
+
+        // Notify parent of the update including the user message
+        console.log(
+          "Notifying parent of new user message, total:",
+          newMessages.length
+        );
+        onMessagesChange?.(newMessages);
+
         const streamedResponse = await getStreamedTextResponse(newMessages, {
           systemPrompt: systemPrompt,
         });
@@ -105,9 +126,19 @@ export const Chat = ({
         }
 
         const finalResponse = await streamedResponse.response;
-        const updatedMessages = [...newMessages, ...finalResponse.messages];
+
+        // Important: Use the current messages state rather than the closure value
+        // to ensure we don't lose any messages added while waiting for the response
+        const latestMessages = [...messages, userMessage];
+        const updatedMessages = [...latestMessages, ...finalResponse.messages];
+
+        console.log(
+          "Updating with AI response, total:",
+          updatedMessages.length
+        );
         setMessages(updatedMessages);
         onMessagesChange?.(updatedMessages);
+
         setStreamedMessage("");
       } catch (error) {
         if (error instanceof Error) {
@@ -160,22 +191,11 @@ export const Chat = ({
         className={messagesContainerClasses}
         onScroll={handleScroll}
       >
-        {messages.map((message, index) => {
-          const showRole =
-            index === 0 || messages[index].role !== messages[index - 1].role;
-          return (
-            <MessageBubble
-              key={index}
-              role={message.role}
-              content={message.content}
-              showRole={showRole}
-              isCollapsible={
-                collapseInitialMessage && index === 0 && message.role === "user"
-              }
-              compact={compact}
-            />
-          );
-        })}
+        <MessageGroup
+          messages={messages}
+          collapseInitialMessage={collapseInitialMessage}
+          compact={compact}
+        />
 
         {streamedMessage && (
           <MessageBubble
