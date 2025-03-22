@@ -8,72 +8,212 @@ type MessageGroupProps = {
   compact?: boolean;
 };
 
+// Type definitions for tool call and result parts
+interface ToolCallPart {
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  args: unknown;
+}
+
+interface ToolResultPart {
+  type: "tool-result";
+  toolCallId: string;
+  toolName: string;
+  result: unknown;
+  isError?: boolean;
+}
+
+// Type for the combined tool call and result that ContentRenderer expects
+interface CombinedToolPart {
+  type: "combined-tool";
+  toolName: string;
+  args: any;
+  toolCallId: string;
+  result: any;
+}
+
 // Function to identify related messages like tool calls and their results
 export const groupRelatedMessages = (messages: CoreMessage[]) => {
   const result: CoreMessage[] = [];
   let i = 0;
+  // Keep track of processed tool call IDs to avoid duplicates
+  const processedToolCallIds = new Set<string>();
+  // Keep track of indices of messages we've already processed
+  const processedIndices = new Set<number>();
 
   while (i < messages.length) {
+    // Skip messages that have already been processed
+    if (processedIndices.has(i)) {
+      i++;
+      continue;
+    }
+
     const currentMessage = messages[i];
 
     // Check if the current message is from an assistant and potentially contains a tool call
-    if (currentMessage.role === "assistant" && i + 1 < messages.length) {
-      const nextMessage = messages[i + 1];
+    if (
+      currentMessage.role === "assistant" &&
+      Array.isArray(currentMessage.content)
+    ) {
+      // Look for tool calls in the content
+      const toolCalls = (currentMessage.content as any[]).filter(
+        (part) => part.type === "tool-call"
+      ) as ToolCallPart[];
 
-      // Check if the next message is a tool response
-      if (nextMessage.role === "tool") {
-        // This is a tool call + tool result combination
+      if (toolCalls.length > 0) {
+        // Create a new message starting with basic text content from the assistant message
+        const mergedMessageContent = (currentMessage.content as any[]).filter(
+          (part) => part.type !== "tool-call"
+        );
 
-        // Create a merged message with the assistant's content and the tool result
-        const mergedMessage: CoreMessage = {
-          role: "assistant",
-          content: Array.isArray(currentMessage.content)
-            ? [...currentMessage.content]
-            : [{ type: "text", text: currentMessage.content as string }],
-        };
+        const toolCallsToProcess = [...toolCalls];
+        const processedToolCalls = new Set<string>();
+        let foundAnyToolResult = false;
+        // Track the indices of messages we'll combine with this one
+        const messagesToCombine = new Set<number>();
 
-        // Add the tool message content to the merged message
-        if (typeof nextMessage.content === "string") {
-          (mergedMessage.content as any[]).push({
-            type: "text",
-            text: nextMessage.content,
-          });
-        } else if (Array.isArray(nextMessage.content)) {
-          (mergedMessage.content as any[]).push(...nextMessage.content);
-        }
+        // Also track any follow-up assistant messages to combine
+        const followUpMessageIndices = new Set<number>();
 
-        // Check if there's a follow-up assistant message after the tool result
-        if (i + 2 < messages.length && messages[i + 2].role === "assistant") {
-          const followupMessage = messages[i + 2];
+        // Look ahead up to 20 messages to find matching tool results
+        const lookAheadLimit = Math.min(messages.length - i - 1, 20);
 
-          // Add the follow-up assistant content to the merged message
-          if (typeof followupMessage.content === "string") {
-            (mergedMessage.content as any[]).push({
-              type: "text",
-              text: followupMessage.content,
-            });
-          } else if (Array.isArray(followupMessage.content)) {
-            (mergedMessage.content as any[]).push(...followupMessage.content);
+        for (let j = 1; j <= lookAheadLimit; j++) {
+          const lookAheadIndex = i + j;
+          if (lookAheadIndex >= messages.length) break;
+
+          const lookAheadMessage = messages[lookAheadIndex];
+
+          // Process tool result messages
+          if (
+            lookAheadMessage.role === "tool" &&
+            Array.isArray(lookAheadMessage.content)
+          ) {
+            const toolResults = (lookAheadMessage.content as any[]).filter(
+              (part) => part.type === "tool-result"
+            ) as ToolResultPart[];
+
+            // Process each tool result
+            for (const result of toolResults) {
+              // Find matching tool call that hasn't been processed yet
+              const matchingToolCallIndex = toolCallsToProcess.findIndex(
+                (toolCall) =>
+                  toolCall.toolCallId === result.toolCallId &&
+                  !processedToolCalls.has(toolCall.toolCallId)
+              );
+
+              if (matchingToolCallIndex !== -1) {
+                const toolCall = toolCallsToProcess[matchingToolCallIndex];
+
+                // Create a combined tool part
+                const combinedTool: CombinedToolPart = {
+                  type: "combined-tool",
+                  toolName: toolCall.toolName,
+                  args: toolCall.args,
+                  toolCallId: toolCall.toolCallId,
+                  result: result.result,
+                };
+
+                // Add the combined tool to the merged message
+                mergedMessageContent.push(combinedTool);
+
+                // Mark this tool call as processed
+                processedToolCalls.add(toolCall.toolCallId);
+                processedToolCallIds.add(toolCall.toolCallId);
+                messagesToCombine.add(lookAheadIndex);
+                foundAnyToolResult = true;
+              }
+            }
           }
 
-          // Skip the follow-up message since we've merged it
-          i += 3;
-        } else {
-          // Only skip the current message and the tool result
-          i += 2;
+          // Check for follow-up assistant messages that should be merged
+          if (lookAheadMessage.role === "assistant") {
+            // Only include follow-up assistant messages if we have found tool results
+            // or if this is the first follow-up message in a sequence after tool results
+            if (foundAnyToolResult || followUpMessageIndices.size > 0) {
+              followUpMessageIndices.add(lookAheadIndex);
+            }
+          }
         }
 
+        // Add any remaining unprocessed tool calls (without results)
+        toolCallsToProcess.forEach((toolCall) => {
+          if (!processedToolCalls.has(toolCall.toolCallId)) {
+            mergedMessageContent.push(toolCall);
+          }
+        });
+
+        // Process and add content from follow-up assistant messages
+        for (const index of followUpMessageIndices) {
+          const followUpMessage = messages[index];
+
+          if (typeof followUpMessage.content === "string") {
+            mergedMessageContent.push({
+              type: "text",
+              text: followUpMessage.content,
+            });
+          } else if (Array.isArray(followUpMessage.content)) {
+            // Add each content part individually to maintain the correct structure
+            for (const part of followUpMessage.content) {
+              // Don't duplicate tool calls from follow-up messages
+              if (
+                part.type !== "tool-call" ||
+                !processedToolCalls.has((part as ToolCallPart).toolCallId)
+              ) {
+                mergedMessageContent.push(part);
+              }
+            }
+          }
+
+          // Mark follow-up message as processed
+          processedIndices.add(index);
+        }
+
+        // Create the merged message
+        const mergedMessage: CoreMessage = {
+          role: "assistant",
+          content: mergedMessageContent,
+        };
+
         result.push(mergedMessage);
-      } else {
-        // Not a tool call sequence, add the message as is
-        result.push(currentMessage);
+
+        // Mark all the tool result messages we've combined as processed
+        for (const index of messagesToCombine) {
+          processedIndices.add(index);
+        }
+
         i++;
+        continue;
       }
-    } else {
-      // Regular message, add as is
-      result.push(currentMessage);
-      i++;
     }
+
+    // Handle tool result messages - only add them if they haven't been processed
+    if (
+      currentMessage.role === "tool" &&
+      Array.isArray(currentMessage.content)
+    ) {
+      const toolResults = (currentMessage.content as any[]).filter(
+        (part) => part.type === "tool-result"
+      ) as ToolResultPart[];
+
+      if (toolResults.length > 0) {
+        // Check if all tool results in this message have been processed
+        const allProcessed = toolResults.every((result) =>
+          processedToolCallIds.has(result.toolCallId)
+        );
+
+        // If all tool results have been processed, skip this message
+        if (allProcessed) {
+          i++;
+          continue;
+        }
+      }
+    }
+
+    // Regular message or unmatched tool call/result - add as is
+    result.push(currentMessage);
+    i++;
   }
 
   return result;

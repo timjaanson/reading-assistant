@@ -58,12 +58,6 @@ export const Chat = ({
   };
 
   useEffect(() => {
-    console.log("messages", messages.length);
-    // Auto-scroll to bottom when messages change
-    setTimeout(scrollToBottom, 100);
-  }, [messages]);
-
-  useEffect(() => {
     const collection = Array.isArray(initialMessages)
       ? createMessageCollection(initialMessages)
       : initialMessages;
@@ -107,13 +101,6 @@ export const Chat = ({
 
         // Update local state immediately
         setMessages(newMessages);
-
-        // Notify parent of the update including the user message
-        console.log(
-          "Notifying parent of new user message, total:",
-          newMessages.length
-        );
-        onMessagesChange?.(newMessages);
 
         const streamedResponse = await getStreamedTextResponse(newMessages, {
           systemPrompt: systemPrompt,

@@ -3,11 +3,12 @@ import { useState } from "react";
 import { TabButton } from "./TabButton";
 import { ChatTab } from "./ChatTab";
 import { ProviderSettingsTab } from "./ProviderSettingsTab";
+import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
 
 export const Popup = () => {
-  const [activeTab, setActiveTab] = useState<"chat" | "providerSettings">(
-    "chat"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "chat" | "providerSettings" | "externalToolSettings"
+  >("chat");
 
   return (
     <div className="w-full h-[500px]">
@@ -26,12 +27,24 @@ export const Popup = () => {
           >
             Providers
           </TabButton>
+          <TabButton
+            isActive={activeTab === "externalToolSettings"}
+            onClick={() => setActiveTab("externalToolSettings")}
+          >
+            External Tools
+          </TabButton>
         </div>
       </nav>
 
       {/* Content */}
       <div className="h-[calc(100%-48px)] overflow-y-auto">
-        {activeTab === "chat" ? <ChatTab /> : <ProviderSettingsTab />}
+        {activeTab === "chat" ? (
+          <ChatTab />
+        ) : activeTab === "providerSettings" ? (
+          <ProviderSettingsTab />
+        ) : (
+          <ExternalToolSettingsTab />
+        )}
       </div>
     </div>
   );

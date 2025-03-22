@@ -47,7 +47,13 @@ export const getCustomMarkdown = (content: string) => {
           </ul>
         ),
         a: ({ children, href, ...props }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          <a
+            href={href}
+            className="text-blue-500 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+            {...props}
+          >
             {children}
           </a>
         ),
@@ -252,13 +258,11 @@ export const CombinedToolCallResultCollapsible = ({
         >
           ▶
         </span>
-        <span className="font-mono">Tool call</span>
+        <span className="font-mono">Tool use ({toolName})</span>
       </div>
       {!isCollapsed && (
         <div className="p-2 rounded bg-[#2a2a2a] font-mono text-xs">
-          <div className="font-bold">
-            {toolName} {toolCallId}
-          </div>
+          <div className="font-bold">Tool call ID:{toolCallId}</div>
           {args && (
             <div className="mt-1">
               Arguments:

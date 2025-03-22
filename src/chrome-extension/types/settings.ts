@@ -10,3 +10,10 @@ export interface LLMProviderSettings {
   apiKey: string;
   model: string;
 }
+
+export interface ExternalToolSettings {
+  braveSearch: {
+    apiKey: string;
+  };
+  // Room for future external tools
+}

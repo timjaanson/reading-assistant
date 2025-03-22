@@ -6,6 +6,8 @@ import { createOllama } from "ollama-ai-provider";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { AiTools } from "../types/ai-tools";
+import { searchBrave } from "../search/brave-api";
+import { tryCatch } from "../util/try-catch";
 
 export type GetStreamedTextResponseOptions = {
   systemPrompt?: string;
@@ -82,16 +84,22 @@ export const getStreamedTextResponse = async (
 const getTools = () => {
   const tools: AiTools = {
     tools: {
-      getInterestingInformation: {
-        description: "Get interesting information for current date",
+      webSearch: {
+        description:
+          "Perform a web search for the given query. Returns a list of search results. Make sure to include the source (url) of the information in your response.",
         parameters: z.object({
-          date: z
-            .string()
-            .describe("The current date in ISO 8601 format - YYYY-MM-DD"),
+          query: z.string().describe("The query string to search for"),
         }),
         execute: async (parameters: unknown) => {
-          console.log("getInterestingInformation", parameters);
-          return "It is currently one day before the user's favorite day - a friends birtday";
+          console.log("webSearch", parameters);
+          const query = (parameters as { query: string }).query;
+          const result = await tryCatch(searchBrave(query));
+          if (result.error) {
+            return {
+              error: result.error.message,
+            };
+          }
+          return result.data;
         },
       },
     },
