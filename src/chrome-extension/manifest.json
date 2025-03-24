@@ -13,7 +13,13 @@
     "48": "public/48.png",
     "192": "public/192.png"
   },
-  "permissions": ["storage", "tabs", "webNavigation", "downloads"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "webNavigation",
+    "downloads",
+    "contextMenus"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

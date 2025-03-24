@@ -28,6 +28,9 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
     this.addAction("Explain", (selectedText: string) => {
       this.showFloatingWindow(FloatingExplainWindow, selectedText);
     });
+
+    // Set up message listener for context menu actions
+    this.setupMessageListener();
   }
 
   protected async setupEventListeners(): Promise<void> {
@@ -42,6 +45,22 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
       document.addEventListener("mouseup", this.handleMouseUp.bind(this));
       document.addEventListener("mousedown", this.handleMouseDown.bind(this));
     }
+  }
+
+  private setupMessageListener(): void {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      sender;
+      if (message.action === "openFloatingWindow" && message.selectedText) {
+        if (message.windowType === "summary") {
+          this.showFloatingWindow(FloatingSummaryWindow, message.selectedText);
+          sendResponse({ success: true });
+        } else if (message.windowType === "explain") {
+          this.showFloatingWindow(FloatingExplainWindow, message.selectedText);
+          sendResponse({ success: true });
+        }
+        return true; // Indicates async response
+      }
+    });
   }
 }
 

@@ -5,10 +5,15 @@ import {
   getExtensionSettings,
   setExtensionSettings,
 } from "../storage/extensionSettings";
+import { tryCatch } from "../util/try-catch";
 
 const ExtensionSettingsTab = () => {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
   const [allowedUrlsInput, setAllowedUrlsInput] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
+    "idle"
+  );
 
   useEffect(() => {
     getExtensionSettings().then((storedSettings: ExtensionSettings) => {
@@ -33,7 +38,6 @@ const ExtensionSettingsTab = () => {
       },
     };
     setSettings(newSettings);
-    setExtensionSettings(newSettings);
   };
 
   const handleFileTypesChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -54,7 +58,6 @@ const ExtensionSettingsTab = () => {
       },
     };
     setSettings(newSettings);
-    setExtensionSettings(newSettings);
   };
 
   const handleContextMenuActiveChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +69,25 @@ const ExtensionSettingsTab = () => {
       },
     };
     setSettings(newSettings);
-    setExtensionSettings(newSettings);
+  };
+
+  const handleSaveSettings = async () => {
+    if (!settings) return;
+
+    setIsSaving(true);
+    setSaveStatus("idle");
+
+    const result = await tryCatch(setExtensionSettings(settings));
+
+    if (result.error) {
+      console.error("Failed to save settings", result.error);
+      setSaveStatus("error");
+    } else {
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+
+    setIsSaving(false);
   };
 
   return (
@@ -109,6 +130,22 @@ const ExtensionSettingsTab = () => {
           />
           <span className="text-sm">Enable Context Menu</span>
         </label>
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={handleSaveSettings}
+          disabled={isSaving}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+        >
+          {isSaving ? "Saving..." : "Save"}
+        </button>
+        {saveStatus === "success" && (
+          <span className="ml-2 text-green-600">Settings saved!</span>
+        )}
+        {saveStatus === "error" && (
+          <span className="ml-2 text-red-600">Failed to save settings</span>
+        )}
       </div>
     </div>
   );
