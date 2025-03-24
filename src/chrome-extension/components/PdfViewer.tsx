@@ -15,7 +15,6 @@ interface PdfViewerProps {
 
 const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.2);
   const [visiblePage, setVisiblePage] = useState<number>(1);
   const visiblePageRef = useRef(1);
@@ -47,8 +46,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
           setVisiblePage(mostVisible);
         }
       },
-      // { threshold: [0, 0.25, 0.5, 0.75, 1] }
-      { threshold: 0.5 }
+      { threshold: [0.25, 0.75] }
     );
 
     pageRefs.current.forEach((node) => {
@@ -71,25 +69,6 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
     setNumPages(numPages);
   }
 
-  function changePage(offset: number) {
-    console.log(
-      `Attempting to change page: current=${pageNumber}, offset=${offset}`
-    );
-    const newPage = pageNumber + offset;
-    console.log(`New page will be: ${newPage}`);
-
-    if (numPages !== null) {
-      if (newPage >= 1 && newPage <= numPages) {
-        console.log(`Setting page to ${newPage}`);
-        setPageNumber(newPage);
-      } else {
-        console.log(`Page ${newPage} is out of bounds (1-${numPages})`);
-      }
-    } else {
-      console.log("No pages loaded yet");
-    }
-  }
-
   function zoomIn() {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   }
@@ -101,23 +80,6 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
       <div className="flex items-center gap-3 p-2 bg-[#f0f0f0] border-b border-[#ddd]">
-        <button
-          onClick={() => changePage(-1)}
-          disabled={pageNumber <= 1}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
-        >
-          Previous
-        </button>
-        <span>
-          Page {pageNumber} of {numPages || "--"}
-        </span>
-        <button
-          onClick={() => changePage(1)}
-          disabled={numPages === null || pageNumber >= numPages}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
-        >
-          Next
-        </button>
         <button
           onClick={zoomOut}
           className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"

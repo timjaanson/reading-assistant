@@ -4,6 +4,7 @@ import {
   SettingsStorage,
 } from "../storage/providerSettings";
 import { ProviderSettings } from "../types/settings";
+import { Input } from "../components/Input";
 
 export const ProviderSettingsTab = () => {
   const [loadedProviderSettings, setLoadedProviderSettings] =
@@ -11,7 +12,9 @@ export const ProviderSettingsTab = () => {
   const [selectedProviderIndex, setSelectedProviderIndex] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
+    "idle"
+  );
 
   useEffect(() => {
     const loadUserSettings = async () => {
@@ -87,32 +90,28 @@ export const ProviderSettingsTab = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setSaveStatus("idle");
     try {
       await SettingsStorage.saveProviderSettings(loadedProviderSettings);
-      setError(null);
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
-      setError("Failed to save settings");
+      setSaveStatus("error");
     }
     setIsLoading(false);
   };
 
-  if (isLoading) {
-    return <div className="p-4">Loading settings...</div>;
+  if (isLoading && loadedProviderSettings === defaultProviderSettings) {
+    return <div className="p-4 text-gray-200">Loading settings...</div>;
   }
 
   return (
     <div className="p-4">
-      {error && (
-        <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <label
             htmlFor="provider"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-200"
           >
             Provider
           </label>
@@ -121,7 +120,7 @@ export const ProviderSettingsTab = () => {
             name="provider"
             value={selectedProviderIndex}
             onChange={handleProviderSelectChange}
-            className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200"
           >
             {loadedProviderSettings.all.map((setting, index) => (
               <option key={setting.provider} value={index}>
@@ -145,7 +144,7 @@ export const ProviderSettingsTab = () => {
             />
             <label
               htmlFor="activeProvider"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-gray-200"
             >
               Active Provider
             </label>
@@ -164,7 +163,7 @@ export const ProviderSettingsTab = () => {
             />
             <label
               htmlFor="enableToolCalls"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-gray-200"
             >
               Enable Tool Calls
             </label>
@@ -174,11 +173,11 @@ export const ProviderSettingsTab = () => {
         <div className="space-y-2">
           <label
             htmlFor="apiKey"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-200"
           >
             API Key
           </label>
-          <input
+          <Input
             type="password"
             id="apiKey"
             name="apiKey"
@@ -187,18 +186,18 @@ export const ProviderSettingsTab = () => {
             }
             onChange={handleProviderFieldChange}
             placeholder="Enter your API key"
-            className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full"
           />
         </div>
 
         <div className="space-y-2">
           <label
             htmlFor="model"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-200"
           >
             Model
           </label>
-          <input
+          <Input
             type="text"
             id="model"
             name="model"
@@ -206,8 +205,8 @@ export const ProviderSettingsTab = () => {
               loadedProviderSettings.all[selectedProviderIndex].model || ""
             }
             onChange={handleProviderFieldChange}
-            placeholder="Enter model name (e.g. gpt-4o-mini)"
-            className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter model name"
+            className="block w-full"
           />
         </div>
 
@@ -215,11 +214,11 @@ export const ProviderSettingsTab = () => {
           <div className="space-y-2">
             <label
               htmlFor="url"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-200"
             >
               URL
             </label>
-            <input
+            <Input
               type="text"
               id="url"
               name="url"
@@ -228,17 +227,30 @@ export const ProviderSettingsTab = () => {
               }
               onChange={handleProviderFieldChange}
               placeholder="Enter URL"
-              className="block w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full"
             />
           </div>
         )}
 
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-        >
-          Save Settings
-        </button>
+        <div className="flex items-center mt-6">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400"
+            disabled={isLoading}
+          >
+            {isLoading ? "Saving..." : "Save Settings"}
+          </button>
+          {saveStatus === "success" && (
+            <span className="ml-2 text-green-400 flex items-center">
+              Settings saved!
+            </span>
+          )}
+          {saveStatus === "error" && (
+            <span className="ml-2 text-red-400 flex items-center">
+              Failed to save settings
+            </span>
+          )}
+        </div>
       </form>
     </div>
   );

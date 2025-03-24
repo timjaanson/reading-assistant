@@ -4,6 +4,7 @@ import Chat from "../components/Chat";
 import { chatDb } from "../storage/chatDatabase";
 import { ChatPreview, createMessageCollection } from "../types/chat";
 import { getCompactLocaleDateTime } from "../util/datetime";
+import { Input } from "../components/Input";
 
 export const ChatTab = () => {
   const [messages, setMessages] = useState<CoreMessage[]>([]);
@@ -212,24 +213,23 @@ export const ChatTab = () => {
 
   return (
     <div className="flex flex-col h-full relative">
-      <div className="flex items-center p-2 border-b border-gray-200">
+      <div className="flex items-center p-2 border-b border-gray-700">
         <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-100 rounded"
+          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded text-gray-200"
           onClick={() => setIsSidebarOpen(true)}
           onDoubleClick={debugDumpChats}
           title="Open chats (double-click to debug)"
         >
           ☰
         </button>
-        <input
-          type="text"
+        <Input
           value={chatName}
           onChange={handleNameChange}
           onBlur={handleNameBlur}
-          className="flex-1 mx-2 p-1 border border-gray-200 rounded focus:outline-none focus:border-gray-400"
+          className="flex-1 mx-2"
         />
         <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-100 rounded"
+          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded text-gray-200"
           onClick={createNewChat}
           title="New chat"
         >
@@ -240,17 +240,17 @@ export const ChatTab = () => {
       {/* Sidebar for chat history */}
       {isSidebarOpen && (
         <div
-          className="absolute inset-0 bg-black bg-opacity-30 z-10"
+          className="absolute inset-0 bg-black bg-opacity-50 z-10"
           onClick={() => setIsSidebarOpen(false)}
         >
           <div
-            className="absolute top-0 left-0 bottom-0 w-[280px] bg-white shadow-md flex flex-col z-20"
+            className="absolute top-0 left-0 bottom-0 w-[280px] bg-[#272522] shadow-md flex flex-col z-20"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center p-3 border-b border-gray-200">
-              <h3 className="m-0 text-base">Your Chats</h3>
+            <div className="flex justify-between items-center p-3 border-b border-gray-700">
+              <h3 className="m-0 text-base text-gray-200">Your Chats</h3>
               <button
-                className="bg-transparent border-none text-xl cursor-pointer p-0 px-1"
+                className="bg-transparent border-none text-xl cursor-pointer p-0 px-1 text-gray-300"
                 onClick={() => setIsSidebarOpen(false)}
               >
                 ×
@@ -258,24 +258,24 @@ export const ChatTab = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {chats.length === 0 ? (
-                <div className="text-center text-gray-500 py-6">
+                <div className="text-center text-gray-400 py-6">
                   No saved chats
                 </div>
               ) : (
                 chats.map((chat) => (
                   <div
                     key={chat.id}
-                    className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-100"
+                    className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
                     onClick={() => loadChat(chat.id)}
                   >
-                    <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6">
+                    <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">
                       {chat.name}
                     </span>
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-400">
                       {getCompactLocaleDateTime(chat.updatedAt)}
                     </span>
                     <button
-                      className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100"
+                      className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100 text-gray-300"
                       onClick={(e) => deleteChat(chat.id, e)}
                       title="Delete chat"
                     >

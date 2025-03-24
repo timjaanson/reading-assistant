@@ -4,6 +4,7 @@ import {
   ExternalToolsStorage,
   defaultExternalToolSettings,
 } from "../storage/externalToolSettings";
+import { Input } from "../components/Input";
 
 export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ExternalToolSettings>(
@@ -57,34 +58,36 @@ export const ExternalToolSettingsTab = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">External Tool Settings</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-200">
+        External Tool Settings
+      </h2>
 
       <div className="mb-4">
-        <h3 className="text-md font-medium mb-2">Brave Search</h3>
+        <h3 className="text-md font-medium mb-2 text-gray-200">Brave Search</h3>
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-200 mb-1">
             API Key
           </label>
-          <input
+          <Input
             type="password"
             value={settings.braveSearch.apiKey}
             onChange={handleBraveSearchApiKeyChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="w-full"
             placeholder="Enter Brave Search API Key"
           />
         </div>
         <button
           onClick={handleSaveSettings}
           disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+          className="px-4 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>
         {saveStatus === "success" && (
-          <span className="ml-2 text-green-600">Settings saved!</span>
+          <span className="ml-2 text-green-400">Settings saved!</span>
         )}
         {saveStatus === "error" && (
-          <span className="ml-2 text-red-600">Failed to save settings</span>
+          <span className="ml-2 text-red-400">Failed to save settings</span>
         )}
       </div>
     </div>

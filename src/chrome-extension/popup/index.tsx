@@ -12,9 +12,9 @@ export const Popup = () => {
   >("chat");
 
   return (
-    <div className="w-full h-[500px]">
+    <div className="w-full h-[600px]">
       {/* Navigation */}
-      <nav className="border-b border-gray-200">
+      <nav className="border-b border-gray-700">
         <div className="flex space-x-4 px-4">
           <TabButton
             isActive={activeTab === "chat"}
@@ -32,13 +32,13 @@ export const Popup = () => {
             isActive={activeTab === "externalToolSettings"}
             onClick={() => setActiveTab("externalToolSettings")}
           >
-            External Tools
+            Tools
           </TabButton>
           <TabButton
             isActive={activeTab === "extensionSettings"}
             onClick={() => setActiveTab("extensionSettings")}
           >
-            Extension Settings
+            Settings
           </TabButton>
         </div>
       </nav>

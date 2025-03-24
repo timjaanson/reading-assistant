@@ -34,7 +34,9 @@ const MessageBubble = ({
       } ${compact ? "text-sm" : ""}`}
     >
       {!compact && showRole && (
-        <span className={`mb-1 ${compact ? "text-xs" : "text-sm"}`}>
+        <span
+          className={`mb-1 ${compact ? "text-xs" : "text-sm"} text-white/90`}
+        >
           {role.charAt(0).toUpperCase() + role.slice(1)}
         </span>
       )}

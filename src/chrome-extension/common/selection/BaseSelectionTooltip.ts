@@ -86,6 +86,7 @@ export abstract class BaseSelectionTooltip {
         backgroundColor: "rgba(255, 255, 255, 0.3)",
         border: "none",
         padding: "2px 4px",
+        borderRadius: "4px",
         cursor: "pointer",
         fontSize: "12px",
         color: "#333",

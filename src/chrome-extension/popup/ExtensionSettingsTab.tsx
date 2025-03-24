@@ -6,6 +6,7 @@ import {
   setExtensionSettings,
 } from "../storage/extensionSettings";
 import { tryCatch } from "../util/try-catch";
+import { Input } from "../components/Input";
 
 const ExtensionSettingsTab = () => {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
@@ -24,7 +25,7 @@ const ExtensionSettingsTab = () => {
     });
   }, []);
 
-  if (!settings) return <div className="p-4">Loading...</div>;
+  if (!settings) return <div className="p-4 text-gray-200">Loading...</div>;
 
   const handleTooltipActiveChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newSettings = {
@@ -65,7 +66,10 @@ const ExtensionSettingsTab = () => {
       ...settings,
       whenSelectingText: {
         ...settings.whenSelectingText,
-        contextMenu: { active: e.target.checked },
+        contextMenu: {
+          ...settings.whenSelectingText.contextMenu,
+          active: e.target.checked,
+        },
       },
     };
     setSettings(newSettings);
@@ -92,11 +96,17 @@ const ExtensionSettingsTab = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Extension Settings</h2>
-      <h3 className="text-md font-medium mb-2">When Selecting Text</h3>
+      <h2 className="text-lg font-semibold mb-4 text-gray-200">
+        Extension Settings
+      </h2>
+      <h3 className="text-md font-medium mb-2 text-gray-200">
+        When Selecting Text
+      </h3>
 
       <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2">Hovering Tooltip</h4>
+        <h4 className="text-sm font-medium mb-2 text-gray-200">
+          Hovering Tooltip
+        </h4>
         <label className="flex items-center mb-2">
           <input
             type="checkbox"
@@ -104,23 +114,25 @@ const ExtensionSettingsTab = () => {
             onChange={handleTooltipActiveChange}
             className="mr-2"
           />
-          <span className="text-sm">Enable Hovering Tooltip</span>
+          <span className="text-sm text-gray-200">Enable Hovering Tooltip</span>
         </label>
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-200 mb-1">
             Allowed urls (comma separated, supports wildcards with *):
-            <input
+            <Input
               type="text"
               value={allowedUrlsInput}
               onChange={handleFileTypesChange}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full mt-1"
             />
           </label>
         </div>
       </div>
 
       <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2">Right-click Context Menu</h4>
+        <h4 className="text-sm font-medium mb-2 text-gray-200">
+          Right-click Context Menu
+        </h4>
         <label className="flex items-center">
           <input
             type="checkbox"
@@ -128,7 +140,7 @@ const ExtensionSettingsTab = () => {
             onChange={handleContextMenuActiveChange}
             className="mr-2"
           />
-          <span className="text-sm">Enable Context Menu</span>
+          <span className="text-sm text-gray-200">Enable Context Menu</span>
         </label>
       </div>
 
@@ -136,15 +148,15 @@ const ExtensionSettingsTab = () => {
         <button
           onClick={handleSaveSettings}
           disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+          className="px-4 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>
         {saveStatus === "success" && (
-          <span className="ml-2 text-green-600">Settings saved!</span>
+          <span className="ml-2 text-green-400">Settings saved!</span>
         )}
         {saveStatus === "error" && (
-          <span className="ml-2 text-red-600">Failed to save settings</span>
+          <span className="ml-2 text-red-400">Failed to save settings</span>
         )}
       </div>
     </div>
