@@ -4,10 +4,11 @@ import { TabButton } from "./TabButton";
 import { ChatTab } from "./ChatTab";
 import { ProviderSettingsTab } from "./ProviderSettingsTab";
 import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
+import ExtensionSettingsTab from "./ExtensionSettingsTab";
 
 export const Popup = () => {
   const [activeTab, setActiveTab] = useState<
-    "chat" | "providerSettings" | "externalToolSettings"
+    "chat" | "providerSettings" | "externalToolSettings" | "extensionSettings"
   >("chat");
 
   return (
@@ -33,6 +34,12 @@ export const Popup = () => {
           >
             External Tools
           </TabButton>
+          <TabButton
+            isActive={activeTab === "extensionSettings"}
+            onClick={() => setActiveTab("extensionSettings")}
+          >
+            Extension Settings
+          </TabButton>
         </div>
       </nav>
 
@@ -42,8 +49,10 @@ export const Popup = () => {
           <ChatTab />
         ) : activeTab === "providerSettings" ? (
           <ProviderSettingsTab />
-        ) : (
+        ) : activeTab === "externalToolSettings" ? (
           <ExternalToolSettingsTab />
+        ) : (
+          <ExtensionSettingsTab />
         )}
       </div>
     </div>

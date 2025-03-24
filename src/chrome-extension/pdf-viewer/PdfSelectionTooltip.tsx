@@ -1,10 +1,12 @@
 import { BaseSelectionTooltip } from "../common/selection/BaseSelectionTooltip";
 import { FloatingExplainWindow } from "../common/floating/FloatingExplainWindow";
 import { FloatingSummaryWindow } from "../common/floating/FloatingSummaryWindow";
+import {
+  getExtensionSettings,
+  MATCHED_URLS_PDF_SPECIAL_CASE,
+} from "../storage/extensionSettings";
 
 export class PdfSelectionTooltip extends BaseSelectionTooltip {
-  private observer: MutationObserver;
-
   constructor() {
     super("ar-pdf-viewer-most-visible-page");
     this.addAction("Summary", (selectedText: string) => {
@@ -14,45 +16,19 @@ export class PdfSelectionTooltip extends BaseSelectionTooltip {
     this.addAction("Explain", (selectedText: string) => {
       this.showFloatingWindow(FloatingExplainWindow, selectedText);
     });
-
-    // Create the observer instance
-    this.observer = new MutationObserver(this.handleDomMutations.bind(this));
-    this.observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
   }
 
-  private handleDomMutations(mutations: MutationRecord[]): void {
-    mutations.forEach((mutation) => {
-      if (mutation.addedNodes.length) {
-        mutation.addedNodes.forEach((node) => {
-          if (
-            node instanceof HTMLElement &&
-            (node.classList.contains("react-pdf__Page__textContent") ||
-              node.classList.contains("textLayer"))
-          ) {
-            // Found a text layer, add our event listeners
-            this.attachEventListeners(node);
-          }
-        });
-      }
-    });
-  }
-
-  private attachEventListeners(element: HTMLElement): void {
-    element.addEventListener("mouseup", this.handleMouseUp.bind(this));
-    element.addEventListener("mousedown", this.handleMouseDown.bind(this));
-  }
-
-  protected setupEventListeners(): void {
-    // For PDF viewer, we initially attach to document as fallback
-    document.addEventListener("mouseup", this.handleMouseUp.bind(this));
-    document.addEventListener("mousedown", this.handleMouseDown.bind(this));
-  }
-
-  public destroy(): void {
-    // Clean up the observer when the tooltip is destroyed
-    this.observer.disconnect();
+  protected async setupEventListeners(): Promise<void> {
+    const settings = await getExtensionSettings();
+    if (
+      settings.whenSelectingText.hoveringTooltip.active &&
+      settings.whenSelectingText.hoveringTooltip.allowedUrls.includes(
+        MATCHED_URLS_PDF_SPECIAL_CASE
+      )
+    ) {
+      // For PDF viewer, we initially attach to document as fallback
+      document.addEventListener("mouseup", this.handleMouseUp.bind(this));
+      document.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    }
   }
 }

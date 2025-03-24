@@ -3,6 +3,10 @@ import { FloatingSummaryWindow } from "../common/floating/FloatingSummaryWindow"
 import { FloatingExplainWindow } from "../common/floating/FloatingExplainWindow";
 import { BaseSelectionTooltip } from "../common/selection/BaseSelectionTooltip";
 import globalCssUrl from "../global.css?url";
+import {
+  getExtensionSettings,
+  urlMatchesAllowedUrls,
+} from "../storage/extensionSettings";
 
 // Inject the global stylesheet using the hashed asset URL.
 (function injectTailwindStyles() {
@@ -26,10 +30,18 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
     });
   }
 
-  protected setupEventListeners(): void {
-    // For content pages, we listen to events on the document
-    document.addEventListener("mouseup", this.handleMouseUp.bind(this));
-    document.addEventListener("mousedown", this.handleMouseDown.bind(this));
+  protected async setupEventListeners(): Promise<void> {
+    const settings = await getExtensionSettings();
+    const currentUrl = window.location.href;
+    const allowedUrls = settings.whenSelectingText.hoveringTooltip.allowedUrls;
+    if (
+      settings.whenSelectingText.hoveringTooltip.active &&
+      urlMatchesAllowedUrls(currentUrl, allowedUrls)
+    ) {
+      // For content pages, we listen to events on the document
+      document.addEventListener("mouseup", this.handleMouseUp.bind(this));
+      document.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    }
   }
 }
 

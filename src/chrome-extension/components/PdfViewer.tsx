@@ -91,17 +91,21 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   }
 
   function zoomIn() {
-    setScale((prevScale) => Math.min(prevScale + 0.1, 3));
+    setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   }
 
   function zoomOut() {
-    setScale((prevScale) => Math.max(prevScale - 0.1, 0.5));
+    setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   }
 
   return (
-    <div className="pdf-viewer-container">
-      <div className="pdf-controls">
-        <button onClick={() => changePage(-1)} disabled={pageNumber <= 1}>
+    <div className="flex flex-col h-screen w-full overflow-hidden">
+      <div className="flex items-center gap-3 p-2 bg-[#f0f0f0] border-b border-[#ddd]">
+        <button
+          onClick={() => changePage(-1)}
+          disabled={pageNumber <= 1}
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+        >
           Previous
         </button>
         <span>
@@ -110,23 +114,33 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
         <button
           onClick={() => changePage(1)}
           disabled={numPages === null || pageNumber >= numPages}
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
         >
           Next
         </button>
-        <button onClick={zoomOut}>Zoom -</button>
-        <button onClick={zoomIn}>Zoom +</button>
+        <button
+          onClick={zoomOut}
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+        >
+          Zoom -
+        </button>
+        <button
+          onClick={zoomIn}
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+        >
+          Zoom +
+        </button>
       </div>
 
       <div
         id="pdf-document-container"
-        className="pdf-document-container relative"
+        className="flex-1 overflow-auto flex justify-center bg-[#666] p-5 relative"
       >
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error) => {
             console.error("PDF load error:", error);
-            // Try to log more details about the error
             if (error instanceof Error) {
               console.error("Error message:", error.message);
               console.error("Error stack:", error.stack);
@@ -135,6 +149,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
             }
           }}
           options={pdfOptions}
+          className="bg-white shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
         >
           {numPages &&
             Array.from({ length: numPages }, (_, index) => {

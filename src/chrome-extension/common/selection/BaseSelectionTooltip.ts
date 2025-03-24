@@ -1,4 +1,3 @@
-import { createRoot } from "react-dom/client";
 import { AbstractFloatingEmbeddedWindow } from "../floating/AbstractFloatingEmbeddedWindow";
 
 export interface TooltipAction {
@@ -9,10 +8,7 @@ export interface TooltipAction {
 export abstract class BaseSelectionTooltip {
   protected tooltip: HTMLElement | null = null;
   protected actions: TooltipAction[] = [];
-  protected summaryRoot: ReturnType<typeof createRoot> | null = null;
   protected lastMousePosition: { x: number; y: number } | null = null;
-  protected isDragging: boolean = false;
-  protected dragOffset: { x: number; y: number } = { x: 0, y: 0 };
   private parentId: string | undefined;
 
   constructor(parentId?: string) {
@@ -61,6 +57,7 @@ export abstract class BaseSelectionTooltip {
     this.tooltip.className = "assisted-reading-tooltip";
 
     Object.assign(this.tooltip.style, {
+      all: "unset",
       position: "absolute",
       zIndex: "10000",
       backgroundColor: "transparent",
