@@ -353,6 +353,36 @@ const ContentRenderer = ({ content }: ContentRendererProps) => {
                   return <span key={idx}>{renderTextContent(part.text)}</span>;
                 }
                 break;
+              case "reasoning":
+                if ("text" in part) {
+                  return (
+                    <ThinkCollapsible
+                      key={idx}
+                      thinkPart={
+                        typeof part.text === "string"
+                          ? part.text
+                          : String(part.text)
+                      }
+                      normalPart=""
+                    />
+                  );
+                }
+                break;
+              case "redacted-reasoning":
+                if ("data" in part) {
+                  return (
+                    <ThinkCollapsible
+                      key={idx}
+                      thinkPart={
+                        typeof part.data === "string"
+                          ? "Redacted reasoning: " + part.data
+                          : "Redacted reasoning: " + String(part.data)
+                      }
+                      normalPart=""
+                    />
+                  );
+                }
+                break;
               case "image":
                 if ("image" in part) {
                   return part.image instanceof URL ? (

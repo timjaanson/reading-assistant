@@ -55,6 +55,7 @@ const getLanguageModel = async () => {
   return {
     model: provider.languageModel(providerSettings.active.model, options),
     toolUse: providerSettings.active.enableToolCalls,
+    providerOptions: providerSettings.active.providerOptions,
   };
 };
 
@@ -72,6 +73,7 @@ export const getStreamedTextResponse = async (
       messages,
       tools: languageModel.toolUse ? getTools().tools : undefined,
       maxSteps: 10,
+      providerOptions: languageModel.providerOptions,
     });
 
     return stream;

@@ -10,11 +10,11 @@ export const ProviderSettingsTab = () => {
   const [loadedProviderSettings, setLoadedProviderSettings] =
     useState<ProviderSettings>(defaultProviderSettings);
   const [selectedProviderIndex, setSelectedProviderIndex] = useState<number>(0);
-
+  const [providerOptionsText, setProviderOptionsText] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "success" | "error" | "json-error"
+  >("idle");
 
   useEffect(() => {
     const loadUserSettings = async () => {
@@ -31,6 +31,15 @@ export const ProviderSettingsTab = () => {
     loadUserSettings();
   }, []);
 
+  useEffect(() => {
+    // Update the providerOptionsText when the selected provider changes
+    const currentOptions =
+      loadedProviderSettings.all[selectedProviderIndex]?.providerOptions;
+    setProviderOptionsText(
+      currentOptions ? JSON.stringify(currentOptions, null, 2) : ""
+    );
+  }, [selectedProviderIndex, loadedProviderSettings]);
+
   const handleProviderSelectChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -38,7 +47,7 @@ export const ProviderSettingsTab = () => {
   };
 
   const handleProviderFieldChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setLoadedProviderSettings((prev) => {
@@ -77,6 +86,13 @@ export const ProviderSettingsTab = () => {
     });
   };
 
+  const handleProviderOptionsChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const { value } = e.target;
+    setProviderOptionsText(value);
+  };
+
   const handleActiveProviderChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -91,12 +107,42 @@ export const ProviderSettingsTab = () => {
     e.preventDefault();
     setIsLoading(true);
     setSaveStatus("idle");
+
+    // Validate and parse providerOptions
     try {
-      await SettingsStorage.saveProviderSettings(loadedProviderSettings);
+      const providerOptions = providerOptionsText
+        ? JSON.parse(providerOptionsText)
+        : {};
+
+      // Update the provider settings with the parsed JSON before saving
+      const newSettingsArray = [...loadedProviderSettings.all];
+      const updatedProvider = {
+        ...newSettingsArray[selectedProviderIndex],
+        providerOptions,
+      };
+      newSettingsArray[selectedProviderIndex] = updatedProvider;
+
+      const updatedSettings = {
+        ...loadedProviderSettings,
+        all: newSettingsArray,
+        active:
+          loadedProviderSettings.active?.provider === updatedProvider.provider
+            ? updatedProvider
+            : loadedProviderSettings.active,
+      };
+
+      // Save the updated settings
+      await SettingsStorage.saveProviderSettings(updatedSettings);
+      setLoadedProviderSettings(updatedSettings);
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
-      setSaveStatus("error");
+      if (providerOptionsText && err instanceof SyntaxError) {
+        setSaveStatus("json-error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else {
+        setSaveStatus("error");
+      }
     }
     setIsLoading(false);
   };
@@ -192,6 +238,23 @@ export const ProviderSettingsTab = () => {
 
         <div className="space-y-2">
           <label
+            htmlFor="providerOptions"
+            className="block text-sm font-medium text-gray-200"
+          >
+            Provider Options
+          </label>
+          <textarea
+            id="providerOptions"
+            name="providerOptions"
+            value={providerOptionsText}
+            onChange={handleProviderOptionsChange}
+            placeholder="Enter provider options as JSON"
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
             htmlFor="model"
             className="block text-sm font-medium text-gray-200"
           >
@@ -248,6 +311,11 @@ export const ProviderSettingsTab = () => {
           {saveStatus === "error" && (
             <span className="ml-2 text-red-400 flex items-center">
               Failed to save settings
+            </span>
+          )}
+          {saveStatus === "json-error" && (
+            <span className="ml-2 text-red-400 flex items-center">
+              Invalid JSON in Provider Options
             </span>
           )}
         </div>

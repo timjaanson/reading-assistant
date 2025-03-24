@@ -8,6 +8,7 @@ export const defaultProviderSettings: ProviderSettings = {
       url: "http://localhost:11434/api",
       enableToolCalls: false,
       apiKey: "",
+      providerOptions: {},
       model: "llama3.1:8b",
     },
     {
@@ -15,12 +16,21 @@ export const defaultProviderSettings: ProviderSettings = {
       apiKey: "",
       enableToolCalls: true,
       model: "gpt-4o-mini",
+      providerOptions: {},
     },
     {
       provider: "anthropic",
       apiKey: "",
       enableToolCalls: true,
-      model: "claude-3-5-sonnet-latest",
+      model: "claude-3-7-sonnet-latest",
+      providerOptions: {
+        anthropic: {
+          thinking: {
+            budgetTokens: 8000,
+            type: "enabled",
+          },
+        },
+      },
     },
   ],
   active: null,
