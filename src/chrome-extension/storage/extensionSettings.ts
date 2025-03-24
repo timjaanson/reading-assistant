@@ -18,15 +18,10 @@ export const defaultExtensionSettings: ExtensionSettings = {
 };
 
 export const urlMatchesAllowedUrls = (url: string, allowedUrls: string[]) => {
-  // Special case for PDF
-  if (
-    allowedUrls.includes(MATCHED_URLS_PDF_SPECIAL_CASE) &&
-    url === MATCHED_URLS_PDF_SPECIAL_CASE
-  ) {
+  if (allowedUrls.includes("*")) {
     return true;
   }
 
-  // Create proper regex patterns from allowed URLs
   const patterns = allowedUrls
     .filter((pattern) => pattern !== MATCHED_URLS_PDF_SPECIAL_CASE)
     .map((pattern) => {
@@ -42,7 +37,6 @@ export const urlMatchesAllowedUrls = (url: string, allowedUrls: string[]) => {
     return false;
   }
 
-  // Create a single regex from all patterns
   const regex = new RegExp(patterns.join("|"));
   return regex.test(url);
 };
