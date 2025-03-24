@@ -238,23 +238,6 @@ export const ProviderSettingsTab = () => {
 
         <div className="space-y-2">
           <label
-            htmlFor="providerOptions"
-            className="block text-sm font-medium text-gray-200"
-          >
-            Provider Options
-          </label>
-          <textarea
-            id="providerOptions"
-            name="providerOptions"
-            value={providerOptionsText}
-            onChange={handleProviderOptionsChange}
-            placeholder="Enter provider options as JSON"
-            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label
             htmlFor="model"
             className="block text-sm font-medium text-gray-200"
           >
@@ -270,6 +253,24 @@ export const ProviderSettingsTab = () => {
             onChange={handleProviderFieldChange}
             placeholder="Enter model name"
             className="block w-full"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="providerOptions"
+            className="block text-sm font-medium text-gray-200"
+          >
+            Provider Options
+          </label>
+          <textarea
+            id="providerOptions"
+            name="providerOptions"
+            value={providerOptionsText}
+            onChange={handleProviderOptionsChange}
+            placeholder="Enter provider options as JSON"
+            rows={2}
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
           />
         </div>
 

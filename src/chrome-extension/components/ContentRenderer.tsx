@@ -61,7 +61,9 @@ export const getCustomMarkdown = (content: string) => {
           <li className="my-1 break-words whitespace-normal">{children}</li>
         ),
         code: ({ children }) => (
-          <code className="bg-gray-200/85 text-gray-700 p-1">{children}</code>
+          <code className="bg-gray-200/85 text-gray-700 px-1 py-0.5 rounded-sm">
+            {children}
+          </code>
         ),
       }}
     >

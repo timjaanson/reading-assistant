@@ -18,10 +18,32 @@ export const defaultExtensionSettings: ExtensionSettings = {
 };
 
 export const urlMatchesAllowedUrls = (url: string, allowedUrls: string[]) => {
-  //acount for wildcards either at the beginning or end of the allowedUrls
-  const regex = new RegExp(
-    "^" + allowedUrls.map((url) => url.replace("*", ".*")).join("|") + "$"
-  );
+  // Special case for PDF
+  if (
+    allowedUrls.includes(MATCHED_URLS_PDF_SPECIAL_CASE) &&
+    url === MATCHED_URLS_PDF_SPECIAL_CASE
+  ) {
+    return true;
+  }
+
+  // Create proper regex patterns from allowed URLs
+  const patterns = allowedUrls
+    .filter((pattern) => pattern !== MATCHED_URLS_PDF_SPECIAL_CASE)
+    .map((pattern) => {
+      // Escape special regex characters except for wildcards
+      const escaped = pattern
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        .replace(/\\\*/g, "*");
+      // Replace all wildcards with .*
+      return `^${escaped.replace(/\*/g, ".*")}$`;
+    });
+
+  if (patterns.length === 0) {
+    return false;
+  }
+
+  // Create a single regex from all patterns
+  const regex = new RegExp(patterns.join("|"));
   return regex.test(url);
 };
 
