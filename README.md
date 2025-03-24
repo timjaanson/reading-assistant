@@ -1,8 +1,8 @@
-# Assisted Reading
+# Reading assistant
 
 ## Description
 
-Assisted Reading is a browser extension that helps with reading and comprehension by providing additional context and tools while browsing the web. This extension aims to enhance the reading experience by offering features like definitions, summaries, and related information for highlighted text.
+Reading assistant is a browser extension that helps with reading and comprehension by providing additional context and tools while browsing the web. This extension aims to enhance the reading experience by offering features like definitions, summaries, and related information for highlighted text.
 
 ## Technical Stack
 

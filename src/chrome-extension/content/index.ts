@@ -3,5 +3,5 @@
   // So that its available when we request using chrome.runtime.getURL
   const src = chrome.runtime.getURL("content-main.js");
   await import(src);
-  console.log("Assisted Reading content script loaded");
+  console.log("Reading assistant content script loaded");
 })();
