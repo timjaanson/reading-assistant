@@ -9,7 +9,7 @@ export const defaultProviderSettings: ProviderSettings = {
       enableToolCalls: false,
       apiKey: "",
       providerOptions: {},
-      model: "llama3.1:8b",
+      model: "gemma3:4b",
     },
     {
       provider: "openai",

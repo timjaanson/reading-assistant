@@ -77,20 +77,39 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   }
 
+  function downloadPdf() {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = url.split("/").pop() || "document.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
-      <div className="flex items-center gap-3 p-2 bg-[#f0f0f0] border-b border-[#ddd]">
+      <div className="flex items-center justify-between p-2 bg-[#f0f0f0] border-b border-[#ddd]">
+        <div className="flex items-center gap-3">
+          <div className="items-center">Pages: {numPages}</div>
+          <button
+            onClick={zoomOut}
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+          >
+            Zoom -
+          </button>
+          <button
+            onClick={zoomIn}
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+          >
+            Zoom +
+          </button>
+        </div>
+
         <button
-          onClick={zoomOut}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+          onClick={downloadPdf}
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer hover:bg-[#f9f9f9]"
         >
-          Zoom -
-        </button>
-        <button
-          onClick={zoomIn}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
-        >
-          Zoom +
+          Download PDF
         </button>
       </div>
 

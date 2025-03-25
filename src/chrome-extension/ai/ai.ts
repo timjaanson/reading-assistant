@@ -74,6 +74,10 @@ export const getStreamedTextResponse = async (
       tools: languageModel.toolUse ? getTools().tools : undefined,
       maxSteps: 10,
       providerOptions: languageModel.providerOptions,
+      onError: (error) => {
+        console.error("Error getting streamed text response", error);
+        throw error;
+      },
     });
 
     return stream;

@@ -2,6 +2,7 @@ import { FilePart, ImagePart, TextPart, ToolCallPart, ToolContent } from "ai";
 import ReactMarkdown from "react-markdown";
 import { ReasoningPart, RedactedReasoningPart } from "../types/ai-sdk-missing";
 import { useState } from "react";
+import remarkGfm from "remark-gfm";
 
 // Define a type for our combined tool call and result
 export type CombinedToolPart = {
@@ -35,6 +36,7 @@ const THINK_END = "</think>";
 export const getCustomMarkdown = (content: string) => {
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       components={{
         ol: ({ children }) => (
           <ol className="py-1 pl-3 list-decimal break-words whitespace-normal">
@@ -64,6 +66,15 @@ export const getCustomMarkdown = (content: string) => {
           <code className="bg-gray-200/85 text-gray-700 px-1 py-0.5 rounded-sm">
             {children}
           </code>
+        ),
+        table: ({ node, ...props }) => (
+          <table className="w-full border-collapse" {...props} />
+        ),
+        thead: ({ node, ...props }) => (
+          <thead className="border-b border-gray-400" {...props} />
+        ),
+        td: ({ node, ...props }) => (
+          <td className="border border-gray-500" {...props} />
         ),
       }}
     >
