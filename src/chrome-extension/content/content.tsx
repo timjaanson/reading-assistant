@@ -8,19 +8,31 @@ import {
   urlMatchesAllowedUrls,
 } from "../storage/extensionSettings";
 
-// Inject the global stylesheet using the hashed asset URL.
-(function injectTailwindStyles() {
+(function injectReadingAssistantShadowDomRoot() {
+  const hostDiv = document.createElement("div");
+  hostDiv.id = "reading-assistant-shadow-dom-root";
+  hostDiv.style.all = "unset";
+  hostDiv.style.position = "absolute";
+  hostDiv.style.top = "0";
+  hostDiv.style.left = "0";
+  hostDiv.style.width = "100%";
+  hostDiv.style.height = "100%";
+  hostDiv.style.pointerEvents = "none";
+  hostDiv.style.zIndex = "10001";
+  document.body.appendChild(hostDiv);
+  const shadowRoot = hostDiv.attachShadow({ mode: "open" });
+
   const link = document.createElement("link");
   // chrome.runtime.getURL will prepend the extension URL to the hashed asset path.
   link.href = chrome.runtime.getURL(globalCssUrl);
   link.rel = "stylesheet";
   link.type = "text/css";
-  document.head.appendChild(link);
+  shadowRoot.appendChild(link);
 })();
 
 export class ContentSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
-    super();
+    super("reading-assistant-shadow-dom-root");
     this.addAction("Summary", (selectedText: string) => {
       this.showFloatingWindow(FloatingSummaryWindow, selectedText);
     });

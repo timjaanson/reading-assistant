@@ -292,88 +292,93 @@ export abstract class AbstractFloatingEmbeddedWindow {
     renderedComponent: React.ReactNode;
     anchorPoint?: { x: number; y: number };
   }): void {
+    // Get the container (either parent element or window)
+    const parent = this.options.parentId
+      ? document.getElementById(this.options.parentId)
+      : document.body;
+
+    // Add to DOM early so we can measure dimensions
+    if (!parent?.contains(this.element)) {
+      if (parent?.shadowRoot) {
+        parent.shadowRoot?.appendChild(this.element);
+      } else {
+        console.warn(
+          "Parent element does not have a shadow root, falling back to appending to parent"
+        );
+        parent?.appendChild(this.element);
+      }
+    }
+
     // Position the window relative to anchor point
     if (options.anchorPoint) {
       console.log(
         "Anchor point provided, using anchor point positioning",
         options.anchorPoint
       );
+
       requestAnimationFrame(() => {
         // Wait for element to be in DOM to get its dimensions
         const width = this.element.offsetWidth;
         const height = this.element.offsetHeight;
 
-        // Calculate position so anchor point is in the middle
-        let left = options.anchorPoint!.x - width / 2;
-        let top = options.anchorPoint!.y - height / 2;
+        // Use absolute positioning with page coordinates
+        // This will ensure the window moves with page content when scrolling
+        const pageX = options.anchorPoint!.x;
+        const pageY = options.anchorPoint!.y;
 
-        // Adjust if window would go outside viewport
+        // Original centered position
+        let left = pageX - width / 2;
+        let top = pageY - height / 2;
+
+        // Get viewport boundaries
         const rightEdge = window.scrollX + window.innerWidth;
         const bottomEdge = window.scrollY + window.innerHeight;
+        const leftEdge = window.scrollX;
+        const topEdge = window.scrollY;
 
-        // Prevent going off right edge
-        if (left + width > rightEdge) {
-          left = rightEdge - width - 10; // 10px padding
-        }
+        // Calculate how much adjustment is needed for each edge
+        const rightOverflow = Math.max(0, left + width - rightEdge + 10);
+        const leftOverflow = Math.max(0, leftEdge + 10 - left);
+        const bottomOverflow = Math.max(0, top + height - bottomEdge + 10);
+        const topOverflow = Math.max(0, topEdge + 10 - top);
 
-        // Prevent going off left edge
-        if (left < window.scrollX) {
-          left = window.scrollX + 10;
-        }
+        // Make minimal adjustments to stay in viewport while keeping close to mouse
+        if (rightOverflow > 0) left -= rightOverflow;
+        if (leftOverflow > 0) left += leftOverflow;
+        if (bottomOverflow > 0) top -= bottomOverflow;
+        if (topOverflow > 0) top += topOverflow;
 
-        // Prevent going off bottom edge
-        if (top + height > bottomEdge) {
-          top = bottomEdge - height - 10;
-        }
-
-        // Prevent going off top edge
-        if (top < window.scrollY) {
-          top = window.scrollY + 10;
-        }
-
+        // Set position - use absolute positioning for scrolling with content
+        this.element.style.position = "absolute";
         this.element.style.left = `${left}px`;
         this.element.style.top = `${top}px`;
+
+        // Make sure floating window captures pointer events (unlike parent)
+        this.element.style.pointerEvents = "auto";
       });
     } else {
       console.log("No anchor point provided, using center-screen fallback");
-      // Keep existing center-screen fallback positioning
-      // Get the container (either parent element or window)
-      const container = this.options.parentId
-        ? document.getElementById(this.options.parentId)
-        : window;
 
-      const containerWidth =
-        container instanceof Window
-          ? container.innerWidth
-          : container!.clientWidth;
-
-      const containerHeight =
-        container instanceof Window
-          ? container.innerHeight
-          : container!.clientHeight;
+      // Center in currently visible viewport using absolute positioning
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
       const width = parseInt(this.options.width);
       const height = parseInt(this.options.height);
 
+      this.element.style.position = "absolute";
       this.element.style.top = `${Math.max(
         0,
-        (containerHeight - height) / 2
+        window.scrollY + (viewportHeight - height) / 2
       )}px`;
       this.element.style.left = `${Math.max(
         0,
-        (containerWidth - width) / 2
+        window.scrollX + (viewportWidth - width) / 2
       )}px`;
+      this.element.style.pointerEvents = "auto";
     }
 
-    // Add to DOM and render component
-    const parent = this.options.parentId
-      ? document.getElementById(this.options.parentId)
-      : document.body;
-
-    if (!parent?.contains(this.element)) {
-      parent?.appendChild(this.element);
-    }
-
+    // Render component
     this.root.render(options.renderedComponent);
   }
 
