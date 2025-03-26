@@ -32,6 +32,13 @@ export const defaultProviderSettings: ProviderSettings = {
         },
       },
     },
+    {
+      provider: "google",
+      apiKey: "",
+      enableToolCalls: true,
+      model: "gemini-2.0-flash",
+      providerOptions: {},
+    },
   ],
   active: null,
 };

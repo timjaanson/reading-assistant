@@ -1,6 +1,5 @@
-import { FilePart, ImagePart, TextPart, ToolCallPart, ToolContent } from "ai";
+import { AssistantContent, ToolContent, UserContent } from "ai";
 import ReactMarkdown from "react-markdown";
-import { ReasoningPart, RedactedReasoningPart } from "../types/ai-sdk-missing";
 import { useState } from "react";
 import remarkGfm from "remark-gfm";
 
@@ -13,17 +12,7 @@ export type CombinedToolPart = {
   result: any;
 };
 
-export type ContentType =
-  | string
-  | (TextPart | ImagePart | FilePart)[]
-  | (
-      | TextPart
-      | ReasoningPart
-      | RedactedReasoningPart
-      | ToolCallPart
-      | CombinedToolPart
-    )[]
-  | ToolContent;
+export type ContentType = UserContent | ToolContent | AssistantContent;
 
 type ContentRendererProps = {
   content: ContentType;

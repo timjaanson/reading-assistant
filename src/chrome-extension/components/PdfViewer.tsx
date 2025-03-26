@@ -86,6 +86,14 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
     document.body.removeChild(link);
   }
 
+  // New function to copy URL to clipboard
+  function copyUrl() {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => console.log("URL copied to clipboard"))
+      .catch((err) => console.error("Error copying URL", err));
+  }
+
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
       <div className="flex items-center justify-between p-2 bg-[#f0f0f0] border-b border-[#ddd]">
@@ -93,21 +101,36 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
           <div className="items-center">Pages: {numPages}</div>
           <button
             onClick={zoomOut}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
           >
             Zoom -
           </button>
           <button
             onClick={zoomIn}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9]"
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
           >
             Zoom +
           </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">URL:</span>
+            <input
+              type="text"
+              readOnly
+              value={url}
+              className="text-xs text-gray-500 bg-gray-100 border border-gray-300 rounded px-2 py-1"
+            />
+            <button
+              onClick={copyUrl}
+              className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
+            >
+              Copy
+            </button>
+          </div>
         </div>
 
         <button
           onClick={downloadPdf}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer hover:bg-[#f9f9f9]"
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
         >
           Download PDF
         </button>

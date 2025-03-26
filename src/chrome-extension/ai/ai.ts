@@ -8,6 +8,7 @@ import { z } from "zod";
 import { AiTools } from "../types/ai-tools";
 import { searchBrave } from "../search/brave-api";
 import { tryCatch } from "../util/try-catch";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export type GetStreamedTextResponseOptions = {
   systemPrompt?: string;
@@ -46,6 +47,11 @@ const getLanguageModel = async () => {
         headers: {
           "anthropic-dangerous-direct-browser-access": "true",
         },
+      });
+      break;
+    case "google":
+      provider = createGoogleGenerativeAI({
+        apiKey: providerSettings.active.apiKey,
       });
       break;
     default:

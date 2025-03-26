@@ -1,4 +1,4 @@
-import { CoreMessage } from "ai";
+import { CoreMessage, ToolCallPart, ToolResultPart } from "ai";
 import { useState, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 
@@ -7,22 +7,6 @@ type MessageGroupProps = {
   collapseInitialMessage?: boolean;
   compact?: boolean;
 };
-
-// Type definitions for tool call and result parts
-interface ToolCallPart {
-  type: "tool-call";
-  toolCallId: string;
-  toolName: string;
-  args: unknown;
-}
-
-interface ToolResultPart {
-  type: "tool-result";
-  toolCallId: string;
-  toolName: string;
-  result: unknown;
-  isError?: boolean;
-}
 
 // Type for the combined tool call and result that ContentRenderer expects
 interface CombinedToolPart {
