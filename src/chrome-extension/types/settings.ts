@@ -14,9 +14,15 @@ export interface LLMProviderSettings {
   model: string;
 }
 
+export interface ExternalTool {
+  id: string;
+  name: string;
+  apiKey: string;
+}
+
 export interface ExternalToolSettings {
-  braveSearch: {
-    apiKey: string;
+  search: {
+    options: ExternalTool[];
+    active: ExternalTool | null;
   };
-  // Room for future external tools
 }

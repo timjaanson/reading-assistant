@@ -84,14 +84,15 @@ class RequestQueue {
 
     const externalToolSettings =
       await ExternalToolsStorage.loadExternalToolSettings();
+    const apiKey = externalToolSettings.search.active?.apiKey;
 
-    if (!externalToolSettings.braveSearch.apiKey) {
+    if (!apiKey) {
       throw new Error("Brave Search API key not found");
     }
 
     const response = await fetch(`${API_URL}?${params.toString()}`, {
       headers: {
-        "X-Subscription-Token": externalToolSettings.braveSearch.apiKey,
+        "X-Subscription-Token": apiKey,
       },
     });
 
@@ -167,8 +168,15 @@ export const searchBrave = async (
   query: string,
   count: number = 5
 ): Promise<MinifiedSearchResult[]> => {
-  // Use the queue to handle rate limiting
-  return requestQueue.enqueue(query, count);
+  const externalToolSettings =
+    await ExternalToolsStorage.loadExternalToolSettings();
+  if (externalToolSettings.search.active?.id === "braveSearch") {
+    if (externalToolSettings.search.active.apiKey) {
+      return requestQueue.enqueue(query, count);
+    }
+    throw new Error("Brave Search enabled but API key not set");
+  }
+  throw new Error("Brave Search is not enabled");
 };
 
 const mapResultsToMinified = (

@@ -10,6 +10,7 @@ export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ExternalToolSettings>(
     defaultExternalToolSettings
   );
+  const [selectedToolIndex, setSelectedToolIndex] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
@@ -44,17 +45,60 @@ export const ExternalToolSettingsTab = () => {
     }
   };
 
-  const handleBraveSearchApiKeyChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setSettings({
-      ...settings,
-      braveSearch: {
-        ...settings.braveSearch,
-        apiKey: e.target.value,
-      },
+  const handleToolSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedToolIndex(Number(e.target.value));
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setSettings((prev) => {
+      const newOptions = [...prev.search.options];
+      newOptions[selectedToolIndex] = {
+        ...newOptions[selectedToolIndex],
+        apiKey: value,
+      };
+
+      return {
+        ...prev,
+        search: {
+          ...prev.search,
+          options: newOptions,
+        },
+      };
     });
   };
+
+  const handleActiveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+
+    setSettings((prev) => {
+      // If unchecking, set active to null
+      if (!checked) {
+        return {
+          ...prev,
+          search: {
+            ...prev.search,
+            active: null,
+          },
+        };
+      }
+
+      // If checking, set currently selected tool as active
+      return {
+        ...prev,
+        search: {
+          ...prev.search,
+          active: prev.search.options[selectedToolIndex],
+        },
+      };
+    });
+  };
+
+  // Get the currently selected tool
+  const selectedTool = settings.search.options[selectedToolIndex] || null;
+
+  // Check if the selected tool is active
+  const isSelectedToolActive = settings.search.active?.id === selectedTool?.id;
 
   return (
     <div className="p-4">
@@ -63,19 +107,60 @@ export const ExternalToolSettingsTab = () => {
       </h2>
 
       <div className="mb-4">
-        <h3 className="text-md font-medium mb-2 text-gray-200">Brave Search</h3>
+        <h3 className="text-md font-medium mb-2 text-gray-200">Search Tools</h3>
+
+        <div className="space-y-2 mb-3">
+          <label
+            htmlFor="searchTool"
+            className="block text-sm font-medium text-gray-200"
+          >
+            Select Search Tool
+          </label>
+          <select
+            id="searchTool"
+            value={selectedToolIndex}
+            onChange={handleToolSelectChange}
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200"
+          >
+            {settings.search.options.map((tool, index) => (
+              <option key={tool.id} value={index}>
+                {tool.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-x-2 mb-3">
+          <div className="flex">
+            <input
+              id="activeTool"
+              type="checkbox"
+              checked={isSelectedToolActive}
+              onChange={handleActiveChange}
+              className="mr-2"
+            />
+            <label
+              htmlFor="activeTool"
+              className="text-sm font-medium text-gray-200"
+            >
+              Active Tool
+            </label>
+          </div>
+        </div>
+
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-200 mb-1">
             API Key
           </label>
           <Input
             type="password"
-            value={settings.braveSearch.apiKey}
-            onChange={handleBraveSearchApiKeyChange}
+            value={selectedTool?.apiKey || ""}
+            onChange={handleApiKeyChange}
             className="w-full"
-            placeholder="Enter Brave Search API Key"
+            placeholder={`Enter ${selectedTool?.name} API Key`}
           />
         </div>
+
         <button
           onClick={handleSaveSettings}
           disabled={isSaving}

@@ -2,8 +2,20 @@ import { ExternalToolSettings } from "../types/settings";
 import { StorageKeys } from "./settings";
 
 export const defaultExternalToolSettings: ExternalToolSettings = {
-  braveSearch: {
-    apiKey: "",
+  search: {
+    options: [
+      {
+        id: "braveSearch",
+        name: "Brave Search",
+        apiKey: "",
+      },
+      {
+        id: "tavily",
+        name: "Tavily",
+        apiKey: "",
+      },
+    ],
+    active: null,
   },
 };
 
@@ -42,9 +54,9 @@ export class ExternalToolsStorage {
     const newSettings = {
       ...currentSettings,
       ...partialSettings,
-      braveSearch: {
-        ...currentSettings.braveSearch,
-        ...(partialSettings.braveSearch || {}),
+      search: {
+        ...currentSettings.search,
+        ...(partialSettings.search || {}),
       },
     };
     await this.saveExternalToolSettings(newSettings);
