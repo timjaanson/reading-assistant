@@ -1,6 +1,7 @@
 import { CoreMessage, ToolCallPart, ToolResultPart } from "ai";
 import { useState, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
+import { CombinedToolPart } from "./ContentRenderer";
 
 type MessageGroupProps = {
   messages: CoreMessage[];
@@ -8,196 +9,115 @@ type MessageGroupProps = {
   compact?: boolean;
 };
 
-// Type for the combined tool call and result that ContentRenderer expects
-interface CombinedToolPart {
-  type: "combined-tool";
-  toolName: string;
-  args: any;
-  toolCallId: string;
-  result: any;
-}
-
-// Function to identify related messages like tool calls and their results
+// Function to identify and combine tool calls with their results
 export const groupRelatedMessages = (messages: CoreMessage[]) => {
   const result: CoreMessage[] = [];
-  let i = 0;
-  // Keep track of processed tool call IDs to avoid duplicates
-  const processedToolCallIds = new Set<string>();
-  // Keep track of indices of messages we've already processed
-  const processedIndices = new Set<number>();
 
-  while (i < messages.length) {
-    // Skip messages that have already been processed
-    if (processedIndices.has(i)) {
-      i++;
-      continue;
-    }
+  // Maps to track tool calls and results
+  const toolCallsById = new Map<string, ToolCallPart>();
+  const toolResultsById = new Map<string, ToolResultPart>();
+  const processedToolIds = new Set<string>();
 
-    const currentMessage = messages[i];
-
-    // Check if the current message is from an assistant and potentially contains a tool call
-    if (
-      currentMessage.role === "assistant" &&
-      Array.isArray(currentMessage.content)
-    ) {
-      // Look for tool calls in the content
-      const toolCalls = (currentMessage.content as any[]).filter(
-        (part) => part.type === "tool-call"
-      ) as ToolCallPart[];
-
-      if (toolCalls.length > 0) {
-        // Create a new message starting with basic text content from the assistant message
-        const mergedMessageContent = (currentMessage.content as any[]).filter(
-          (part) => part.type !== "tool-call"
-        );
-
-        const toolCallsToProcess = [...toolCalls];
-        const processedToolCalls = new Set<string>();
-        let foundAnyToolResult = false;
-        // Track the indices of messages we'll combine with this one
-        const messagesToCombine = new Set<number>();
-
-        // Also track any follow-up assistant messages to combine
-        const followUpMessageIndices = new Set<number>();
-
-        // Look ahead up to 20 messages to find matching tool results
-        const lookAheadLimit = Math.min(messages.length - i - 1, 20);
-
-        for (let j = 1; j <= lookAheadLimit; j++) {
-          const lookAheadIndex = i + j;
-          if (lookAheadIndex >= messages.length) break;
-
-          const lookAheadMessage = messages[lookAheadIndex];
-
-          // Process tool result messages
-          if (
-            lookAheadMessage.role === "tool" &&
-            Array.isArray(lookAheadMessage.content)
-          ) {
-            const toolResults = (lookAheadMessage.content as any[]).filter(
-              (part) => part.type === "tool-result"
-            ) as ToolResultPart[];
-
-            // Process each tool result
-            for (const result of toolResults) {
-              // Find matching tool call that hasn't been processed yet
-              const matchingToolCallIndex = toolCallsToProcess.findIndex(
-                (toolCall) =>
-                  toolCall.toolCallId === result.toolCallId &&
-                  !processedToolCalls.has(toolCall.toolCallId)
-              );
-
-              if (matchingToolCallIndex !== -1) {
-                const toolCall = toolCallsToProcess[matchingToolCallIndex];
-
-                // Create a combined tool part
-                const combinedTool: CombinedToolPart = {
-                  type: "combined-tool",
-                  toolName: toolCall.toolName,
-                  args: toolCall.args,
-                  toolCallId: toolCall.toolCallId,
-                  result: result.result,
-                };
-
-                // Add the combined tool to the merged message
-                mergedMessageContent.push(combinedTool);
-
-                // Mark this tool call as processed
-                processedToolCalls.add(toolCall.toolCallId);
-                processedToolCallIds.add(toolCall.toolCallId);
-                messagesToCombine.add(lookAheadIndex);
-                foundAnyToolResult = true;
-              }
-            }
-          }
-
-          // Check for follow-up assistant messages that should be merged
-          if (lookAheadMessage.role === "assistant") {
-            // Only include follow-up assistant messages if we have found tool results
-            // or if this is the first follow-up message in a sequence after tool results
-            if (foundAnyToolResult || followUpMessageIndices.size > 0) {
-              followUpMessageIndices.add(lookAheadIndex);
-            }
+  // First pass: Extract all tool calls and tool results
+  for (const message of messages) {
+    if (Array.isArray(message.content)) {
+      // Extract all tool calls from assistant messages
+      if (message.role === "assistant") {
+        for (const part of message.content) {
+          if (part.type === "tool-call") {
+            toolCallsById.set(part.toolCallId, part as ToolCallPart);
           }
         }
+      }
 
-        // Add any remaining unprocessed tool calls (without results)
-        toolCallsToProcess.forEach((toolCall) => {
-          if (!processedToolCalls.has(toolCall.toolCallId)) {
-            mergedMessageContent.push(toolCall);
+      // Extract all tool results from tool messages
+      if (message.role === "tool") {
+        for (const part of message.content) {
+          if (part.type === "tool-result") {
+            toolResultsById.set(part.toolCallId, part as ToolResultPart);
           }
-        });
-
-        // Process and add content from follow-up assistant messages
-        for (const index of followUpMessageIndices) {
-          const followUpMessage = messages[index];
-
-          if (typeof followUpMessage.content === "string") {
-            mergedMessageContent.push({
-              type: "text",
-              text: followUpMessage.content,
-            });
-          } else if (Array.isArray(followUpMessage.content)) {
-            // Add each content part individually to maintain the correct structure
-            for (const part of followUpMessage.content) {
-              // Don't duplicate tool calls from follow-up messages
-              if (
-                part.type !== "tool-call" ||
-                !processedToolCalls.has((part as ToolCallPart).toolCallId)
-              ) {
-                mergedMessageContent.push(part);
-              }
-            }
-          }
-
-          // Mark follow-up message as processed
-          processedIndices.add(index);
         }
-
-        // Create the merged message
-        const mergedMessage: CoreMessage = {
-          role: "assistant",
-          content: mergedMessageContent,
-        };
-
-        result.push(mergedMessage);
-
-        // Mark all the tool result messages we've combined as processed
-        for (const index of messagesToCombine) {
-          processedIndices.add(index);
-        }
-
-        i++;
-        continue;
       }
     }
+  }
 
-    // Handle tool result messages - only add them if they haven't been processed
-    if (
-      currentMessage.role === "tool" &&
-      Array.isArray(currentMessage.content)
-    ) {
-      const toolResults = (currentMessage.content as any[]).filter(
-        (part) => part.type === "tool-result"
-      ) as ToolResultPart[];
+  // Second pass: Process messages in order and create properly grouped output
+  for (let i = 0; i < messages.length; i++) {
+    const message = messages[i];
 
-      if (toolResults.length > 0) {
-        // Check if all tool results in this message have been processed
-        const allProcessed = toolResults.every((result) =>
-          processedToolCallIds.has(result.toolCallId)
-        );
+    // Process assistant messages
+    if (message.role === "assistant" && Array.isArray(message.content)) {
+      // Extract regular content and tool calls separately
+      const regularContent = [];
+      const toolCallsWithResults = [];
 
-        // If all tool results have been processed, skip this message
-        if (allProcessed) {
-          i++;
+      for (const part of message.content) {
+        if (part.type === "tool-call") {
+          const toolCall = part as ToolCallPart;
+          const toolResult = toolResultsById.get(toolCall.toolCallId);
+
+          if (toolResult) {
+            // We have a matching result, create a combined tool part
+            // The type isn't directly supported by AssistantContent but ContentRenderer handles it
+            const combinedPart: CombinedToolPart = {
+              type: "combined-tool",
+              toolName: toolCall.toolName,
+              args: toolCall.args,
+              toolCallId: toolCall.toolCallId,
+              result: toolResult.result,
+            };
+
+            // Mark this tool result as processed
+            processedToolIds.add(toolCall.toolCallId);
+
+            // Add the combined part (with a type assertion for TypeScript)
+            toolCallsWithResults.push(combinedPart as any);
+          } else {
+            // No matching result, keep the original tool call
+            toolCallsWithResults.push(toolCall);
+          }
+        } else if (part.type === "text" && part.text.trim() === "") {
+          // Skip empty text
           continue;
+        } else {
+          regularContent.push(part);
         }
       }
-    }
 
-    // Regular message or unmatched tool call/result - add as is
-    result.push(currentMessage);
-    i++;
+      // Add non-empty regular content with tool calls
+      if (regularContent.length > 0 || toolCallsWithResults.length > 0) {
+        result.push({
+          role: "assistant",
+          content: [...regularContent, ...toolCallsWithResults],
+        });
+      }
+    }
+    // Process tool messages for any unmatched tool results
+    else if (message.role === "tool" && Array.isArray(message.content)) {
+      const unmatchedResults = [];
+
+      for (const part of message.content) {
+        if (part.type === "tool-result") {
+          const toolResult = part as ToolResultPart;
+          // Only include tool results that weren't already processed
+          if (!processedToolIds.has(toolResult.toolCallId)) {
+            processedToolIds.add(toolResult.toolCallId);
+            unmatchedResults.push(toolResult);
+          }
+        }
+      }
+
+      if (unmatchedResults.length > 0) {
+        result.push({
+          role: "tool",
+          content: unmatchedResults,
+        });
+      }
+    }
+    // Add all other message types directly
+    else if (message.role !== "assistant" && message.role !== "tool") {
+      result.push(message);
+    }
   }
 
   return result;

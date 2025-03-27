@@ -30,7 +30,7 @@ const doSearch = async (query: string, count: number) => {
   return results;
 };
 
-export const searchTavily = async (query: string, count: number = 5) => {
+export const searchTavily = async (query: string, count: number = 8) => {
   const externalToolSettings =
     await ExternalToolsStorage.loadExternalToolSettings();
   if (externalToolSettings.search.active?.id === "tavily") {
@@ -45,8 +45,8 @@ export const searchTavily = async (query: string, count: number = 5) => {
 export const extractContentFromUrl = async (urls: string[]) => {
   if (urls.length === 0) {
     return [];
-  } else if (urls.length > 5) {
-    throw new Error("Cannot extract content from more than 5 URLs");
+  } else if (urls.length > 10) {
+    throw new Error("Cannot extract content from more than 10 URLs");
   }
 
   const externalToolSettings =

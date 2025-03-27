@@ -166,7 +166,7 @@ const requestQueue = new RequestQueue();
 
 export const searchBrave = async (
   query: string,
-  count: number = 5
+  count: number = 8
 ): Promise<MinifiedSearchResult[]> => {
   const externalToolSettings =
     await ExternalToolsStorage.loadExternalToolSettings();

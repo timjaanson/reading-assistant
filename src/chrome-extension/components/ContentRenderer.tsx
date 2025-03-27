@@ -12,7 +12,11 @@ export type CombinedToolPart = {
   result: any;
 };
 
-export type ContentType = UserContent | ToolContent | AssistantContent;
+export type ContentType =
+  | UserContent
+  | ToolContent
+  | AssistantContent
+  | CombinedToolPart;
 
 type ContentRendererProps = {
   content: ContentType;
