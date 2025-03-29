@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Popup } from "./chrome-extension/popup/index";
+import { Popup } from "./chrome-extension/popup/popup";
 import "./chrome-extension/global.css";
 
 createRoot(document.getElementById("root")!).render(

@@ -1,5 +1,5 @@
 import "../global.css";
-import { Popup } from "../popup";
+import { Popup } from "../popup/popup";
 import "../global.css";
 
 const Options = () => {

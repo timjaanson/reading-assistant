@@ -21,8 +21,8 @@ export abstract class AbstractFloatingEmbeddedWindow {
   private header: HTMLElement;
   private contentContainer: HTMLElement;
   private options: FloatingEmbeddedWindowOptions = {
-    width: "600px",
-    height: "400px",
+    width: "500px",
+    height: "450px",
   };
 
   private title: string;
@@ -104,7 +104,7 @@ export abstract class AbstractFloatingEmbeddedWindow {
       position: "absolute",
       width: this.options.width,
       height: this.options.height,
-      backgroundColor: "rgba(50, 47, 44, 0.4)",
+      backgroundColor: "rgba(55, 50, 44, 0.4)",
       backdropFilter: "blur(8px)",
       color: "#FAFAFA",
       borderRadius: "8px",
