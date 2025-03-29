@@ -192,7 +192,7 @@ export const ProviderSettingsTab = () => {
               htmlFor="activeProvider"
               className="text-sm font-medium text-gray-200"
             >
-              Active Provider
+              Active
             </label>
           </div>
           <div className="flex">

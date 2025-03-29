@@ -171,7 +171,7 @@ export const Chat = ({
     : "bg-gray-200/80 text-gray-900 rounded-md px-4 py-2";
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[800px] mx-auto relative">
+    <div className="flex flex-col h-full w-full mx-auto relative">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}

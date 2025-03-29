@@ -12,7 +12,7 @@ export const Popup = () => {
   >("chat");
 
   return (
-    <div className="w-full h-[600px]">
+    <div className="w-full h-full">
       {/* Navigation */}
       <nav className="border-b border-gray-700">
         <div className="flex space-x-4 px-4">

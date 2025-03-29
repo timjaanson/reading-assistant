@@ -69,6 +69,9 @@ export const getCustomMarkdown = (content: string) => {
         td: ({ node, ...props }) => (
           <td className="border border-gray-500" {...props} />
         ),
+        p: ({ node, ...props }) => (
+          <p className="whitespace-pre-line" {...props} />
+        ),
       }}
     >
       {content}
