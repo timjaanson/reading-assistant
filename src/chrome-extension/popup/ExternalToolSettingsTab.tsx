@@ -22,6 +22,13 @@ export const ExternalToolSettingsTab = () => {
         const loadedSettings =
           await ExternalToolsStorage.loadExternalToolSettings();
         setSettings(loadedSettings);
+        setSelectedToolIndex(
+          loadedSettings.search.active
+            ? loadedSettings.search.options.findIndex(
+                (tool) => tool.id === loadedSettings.search.active!.id
+              )
+            : 0
+        );
       } catch (error) {
         console.error("Failed to load external tool settings", error);
       }

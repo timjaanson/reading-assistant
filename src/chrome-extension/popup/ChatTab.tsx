@@ -293,7 +293,7 @@ export const ChatTab = () => {
         <Chat
           initialMessages={createMessageCollection(messages, currentChatId)}
           onMessagesChange={handleMessagesChange}
-          key={`chat-${currentChatId || "new"}-${messagesRef.current.length}`}
+          key={`chat-${currentChatId || "new"}`}
         />
       </div>
     </div>
