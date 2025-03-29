@@ -215,11 +215,16 @@ export const Chat = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
+              // Prevent event propagation to stop host website shortcuts
+              e.stopPropagation();
+
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage();
               }
             }}
+            onKeyUp={(e) => e.stopPropagation()}
+            onKeyPress={(e) => e.stopPropagation()}
             placeholder="Type your message"
             className={textareaClasses}
             rows={compact ? 1 : 2}

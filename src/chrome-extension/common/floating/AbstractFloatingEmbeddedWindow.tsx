@@ -113,6 +113,7 @@ export abstract class AbstractFloatingEmbeddedWindow {
       border: "1px solid #333",
       display: "flex",
       flexDirection: "column",
+      fontSize: "14px",
     });
 
     // If we have a parent element, verify it has valid positioning
@@ -236,45 +237,54 @@ export abstract class AbstractFloatingEmbeddedWindow {
     const initialMouseX = event.clientX;
     const initialMouseY = event.clientY;
     const rect = this.element.getBoundingClientRect();
+
+    // Get the current style values
+    const currentStyleLeft = parseFloat(this.element.style.left) || 0;
+
     const initialWidth = rect.width;
     const initialHeight = rect.height;
-    const initialLeft = rect.left;
+
+    // Minimum dimensions
+    const minWidth = 100;
+    const minHeight = 100;
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       let newWidth = initialWidth;
       let newHeight = initialHeight;
-      let newLeft = initialLeft;
+
+      // Log mouse movement
+      const deltaX = moveEvent.clientX - initialMouseX;
 
       if (handlePosition === "bottom-right") {
         // For the bottom-right, add the mouse movement to width and height
-        newWidth = initialWidth + (moveEvent.clientX - initialMouseX);
+        newWidth = initialWidth + deltaX;
         newHeight = initialHeight + (moveEvent.clientY - initialMouseY);
       } else if (handlePosition === "bottom-left") {
-        // For the bottom-left, subtract horizontal movement from width and update left position
-        newWidth = initialWidth - (moveEvent.clientX - initialMouseX);
+        // Calculate new width based on mouse movement
+        newWidth = initialWidth - deltaX;
         newHeight = initialHeight + (moveEvent.clientY - initialMouseY);
-        newLeft = initialLeft + (moveEvent.clientX - initialMouseX);
       }
 
-      // Optionally enforce minimum dimensions (using minWidth from options and a preset minHeight)
-      const minWidth = 100;
-      const minHeight = 100; // default minimum height
+      // Enforce minimum dimensions
       if (newWidth < minWidth) {
-        if (handlePosition === "bottom-left") {
-          // Adjust left so that the width remains at minWidth
-          newLeft = initialLeft + (initialWidth - minWidth);
-        }
         newWidth = minWidth;
       }
       if (newHeight < minHeight) {
         newHeight = minHeight;
       }
 
-      // Update the container style so that the window size remains changed
+      // Update the container style
       this.element.style.width = `${newWidth}px`;
       this.element.style.height = `${newHeight}px`;
+
+      // Only update left position for bottom-left resize
       if (handlePosition === "bottom-left") {
-        this.element.style.left = `${newLeft}px`;
+        // If width hit minimum, adjust position to compensate
+        const widthDelta = initialWidth - newWidth;
+        const adjustedStyleLeft = currentStyleLeft + widthDelta;
+
+        // Set the new left position in style (not based on rect position)
+        this.element.style.left = `${adjustedStyleLeft}px`;
       }
     };
 
