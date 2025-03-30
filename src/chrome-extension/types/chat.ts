@@ -2,6 +2,7 @@ import { CoreMessage } from "ai";
 
 export interface Chat {
   id?: number; // Dexie will auto-generate this
+  url?: string;
   name: string;
   messages: CoreMessage[];
   createdAt: Date;
@@ -10,6 +11,7 @@ export interface Chat {
 
 export interface ChatPreview {
   id: number;
+  url?: string;
   name: string;
   updatedAt: Date;
 }

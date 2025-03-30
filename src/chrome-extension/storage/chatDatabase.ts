@@ -12,7 +12,11 @@ export class ChatDatabase extends Dexie {
     });
   }
 
-  async insertChat(name: string, messages: CoreMessage[]): Promise<number> {
+  async insertChat(
+    name: string,
+    url: string,
+    messages: CoreMessage[]
+  ): Promise<number> {
     console.log("Saving new chat with messages:", messages.length);
     const now = new Date();
 
@@ -23,6 +27,7 @@ export class ChatDatabase extends Dexie {
 
     return this.chats.add({
       name,
+      url,
       messages,
       createdAt: now,
       updatedAt: now,

@@ -13,7 +13,7 @@ import { ProviderOptions } from "../types/ai-sdk-missing";
 import { ExternalToolsStorage } from "../storage/externalToolSettings";
 import { extractContentFromUrl, searchTavily } from "../search/tavily";
 
-export type GetStreamedTextResponseOptions = {
+export type GetTextResponseOptions = {
   systemPrompt?: string;
 };
 
@@ -81,7 +81,7 @@ const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
 
 export const getStreamedTextResponse = async (
   messages: CoreMessage[],
-  options: GetStreamedTextResponseOptions = {}
+  options: GetTextResponseOptions = {}
 ) => {
   console.log("getStreamedTextResponse", messages);
   try {
@@ -180,11 +180,14 @@ const getTooling = async (
   return;
 };
 
-export const getSyncTextResponse = async (messages: CoreMessage[]) => {
+export const getSyncTextResponse = async (
+  messages: CoreMessage[],
+  options: GetTextResponseOptions = {}
+) => {
   const languageModel = await getLanguageModel();
   const response = await generateText({
     model: languageModel.model,
-    system: defaultSystemMessage(),
+    system: options.systemPrompt || defaultSystemMessage(),
     messages,
   });
   return response;
