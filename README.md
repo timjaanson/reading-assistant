@@ -109,4 +109,4 @@ There is a right-click context menu item available if text is selected to perfor
 
 ## License
 
-[Add license information if applicable]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
