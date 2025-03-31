@@ -110,3 +110,7 @@ There is a right-click context menu item available if text is selected to perfor
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Third-Party Licenses
+
+This project includes Adobe cmap files for PDF parsing, which are licensed under their own terms. See [public/cmaps/LICENSE](public/cmaps/LICENSE) for details.
