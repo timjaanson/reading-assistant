@@ -2,7 +2,26 @@
 
 ## Description
 
-Reading assistant is a browser extension that helps with reading and comprehension by providing additional context and tools while browsing the web. This extension aims to enhance the reading experience by offering features like definitions, summaries, and related information for highlighted text.
+Reading assistant is a browser extension that helps with reading and comprehension by providing additional context and tools while browsing the web or viewing PDFs. This extension aims to enhance the reading experience by offering features like definitions, summaries, and related information for highlighted text.
+
+## Usage
+
+### Text Selection Feature
+
+#### Tooltip
+
+The extension adds a tooltip by default for PDFs loaded using the extension.
+
+For text selection tooltip on webpages, add a matching url or '\*' in the extension settings
+
+1. Select any text on PDF or added website
+2. A tooltip will appear above the selected text
+3. Click on the "Summary" button or any other option in the tooltip
+4. Embeds a floating window for interacting with an LLM based on the selected text
+
+#### Right-click context menu
+
+There is a right-click context menu item available if text is selected to perform the same operation, e.g. "Summary"
 
 ## Technical Stack
 
@@ -87,25 +106,6 @@ This will create a production-ready build in the `dist` (or similar) directory.
 4. Click "Load unpacked"
 5. Select the `dist` folder (or whatever folder contains your built extension)
 6. The extension should now appear in your browser's toolbar
-
-## Usage
-
-### Text Selection Feature
-
-#### Tooltip
-
-The extension adds a tooltip by default for PDFs loaded using the extension.
-
-For text selection tooltip on webpages, add a matching url or '\*' in the extension settings
-
-1. Select any text on PDF or added website
-2. A tooltip will appear above the selected text
-3. Click on the "Summary" button or any other option in the tooltip
-4. Embeds a floating window for interacting with an LLM based on the selected text
-
-#### Right-click context menu
-
-There is a right-click context menu item available if text is selected to perform the same operation, e.g. "Summary"
 
 ## License
 
