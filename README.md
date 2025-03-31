@@ -30,24 +30,41 @@ Reading assistant is a browser extension that helps with reading and comprehensi
    ```
 
 2. Install dependencies:
+
    ```
    npm install
    ```
 
-### Development
+3. If not on darwin-arm64
 
-Run the extension in development mode with hot reloading:
+   ```
+   npm i -D <os_specific_rollup_option>
+   ```
 
-```
-npm run dev
-```
+   ```
+   rollup OS specific dependencies:
 
-This will:
-
-- Start a development server
-- Enable hot reloading
-- Allow you to view the main popup (extension content when clicking on the extension icon)
-- Allow you to view the options/settings page
+   @rollup/rollup-android-arm-eabi
+   @rollup/rollup-android-arm64
+   @rollup/rollup-darwin-arm64
+   @rollup/rollup-darwin-x64
+   @rollup/rollup-freebsd-arm64
+   @rollup/rollup-freebsd-x64
+   @rollup/rollup-linux-arm-gnueabihf
+   @rollup/rollup-linux-arm-musleabihf
+   @rollup/rollup-linux-arm64-gnu
+   @rollup/rollup-linux-arm64-musl
+   @rollup/rollup-linux-loongarch64-gnu
+   @rollup/rollup-linux-powerpc64le-gnu
+   @rollup/rollup-linux-riscv64-gnu
+   @rollup/rollup-linux-riscv64-musl
+   @rollup/rollup-linux-s390x-gnu
+   @rollup/rollup-linux-x64-gnu
+   @rollup/rollup-linux-x64-musl
+   @rollup/rollup-win32-arm64-msvc
+   @rollup/rollup-win32-ia32-msvc
+   @rollup/rollup-win32-x64-msvc
+   ```
 
 ### Building for Production
 
@@ -75,23 +92,20 @@ This will create a production-ready build in the `dist` (or similar) directory.
 
 ### Text Selection Feature
 
-The extension adds a tooltip whenever you highlight text on a webpage:
+#### Tooltip
 
-1. Select any text on a webpage by clicking and dragging with your mouse
+The extension adds a tooltip by default for PDFs loaded using the extension.
+
+For text selection tooltip on webpages, add a matching url or '\*' in the extension settings
+
+1. Select any text on PDF or added website
 2. A tooltip will appear above the selected text
-3. Click on the "Summary" button in the tooltip
-4. Currently, this will log the selected text to the console (visible in developer tools)
+3. Click on the "Summary" button or any other option in the tooltip
+4. Embeds a floating window for interacting with an LLM based on the selected text
 
-This feature is designed to be extensible, allowing for more actions to be added in the future, such as:
+#### Right-click context menu
 
-- Generating explanations
-- Looking up definitions
-- Providing translations
-- Creating summaries
-
-## Contributing
-
-[Add contribution guidelines if applicable]
+There is a right-click context menu item available if text is selected to perform the same operation, e.g. "Summary"
 
 ## License
 
