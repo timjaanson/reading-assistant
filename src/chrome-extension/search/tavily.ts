@@ -39,9 +39,11 @@ export const searchTavily = async (query: string, options: SearchOptions) => {
         topic: "general",
         searchDepth: "advanced",
         resultCount: 8,
-        timeRange: options.timeRange ?? undefined,
+        timeRange: options.timeRange ? options.timeRange : undefined,
         days:
-          options.days && options.topic === "news" ? options.days : undefined,
+          options.days !== 0 && options.topic === "news"
+            ? options.days
+            : undefined,
       } satisfies SearchOptions;
       return doSearch(query, optionsWithDefaults);
     }
