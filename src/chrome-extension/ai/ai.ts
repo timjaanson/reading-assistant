@@ -12,6 +12,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ProviderOptions } from "../types/ai-sdk-missing";
 import { ExternalToolsStorage } from "../storage/externalToolSettings";
 import { extractContentFromUrl, searchTavily } from "../search/tavily";
+import { SearchOptions } from "../types/search";
 
 export type GetTextResponseOptions = {
   systemPrompt?: string;
@@ -126,10 +127,30 @@ const getTooling = async (
       description:
         "Perform a web search for the given query. Returns an optional answer and a list of search results. Make sure to include the source (url) of the information in your response.",
       parameters: z.object({
-        query: z.string().describe("The query string to search for"),
+        query: z
+          .string()
+          .describe(
+            "The query string to search for. Include the search terms you want to find including the topic or type of source you are looking for."
+          ),
+        options: z.object({
+          topic: z
+            .enum(["general", "news", "finance"])
+            .describe("The topic of the search. Default is general"),
+          timeRange: z
+            .enum(["year", "month", "week", "day", ""])
+            .describe(
+              "The time range back from the current date to filter results. Useful when looking for sources that have published data."
+            ),
+          days: z
+            .number()
+            .describe(
+              "The number of days to search back for news. Only used if topic is news."
+            ),
+        }),
       }),
       execute: async (parameters: unknown) => {
         console.log("webSearch", parameters);
+        const options = (parameters as { options: SearchOptions }).options;
         const query = (parameters as { query: string }).query;
         let result;
         switch (externalToolSettings.search.active?.id) {
@@ -137,7 +158,7 @@ const getTooling = async (
             result = await tryCatch(searchBrave(query));
             break;
           case "tavily":
-            result = await tryCatch(searchTavily(query));
+            result = await tryCatch(searchTavily(query, options));
             break;
           default:
             throw new Error(
@@ -158,7 +179,7 @@ const getTooling = async (
   if (externalToolSettings.search.active?.id === "tavily") {
     tools["urlExtractor"] = {
       description:
-        "Extract the content from up to 5 URLs at a time. Returns the content for each URL.",
+        "Extract the content from up to 10 URLs at a time. Returns the content for each URL.",
       parameters: z.object({
         urls: z.array(z.string()).describe("The URLs to extract content from"),
       }),

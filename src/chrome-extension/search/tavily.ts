@@ -5,8 +5,9 @@ import {
   TavilySearchOptions,
 } from "@tavily/core";
 import { ExternalToolSettings } from "../types/settings";
+import { SearchOptions } from "../types/search";
 
-const doSearch = async (query: string, count: number) => {
+const doSearch = async (query: string, options: SearchOptions) => {
   const externalToolSettings =
     await ExternalToolsStorage.loadExternalToolSettings();
   const apiKey = externalToolSettings.search.active?.apiKey;
@@ -18,8 +19,7 @@ const doSearch = async (query: string, count: number) => {
   const tvly = tavily({ apiKey: apiKey });
 
   const tavilyOptions = {
-    searchDepth: "basic",
-    maxResults: count,
+    ...options,
   } satisfies TavilySearchOptions;
 
   const response = await tvly.search(query, tavilyOptions);
@@ -30,12 +30,20 @@ const doSearch = async (query: string, count: number) => {
   return results;
 };
 
-export const searchTavily = async (query: string, count: number = 8) => {
+export const searchTavily = async (query: string, options: SearchOptions) => {
   const externalToolSettings =
     await ExternalToolsStorage.loadExternalToolSettings();
   if (externalToolSettings.search.active?.id === "tavily") {
     if (externalToolSettings.search.active.apiKey) {
-      return doSearch(query, count);
+      const optionsWithDefaults = {
+        topic: "general",
+        searchDepth: "advanced",
+        resultCount: 8,
+        timeRange: options.timeRange ?? undefined,
+        days:
+          options.days && options.topic === "news" ? options.days : undefined,
+      } satisfies SearchOptions;
+      return doSearch(query, optionsWithDefaults);
     }
     throw new Error("Tavily enabled but API key not set");
   }
@@ -56,7 +64,8 @@ export const extractContentFromUrl = async (urls: string[]) => {
   const apiKey = externalToolSettings.search.active?.apiKey;
   const tvly = tavily({ apiKey: apiKey });
   const options = {
-    extractDepth: "basic",
+    extractDepth: "advanced",
+    includeImages: true,
   } satisfies TavilyExtractOptions;
   const response = await tvly.extract(urls, options);
   return response;
