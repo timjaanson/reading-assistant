@@ -135,14 +135,17 @@ const getTooling = async (
         options: z.object({
           topic: z
             .enum(["general", "news", "finance"])
+            .optional()
             .describe("The topic of the search. Default is general"),
           timeRange: z
-            .enum(["year", "month", "week", "day", ""])
+            .enum(["year", "month", "week", "day"])
+            .optional()
             .describe(
               "The time range back from the current date to filter results. Useful when looking for sources that have published data."
             ),
           days: z
             .number()
+            .optional()
             .describe(
               "The number of days to search back for news. Only used if topic is news."
             ),
