@@ -11,7 +11,7 @@ import { tryCatch } from "../util/try-catch";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ProviderOptions } from "../types/ai-sdk-missing";
 import { ExternalToolsStorage } from "../storage/externalToolSettings";
-import { extractContentFromUrl, searchTavily } from "../search/tavily";
+import { extractContentFromUrls, searchTavily } from "../search/tavily";
 import { SearchOptions } from "../types/search";
 
 export type GetTextResponseOptions = {
@@ -93,7 +93,6 @@ export const getStreamedTextResponse = async (
   messages: CoreMessage[],
   options: GetTextResponseOptions = {}
 ) => {
-  console.log("getStreamedTextResponse", messages);
   try {
     const languageModel = await getLanguageModel();
     const tooling = await getTooling(languageModel);
@@ -197,8 +196,15 @@ const getTooling = async (
       }),
       execute: async (parameters: unknown) => {
         const urls = (parameters as { urls: string[] }).urls;
-        const content = await extractContentFromUrl(urls);
-        return content;
+        const result = await tryCatch(extractContentFromUrls(urls));
+
+        if (result.error) {
+          return {
+            error: result.error.message,
+          };
+        }
+
+        return result.data;
       },
     };
   }

@@ -2,9 +2,19 @@ import { CoreMessage } from "ai";
 import { useState, useRef, useEffect, useCallback } from "react";
 import MessageBubble from "./MessageBubble";
 import MessageGroup from "./MessageGroup";
-import { getStreamedTextResponse } from "../ai/ai";
 import { Spinner } from "../common/Spinner";
 import { MessageCollection, createMessageCollection } from "../types/chat";
+import {
+  AI_STREAM_CHUNK,
+  AI_STREAM_END,
+  AI_STREAM_ERROR,
+  AI_STREAM_PORT_NAME,
+  AiStreamEndPayload,
+  AiStreamErrorPayload,
+  GET_AI_STREAM,
+  GetAiStreamPayload,
+  isAiStreamMessage,
+} from "../types/ai-extension-messaging";
 
 type ChatProps = {
   initialMessages: MessageCollection;
@@ -36,6 +46,7 @@ export const Chat = ({
   const [streamedMessage, setStreamedMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const portRef = useRef<chrome.runtime.Port | null>(null);
 
   const lastCollectionIdRef = useRef<string | number | null>(
     messageCollection.id
@@ -89,69 +100,165 @@ export const Chat = ({
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (portRef.current) {
+        console.log("Disconnecting port on unmount");
+        portRef.current.disconnect();
+        portRef.current = null;
+      }
+    };
+  }, []);
+
   const sendMessage = useCallback(
-    async (messageText: string) => {
+    (messageText: string) => {
+      if (isLoading) {
+        console.warn("sendMessage called while already loading");
+        return;
+      }
+
       try {
         setIsLoading(true);
         setStreamedMessage("");
+        setError(null);
         const userMessage: CoreMessage = { role: "user", content: messageText };
 
-        // Create a message array with the new user message
-        const newMessages = [...messages, userMessage];
+        // Create the array to be sent, including the new user message
+        const messagesToSend = [...messages, userMessage];
 
-        // Update local state immediately
-        setMessages(newMessages);
+        // Schedule the state update using the functional form
+        // This updates the UI state correctly based on the previous state
+        setMessages((currentMessages) => [...currentMessages, userMessage]);
 
-        const streamedResponse = await getStreamedTextResponse(newMessages, {
-          systemPrompt: systemPrompt,
+        // Disconnect previous port if it exists
+        if (portRef.current) {
+          console.log("Disconnecting existing port before new request");
+          portRef.current.disconnect();
+        }
+
+        portRef.current = chrome.runtime.connect({ name: AI_STREAM_PORT_NAME });
+        console.log("Port connected", portRef.current);
+
+        let accumulatedStream = "";
+        let finalAiMessages: CoreMessage[] = [];
+
+        portRef.current.onMessage.addListener((message: unknown) => {
+          console.log(
+            "Received message from extension background script:",
+            message
+          );
+          if (!isAiStreamMessage(message)) {
+            console.warn("Received invalid message format:", message);
+            return;
+          }
+
+          switch (message.type) {
+            case AI_STREAM_CHUNK:
+              accumulatedStream += message.payload;
+              setStreamedMessage(accumulatedStream);
+              break;
+            case AI_STREAM_END:
+              const endPayload = message.payload as AiStreamEndPayload; // Type assertion
+              finalAiMessages = endPayload.messages;
+              setMessages((currentMessages) => [
+                ...currentMessages,
+                ...finalAiMessages,
+              ]);
+              onMessagesChange?.([...messagesToSend, ...finalAiMessages]);
+              setStreamedMessage("");
+              setIsLoading(false);
+              console.log(
+                "Stream ended, updated messages count:",
+                messagesToSend.length + finalAiMessages.length
+              );
+              portRef.current = null; // Port disconnects itself on end/error
+              break;
+            case AI_STREAM_ERROR:
+              const errorPayload = message.payload as AiStreamErrorPayload; // Type assertion
+              const errorMessage =
+                typeof errorPayload === "string"
+                  ? errorPayload
+                  : errorPayload.message;
+              setError(
+                `Error from background: ${errorMessage || "Unknown error"}`
+              );
+              setIsLoading(false);
+              setStreamedMessage("");
+              console.error("AI_STREAM_ERROR received:", message.payload);
+              portRef.current = null; // Port disconnects itself on end/error
+              break;
+            default:
+              // This case should ideally not be reached due to isAiStreamMessage check
+              // but we keep it for robustness.
+              console.warn(
+                "Received unknown message type:",
+                (message as any).type
+              );
+          }
         });
 
-        let completeText = "";
-        for await (const textChunk of streamedResponse.textStream) {
-          completeText += textChunk;
-          setStreamedMessage(completeText);
-        }
+        portRef.current.onDisconnect.addListener(() => {
+          console.log("Port disconnected.");
+          if (isLoading) {
+            setError("Connection to background script lost unexpectedly.");
+            setIsLoading(false);
+            setStreamedMessage("");
+          }
+          portRef.current = null;
+        });
 
-        const finalResponse = await streamedResponse.response;
-
-        // Important: Use the current messages state rather than the closure value
-        // to ensure we don't lose any messages added while waiting for the response
-        const latestMessages = [...messages, userMessage];
-        const updatedMessages = [...latestMessages, ...finalResponse.messages];
-
-        console.log(
-          "Updating with AI response, total:",
-          updatedMessages.length
-        );
-        setMessages(updatedMessages);
-        onMessagesChange?.(updatedMessages);
-
-        setStreamedMessage("");
+        // Send the message to the background script using the correctly constructed array
+        console.log("Sending GET_AI_STREAM to background", {
+          messages: messagesToSend,
+          systemPrompt,
+        });
+        const messageToSend: {
+          type: typeof GET_AI_STREAM;
+          payload: GetAiStreamPayload;
+        } = {
+          type: GET_AI_STREAM,
+          payload: { messages: messagesToSend, systemPrompt },
+        };
+        portRef.current.postMessage(messageToSend);
       } catch (error) {
+        console.error("Error initiating AI stream connection:", error);
         if (error instanceof Error) {
-          setError(error.message);
+          setError(`Initiation error: ${error.message}`);
         } else {
-          setError(`An unknown error occurred: ${JSON.stringify(error)}`);
+          setError(
+            `An unknown error occurred during initiation: ${JSON.stringify(
+              error
+            )}`
+          );
         }
-      } finally {
         setIsLoading(false);
+        if (portRef.current) {
+          portRef.current.disconnect();
+          portRef.current = null;
+        }
       }
     },
-    [messages, systemPrompt, onMessagesChange]
+    [messages, systemPrompt, onMessagesChange, isLoading]
   );
 
   const handleSendMessage = useCallback(async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     const messageText = input;
     setInput("");
-    await sendMessage(messageText);
-  }, [input, sendMessage]);
+    sendMessage(messageText);
+  }, [input, sendMessage, isLoading]);
 
   useEffect(() => {
-    if (initialUserMessage?.trim() && messages.length === 0) {
+    if (
+      initialUserMessage?.trim() &&
+      messages.length === 0 &&
+      !isLoading &&
+      !portRef.current
+    ) {
+      console.log("Sending initial user message");
       sendMessage(initialUserMessage);
     }
-  }, [initialUserMessage, messages.length, sendMessage]);
+  }, [initialUserMessage, messages.length, sendMessage, isLoading]);
 
   // Define conditional classes for messages container based on compact prop
   const messagesContainerClasses = compact
@@ -184,13 +291,13 @@ export const Chat = ({
           compact={compact}
         />
 
-        {streamedMessage && (
+        {isLoading && streamedMessage && (
           <MessageBubble
             role="assistant"
             content={streamedMessage}
             showRole={
               messages.length === 0 ||
-              messages[messages.length - 1].role !== "assistant"
+              messages[messages.length - 1]?.role !== "assistant"
             }
             compact={compact}
           />
@@ -215,7 +322,6 @@ export const Chat = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              // Prevent event propagation to stop host website shortcuts
               e.stopPropagation();
 
               if (e.key === "Enter" && !e.shiftKey) {

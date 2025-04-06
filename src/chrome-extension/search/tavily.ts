@@ -52,7 +52,7 @@ export const searchTavily = async (query: string, options: SearchOptions) => {
   throw new Error("Tavily is not enabled");
 };
 
-export const extractContentFromUrl = async (urls: string[]) => {
+export const extractContentFromUrls = async (urls: string[]) => {
   if (urls.length === 0) {
     return [];
   } else if (urls.length > 10) {
