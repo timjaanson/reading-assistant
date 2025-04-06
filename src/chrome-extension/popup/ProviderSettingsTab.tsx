@@ -216,6 +216,50 @@ export const ProviderSettingsTab = () => {
           </div>
         </div>
 
+        {"name" in loadedProviderSettings.all[selectedProviderIndex] && (
+          <div className="space-y-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-200"
+            >
+              Custom provider name
+            </label>
+            <Input
+              type="text"
+              id="name"
+              name="name"
+              value={
+                loadedProviderSettings.all[selectedProviderIndex].name || ""
+              }
+              onChange={handleProviderFieldChange}
+              placeholder="Enter provider name"
+              className="block w-full"
+            />
+          </div>
+        )}
+
+        {"url" in loadedProviderSettings.all[selectedProviderIndex] && (
+          <div className="space-y-2">
+            <label
+              htmlFor="url"
+              className="block text-sm font-medium text-gray-200"
+            >
+              URL
+            </label>
+            <Input
+              type="text"
+              id="url"
+              name="url"
+              value={
+                loadedProviderSettings.all[selectedProviderIndex].url || ""
+              }
+              onChange={handleProviderFieldChange}
+              placeholder="Enter URL"
+              className="block w-full"
+            />
+          </div>
+        )}
+
         <div className="space-y-2">
           <label
             htmlFor="apiKey"
@@ -273,28 +317,6 @@ export const ProviderSettingsTab = () => {
             className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
           />
         </div>
-
-        {"url" in loadedProviderSettings.all[selectedProviderIndex] && (
-          <div className="space-y-2">
-            <label
-              htmlFor="url"
-              className="block text-sm font-medium text-gray-200"
-            >
-              URL
-            </label>
-            <Input
-              type="text"
-              id="url"
-              name="url"
-              value={
-                loadedProviderSettings.all[selectedProviderIndex].url || ""
-              }
-              onChange={handleProviderFieldChange}
-              placeholder="Enter URL"
-              className="block w-full"
-            />
-          </div>
-        )}
 
         <div className="flex items-center mt-6">
           <button

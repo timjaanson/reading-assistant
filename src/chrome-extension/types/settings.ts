@@ -1,12 +1,13 @@
 import { ProviderOptions } from "./ai-sdk-missing";
 
 export interface ProviderSettings {
-  all: LLMProviderSettings[];
-  active: LLMProviderSettings | null;
+  all: Provider[];
+  active: Provider | null;
 }
 
-export interface LLMProviderSettings {
+export interface Provider {
   provider: string;
+  name?: string;
   url?: string;
   enableToolCalls: boolean;
   apiKey: string;

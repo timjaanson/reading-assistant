@@ -1,9 +1,7 @@
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
 export const defaultSystemMessage = () => `## Your role
-You are a helpful assistant inside a Chrome extension that is for assisted reading.
-
-The user can ask about some specific text or alternatively ask other unrelated questions that you should answer.
+You are a helpful assistant inside a Chrome extension called "Reading Assistant".
 
 ## Response format
 * You should respond in markdown format.

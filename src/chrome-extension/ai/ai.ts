@@ -41,6 +41,7 @@ const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
     case "openai":
       provider = createOpenAI({
         apiKey: providerSettings.active.apiKey,
+        compatibility: "strict",
       });
       break;
     case "ollama":
@@ -67,6 +68,14 @@ const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       options = {
         useSearchGrounding: true,
       };
+      break;
+    case "custom-provider-openai":
+      provider = createOpenAI({
+        name: providerSettings.active.name,
+        baseURL: providerSettings.active.url,
+        apiKey: providerSettings.active.apiKey,
+        compatibility: "compatible",
+      });
       break;
     default:
       throw new Error("Invalid provider from userSettings");

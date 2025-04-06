@@ -35,8 +35,17 @@ export const defaultProviderSettings: ProviderSettings = {
     {
       provider: "google",
       apiKey: "",
-      enableToolCalls: true,
+      enableToolCalls: false,
       model: "gemini-2.0-flash",
+      providerOptions: {},
+    },
+    {
+      provider: "custom-provider-openai",
+      name: "openai-compliant-provider",
+      url: "https://custom.example-provider.com/v1",
+      apiKey: "",
+      enableToolCalls: false,
+      model: "llama3.1:8b",
       providerOptions: {},
     },
   ],
