@@ -93,7 +93,7 @@ Build the extension for Chrome:
 npm run build
 ```
 
-This will create a production-ready build in the `dist` (or similar) directory.
+This will create a production-ready build in the `dist` directory.
 
 ## Installing the Extension in Chrome-based Browsers
 
@@ -104,8 +104,10 @@ This will create a production-ready build in the `dist` (or similar) directory.
    - In Brave: `brave://extensions/`
 3. Enable "Developer mode" using the toggle in the top-right corner
 4. Click "Load unpacked"
-5. Select the `dist` folder (or whatever folder contains your built extension)
+5. Select the `dist` folder
 6. The extension should now appear in your browser's toolbar
+7. Open the extension, set up your providers and mark one provider as `active`
+8. Only one provider can be marked as `active`
 
 ## License
 
