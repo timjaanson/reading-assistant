@@ -44,8 +44,8 @@ There is a right-click context menu item available if text is selected to perfor
 1. Clone the repository:
 
    ```
-   git clone [your-repository-url]
-   cd assisted-reading
+   git clone https://github.com/timjaanson/reading-assistant.git
+   cd reading-assistant
    ```
 
 2. Install dependencies:
@@ -54,7 +54,7 @@ There is a right-click context menu item available if text is selected to perfor
    npm install
    ```
 
-3. If not on darwin-arm64
+3. If not on Apple silicon (darwin-arm64)
 
    ```
    npm i -D <os_specific_rollup_option>
