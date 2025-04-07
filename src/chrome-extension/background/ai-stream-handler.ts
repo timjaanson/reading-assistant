@@ -1,3 +1,4 @@
+import { AISDKError, APICallError } from "ai";
 import { getStreamedTextResponse } from "../ai/ai";
 import {
   AI_STREAM_CHUNK,
@@ -58,6 +59,26 @@ export function setupAiStreamHandler() {
         let errorPayload: AiStreamErrorPayload;
         if (error instanceof Error) {
           errorPayload = { message: error.message, name: error.name };
+        } else if (
+          errorIsObjectAndHasErrorProperty(error) &&
+          APICallError.isInstance(error.error)
+        ) {
+          errorPayload = {
+            message: error.error.message,
+            url: error.error.url,
+            statusCode: error.error.statusCode,
+            responseHeaders: error.error.responseHeaders,
+            responseBody: error.error.responseBody,
+          };
+        } else if (
+          errorIsObjectAndHasErrorProperty(error) &&
+          AISDKError.isInstance(error.error)
+        ) {
+          errorPayload = {
+            message: error.error.message,
+            name: error.error.name,
+            cause: error.error.cause,
+          };
         } else {
           errorPayload = "An unknown error occurred during streaming";
         }
@@ -81,3 +102,8 @@ export function setupAiStreamHandler() {
 
   console.log("AI stream handler initialized.");
 }
+
+const errorIsObjectAndHasErrorProperty = (
+  error: unknown
+): error is { error: unknown } =>
+  typeof error === "object" && error !== null && "error" in error;

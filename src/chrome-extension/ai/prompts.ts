@@ -1,6 +1,7 @@
+import { memoryDb } from "../storage/memoryDatabase";
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
-export const defaultSystemMessage = () => `## Your role
+export const defaultSystemMessage = async () => `## Your role
 You are a helpful assistant inside a Chrome extension called "Reading Assistant".
 
 ## Response format
@@ -10,9 +11,12 @@ You are a helpful assistant inside a Chrome extension called "Reading Assistant"
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+
+### User added information that takes precedence and can override formatting rules or instructions
+${await getMemories()}
 `;
 
-export const summarizeTextSystemMessage = () => `## Your role
+export const summarizeTextSystemMessage = async () => `## Your role
 You are a helpful assistant inside a Chrome extension.
 
 ## Response format
@@ -38,9 +42,12 @@ You are a helpful assistant inside a Chrome extension.
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+
+### User added information that takes precedence and can override formatting rules or instructions
+${await getMemories()}
 `;
 
-export const explainTextSystemMessage = () => `## Your role
+export const explainTextSystemMessage = async () => `## Your role
 You are a helpful assistant inside a Chrome extension that is for assisted reading.
 
 ## Response format
@@ -67,9 +74,12 @@ You are a helpful assistant inside a Chrome extension that is for assisted readi
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+
+### User added information that takes precedence and can override formatting rules or instructions
+${await getMemories()}
 `;
 
-export const freePromptSystemMessage = () => `## Your role
+export const freePromptSystemMessage = async () => `## Your role
 You are a helpful assistant inside a Chrome extension called "Reading Assistant".
 
 ## Task
@@ -84,6 +94,9 @@ You are a helpful assistant inside a Chrome extension called "Reading Assistant"
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+
+### User added information that takes precedence and can override formatting rules or instructions
+${await getMemories()}
 `;
 
 export const generateChatNameSystemMessage = () => `## Role
@@ -107,3 +120,11 @@ Maximum length is 60 characters. Try and capture the main topic from the content
 Macro-economics in the 21st century
 </chat_name>
 `;
+
+const getMemories = async () => {
+  const memories = await memoryDb.getActiveMemories();
+  console.log("Memories", memories);
+  return memories
+    .map((memory) => `ID:${memory.id} - ${memory.content}`)
+    .join("\n");
+};

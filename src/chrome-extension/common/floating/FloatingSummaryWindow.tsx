@@ -8,10 +8,10 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
     super("summary", { parentId });
   }
 
-  public show(options: {
+  public async show(options: {
     selectedText: string;
     anchorPoint?: { x: number; y: number };
-  }): void {
+  }): Promise<void> {
     // Generate a unique ID for this summary session
     const sessionId = `summary-${Date.now()}`;
 
@@ -21,7 +21,7 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
         <Chat
           initialMessages={createMessageCollection([], sessionId)}
           initialUserMessage={options.selectedText}
-          systemPrompt={summarizeTextSystemMessage()}
+          systemPrompt={await summarizeTextSystemMessage()}
           collapseInitialMessage={true}
           sendInitialMessage={true}
           compact={true}

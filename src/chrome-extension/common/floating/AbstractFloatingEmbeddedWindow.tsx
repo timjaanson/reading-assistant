@@ -44,7 +44,7 @@ export abstract class AbstractFloatingEmbeddedWindow {
     this.addResizeHandles();
   }
 
-  public abstract show(options: FloatingWindowShowOptions): void;
+  public abstract show(options: FloatingWindowShowOptions): Promise<void>;
 
   private createContentContainer(): HTMLElement {
     const container = document.createElement("div");

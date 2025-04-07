@@ -8,10 +8,10 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
     super("explain", { parentId });
   }
 
-  public show(options: {
+  public async show(options: {
     selectedText: string;
     anchorPoint?: { x: number; y: number };
-  }): void {
+  }): Promise<void> {
     // Generate a unique ID for this explain session
     const sessionId = `explain-${Date.now()}`;
 
@@ -21,7 +21,7 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
         <Chat
           initialMessages={createMessageCollection([], sessionId)}
           initialUserMessage={options.selectedText}
-          systemPrompt={explainTextSystemMessage()}
+          systemPrompt={await explainTextSystemMessage()}
           collapseInitialMessage={true}
           sendInitialMessage={true}
           compact={true}

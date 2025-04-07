@@ -30,7 +30,6 @@ const InputComponent: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
   },
   ref
 ) => {
-  // Use same classes as the textarea in Chat.tsx component
   const baseClasses =
     "text-gray-200 border border-gray-800 rounded-md resize-none bg-[#1f1f1f]/50";
   const sizeClasses = compact ? "p-1 text-sm" : "p-2";

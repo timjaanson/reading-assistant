@@ -13,6 +13,8 @@ import { ProviderOptions } from "../types/ai-sdk-missing";
 import { ExternalToolsStorage } from "../storage/externalToolSettings";
 import { extractContentFromUrls, searchTavily } from "../search/tavily";
 import { SearchOptions } from "../types/search";
+import { memoryDb } from "../storage/memoryDatabase";
+import { NewMemoryData } from "../types/memory";
 
 export type GetTextResponseOptions = {
   systemPrompt?: string;
@@ -99,7 +101,7 @@ export const getStreamedTextResponse = async (
 
     const stream = streamText({
       model: languageModel.model,
-      system: options.systemPrompt || defaultSystemMessage(),
+      system: options.systemPrompt || (await defaultSystemMessage()),
       messages,
       tools: tooling?.tools,
       toolChoice: tooling?.toolChoice,
@@ -209,6 +211,64 @@ const getTooling = async (
     };
   }
 
+  tools["addMemory"] = {
+    description:
+      "Use only if the user asks you to remember something. Add a new memory to the user's memory list. Returns the ID of the new memory if successful.",
+    parameters: z.object({
+      content: z.string().describe("The content of the memory."),
+    }),
+    execute: async (parameters: unknown) => {
+      const fields = parameters as NewMemoryData;
+      const result = await tryCatch(memoryDb.addMemory(fields));
+      if (result.error) {
+        return {
+          error: result.error.message,
+        };
+      }
+      return result.data;
+    },
+  };
+
+  tools["updateMemory"] = {
+    description:
+      "Update a memory by memory ID from the user's memory list. Returns true if update was successful.",
+    parameters: z.object({
+      id: z.number().describe("The ID of the memory to update"),
+      content: z.string().describe("The new content for the memory"),
+    }),
+    execute: async (parameters: unknown) => {
+      const id = (parameters as { id: number }).id;
+      const fields = parameters as NewMemoryData;
+      const result = await tryCatch(memoryDb.updateMemory(id, fields));
+      if (result.error) {
+        return {
+          error: result.error.message,
+        };
+      }
+      return { success: true };
+    },
+  };
+
+  tools["removeMemory"] = {
+    description:
+      "Remove/de-activate a memory by memory ID from the user's memory list. Returns true if de-activation was successful.",
+    parameters: z.object({
+      id: z.number().describe("The ID of the memory to remove"),
+    }),
+    execute: async (parameters: unknown) => {
+      const id = (parameters as { id: number }).id;
+      const result = await tryCatch(
+        memoryDb.updateMemory(id, { active: false })
+      );
+      if (result.error) {
+        return {
+          error: result.error.message,
+        };
+      }
+      return { success: true };
+    },
+  };
+
   if (Object.keys(tools).length > 0) {
     return {
       tools: tools as unknown as AiTools["tools"],
@@ -226,7 +286,7 @@ export const getSyncTextResponse = async (
   const languageModel = await getLanguageModel();
   const response = await generateText({
     model: languageModel.model,
-    system: options.systemPrompt || defaultSystemMessage(),
+    system: options.systemPrompt || (await defaultSystemMessage()),
     messages,
   });
   return response;

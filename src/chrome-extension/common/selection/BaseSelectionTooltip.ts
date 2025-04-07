@@ -146,13 +146,13 @@ export abstract class BaseSelectionTooltip {
     }
   }
 
-  protected showFloatingWindow<T extends AbstractFloatingEmbeddedWindow>(
+  protected async showFloatingWindow<T extends AbstractFloatingEmbeddedWindow>(
     WindowClass: new (parentId?: string) => T,
     selectedText: string
-  ): void {
+  ): Promise<void> {
     this.hideTooltip();
     const window = new WindowClass(this.parentId);
-    window.show({
+    await window.show({
       selectedText,
       anchorPoint: this.calculatePositionForWindowBasedOnTooltip(),
     });

@@ -180,10 +180,8 @@ export const Chat = ({
               const errorMessage =
                 typeof errorPayload === "string"
                   ? errorPayload
-                  : errorPayload.message;
-              setError(
-                `Error from background: ${errorMessage || "Unknown error"}`
-              );
+                  : JSON.stringify(errorPayload);
+              setError(errorMessage || "Unknown error");
               setIsLoading(false);
               setStreamedMessage("");
               console.error("AI_STREAM_ERROR received:", message.payload);
@@ -359,7 +357,13 @@ export const Chat = ({
             )}
           </button>
         </div>
-        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+
+        {/* error whitespacing so everything is always shown and wrapped even if no good place to wrap like different words */}
+        {error && (
+          <div className="w-full break-all whitespace-normal text-red-500 mt-2 text-sm">
+            <p>{error}</p>
+          </div>
+        )}
       </div>
     </div>
   );

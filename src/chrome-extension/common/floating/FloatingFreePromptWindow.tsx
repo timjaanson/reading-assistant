@@ -8,10 +8,10 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
     super("custom", { parentId });
   }
 
-  public show(options: {
+  public async show(options: {
     selectedText: string;
     anchorPoint?: { x: number; y: number };
-  }): void {
+  }): Promise<void> {
     // Generate a unique ID for this summary session
     const sessionId = `free-prompt-${Date.now()}`;
 
@@ -21,7 +21,7 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
         <Chat
           initialMessages={createMessageCollection([], sessionId)}
           initialUserMessage={options.selectedText}
-          systemPrompt={freePromptSystemMessage()}
+          systemPrompt={await freePromptSystemMessage()}
           collapseInitialMessage={true}
           sendInitialMessage={false}
           compact={true}
