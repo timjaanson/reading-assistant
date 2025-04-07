@@ -23,6 +23,7 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
           initialUserMessage={options.selectedText}
           systemPrompt={explainTextSystemMessage()}
           collapseInitialMessage={true}
+          sendInitialMessage={true}
           compact={true}
         />
       ),

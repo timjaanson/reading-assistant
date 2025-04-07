@@ -1,11 +1,11 @@
-import { summarizeTextSystemMessage } from "../../ai/prompts";
+import { freePromptSystemMessage } from "../../ai/prompts";
 import Chat from "../../components/Chat";
 import { createMessageCollection } from "../../types/chat";
 import { AbstractFloatingEmbeddedWindow } from "./AbstractFloatingEmbeddedWindow";
 
-export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
+export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
   constructor(parentId?: string) {
-    super("summary", { parentId });
+    super("custom", { parentId });
   }
 
   public show(options: {
@@ -13,7 +13,7 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
     anchorPoint?: { x: number; y: number };
   }): void {
     // Generate a unique ID for this summary session
-    const sessionId = `summary-${Date.now()}`;
+    const sessionId = `free-prompt-${Date.now()}`;
 
     super.renderComponent({
       ...options,
@@ -21,9 +21,9 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
         <Chat
           initialMessages={createMessageCollection([], sessionId)}
           initialUserMessage={options.selectedText}
-          systemPrompt={summarizeTextSystemMessage()}
+          systemPrompt={freePromptSystemMessage()}
           collapseInitialMessage={true}
-          sendInitialMessage={true}
+          sendInitialMessage={false}
           compact={true}
         />
       ),

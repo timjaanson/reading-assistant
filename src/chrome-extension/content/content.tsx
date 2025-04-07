@@ -7,6 +7,7 @@ import {
   getExtensionSettings,
   urlMatchesAllowedUrls,
 } from "../storage/extensionSettings";
+import { FloatingFreePromptWindow } from "../common/floating/FloatingFreePromptWindow";
 
 (function injectReadingAssistantShadowDomRoot() {
   const hostDiv = document.createElement("div");
@@ -41,6 +42,10 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
       this.showFloatingWindow(FloatingExplainWindow, selectedText);
     });
 
+    this.addAction("Custom", (selectedText: string) => {
+      this.showFloatingWindow(FloatingFreePromptWindow, selectedText);
+    });
+
     // Set up message listener for context menu actions
     this.setupMessageListener();
   }
@@ -63,11 +68,17 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sender;
       if (message.action === "openFloatingWindow" && message.selectedText) {
-        if (message.windowType === "summary") {
+        if (message.windowType === "reading-assistant-summary") {
           this.showFloatingWindow(FloatingSummaryWindow, message.selectedText);
           sendResponse({ success: true });
-        } else if (message.windowType === "explain") {
+        } else if (message.windowType === "reading-assistant-explain") {
           this.showFloatingWindow(FloatingExplainWindow, message.selectedText);
+          sendResponse({ success: true });
+        } else if (message.windowType === "reading-assistant-custom") {
+          this.showFloatingWindow(
+            FloatingFreePromptWindow,
+            message.selectedText
+          );
           sendResponse({ success: true });
         }
         return true; // Indicates async response

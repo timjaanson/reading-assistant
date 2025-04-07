@@ -22,6 +22,7 @@ type ChatProps = {
   systemPrompt?: string;
   initialUserMessage?: string;
   collapseInitialMessage?: boolean;
+  sendInitialMessage?: boolean;
   compact?: boolean;
 };
 
@@ -31,6 +32,7 @@ export const Chat = ({
   systemPrompt,
   initialUserMessage,
   collapseInitialMessage = false,
+  sendInitialMessage = false,
   compact = false,
 }: ChatProps) => {
   const messageCollection = Array.isArray(initialMessages)
@@ -255,8 +257,15 @@ export const Chat = ({
       !isLoading &&
       !portRef.current
     ) {
-      console.log("Sending initial user message");
-      sendMessage(initialUserMessage);
+      if (sendInitialMessage) {
+        console.log("Sending initial user message");
+        sendMessage(initialUserMessage);
+      } else {
+        console.log(
+          "Not sending initial user message, only adding to messages"
+        );
+        setMessages([{ role: "user", content: initialUserMessage }]);
+      }
     }
   }, [initialUserMessage, messages.length, sendMessage, isLoading]);
 

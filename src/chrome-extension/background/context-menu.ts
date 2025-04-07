@@ -24,6 +24,13 @@ export async function setupContextMenu() {
       contexts: ["selection"],
     });
 
+    // Add Custom option
+    chrome.contextMenus.create({
+      id: "reading-assistant-custom",
+      title: "Custom",
+      contexts: ["selection"],
+    });
+
     // Set up click handler for the context menu items
     chrome.contextMenus.onClicked.addListener((info, tab) => {
       if (
@@ -33,13 +40,11 @@ export async function setupContextMenu() {
         info.selectionText
       ) {
         const selectedText = info.selectionText;
+
         const message = {
           action: "openFloatingWindow",
           selectedText,
-          windowType:
-            info.menuItemId === "reading-assistant-summary"
-              ? "summary"
-              : "explain",
+          windowType: info.menuItemId,
         };
 
         // Send message to the appropriate context

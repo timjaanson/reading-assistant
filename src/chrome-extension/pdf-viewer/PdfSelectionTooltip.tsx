@@ -5,6 +5,7 @@ import {
   getExtensionSettings,
   MATCHED_URLS_PDF_SPECIAL_CASE,
 } from "../storage/extensionSettings";
+import { FloatingFreePromptWindow } from "../common/floating/FloatingFreePromptWindow";
 
 export class PdfSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
@@ -15,6 +16,10 @@ export class PdfSelectionTooltip extends BaseSelectionTooltip {
 
     this.addAction("Explain", (selectedText: string) => {
       this.showFloatingWindow(FloatingExplainWindow, selectedText);
+    });
+
+    this.addAction("Custom", (selectedText: string) => {
+      this.showFloatingWindow(FloatingFreePromptWindow, selectedText);
     });
 
     // Set up message listener for context menu actions
@@ -39,11 +44,17 @@ export class PdfSelectionTooltip extends BaseSelectionTooltip {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sender;
       if (message.action === "openFloatingWindow" && message.selectedText) {
-        if (message.windowType === "summary") {
+        if (message.windowType === "reading-assistant-summary") {
           this.showFloatingWindow(FloatingSummaryWindow, message.selectedText);
           sendResponse({ success: true });
-        } else if (message.windowType === "explain") {
+        } else if (message.windowType === "reading-assistant-explain") {
           this.showFloatingWindow(FloatingExplainWindow, message.selectedText);
+          sendResponse({ success: true });
+        } else if (message.windowType === "reading-assistant-custom") {
+          this.showFloatingWindow(
+            FloatingFreePromptWindow,
+            message.selectedText
+          );
           sendResponse({ success: true });
         }
         return true; // Indicates async response
