@@ -143,22 +143,20 @@ const getTooling = async (
             "The query string to search for. Include the search terms you want to find including the topic or type of source you are looking for."
           ),
         options: z.object({
-          topic: z
-            .enum(["general", "news", "finance"])
-            .optional()
-            .describe("The topic of the search. Default is general"),
           timeRange: z
             .enum(["year", "month", "week", "day"])
             .optional()
             .describe(
               "The time range back from the current date to filter results. Useful when looking for sources that have published data."
             ),
-          days: z
-            .number()
+          include_domains: z
+            .array(z.string())
             .optional()
-            .describe(
-              "The number of days to search back for news. Only used if topic is news."
-            ),
+            .describe("Include only sources from these domains"),
+          exclude_domains: z
+            .array(z.string())
+            .optional()
+            .describe("Exclude sources from these domains"),
         }),
       }),
       execute: async (parameters: unknown) => {

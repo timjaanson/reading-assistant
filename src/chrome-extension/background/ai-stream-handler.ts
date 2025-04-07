@@ -16,7 +16,10 @@ import {
  */
 export function setupAiStreamHandler() {
   chrome.runtime.onConnect.addListener((port) => {
-    console.log("Connection established from:", port.sender);
+    console.log(
+      "Connection established from extension front-end:",
+      port.sender
+    );
 
     // Only handle connections named 'ai-stream'
     if (port.name !== AI_STREAM_PORT_NAME) {

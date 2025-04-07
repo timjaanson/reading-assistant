@@ -125,6 +125,9 @@ const getMemories = async () => {
   const memories = await memoryDb.getActiveMemories();
   console.log("Memories", memories);
   return memories
-    .map((memory) => `ID:${memory.id} - ${memory.content}`)
+    .map(
+      (memory) =>
+        `ID:${memory.id} updated: ${memory.updatedAt} - ${memory.content}`
+    )
     .join("\n");
 };
