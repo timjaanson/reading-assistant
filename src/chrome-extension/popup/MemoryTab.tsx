@@ -171,11 +171,11 @@ export const MemoryTab = () => {
             Use it to change AI behavior, formatting, or for it to remember
             things.
           </p>
-          <p>
+          <p className="mb-1">
             Memories can also be managed through chat with models that support
             tool calling.
           </p>
-          <p>
+          <p className="mb-1">
             Saying in chat "remember this" or "add memory" will add a new memory
             item.
           </p>
