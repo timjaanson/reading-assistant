@@ -1,4 +1,4 @@
-import { ProviderSettings } from "../types/settings";
+import { Provider, ProviderSettings } from "../types/settings";
 import { StorageKeys } from "./settings";
 
 export const defaultProviderSettings: ProviderSettings = {
@@ -89,6 +89,39 @@ export class SettingsStorage {
       },
     };
     await this.saveProviderSettings(newSettings);
+    return newSettings;
+  }
+
+  static async setActiveProvider(
+    providerIndex: number | null
+  ): Promise<ProviderSettings> {
+    const currentSettings = await this.loadProviderSettings();
+    let activeProvider: Provider | null = null;
+
+    // Validate index if not null and find the provider object
+    if (
+      providerIndex !== null &&
+      providerIndex >= 0 &&
+      providerIndex < currentSettings.all.length
+    ) {
+      activeProvider = currentSettings.all[providerIndex];
+    } else if (providerIndex !== null) {
+      console.error("Invalid provider index:", providerIndex);
+      // Optionally throw an error or return current settings without change
+      throw new Error(
+        `Invalid provider index to set as active: ${providerIndex}`
+      );
+    }
+
+    const newSettings = {
+      ...currentSettings,
+      active: activeProvider, // Store the object or null
+    };
+    await this.saveProviderSettings(newSettings);
+    console.log(
+      "Active provider set to:",
+      activeProvider ? activeProvider.provider : "None"
+    );
     return newSettings;
   }
 }

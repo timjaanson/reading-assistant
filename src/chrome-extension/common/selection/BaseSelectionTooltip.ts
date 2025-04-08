@@ -147,15 +147,21 @@ export abstract class BaseSelectionTooltip {
   }
 
   protected async showFloatingWindow<T extends AbstractFloatingEmbeddedWindow>(
-    WindowClass: new (parentId?: string) => T,
+    floatingWindowClass: new (parentId?: string) => T,
     selectedText: string
   ): Promise<void> {
     this.hideTooltip();
-    const window = new WindowClass(this.parentId);
-    await window.show({
+    const floatingWindowInstance = new floatingWindowClass(this.parentId);
+    await floatingWindowInstance.show({
       selectedText,
       anchorPoint: this.calculatePositionForWindowBasedOnTooltip(),
     });
+
+    // Clear the selection after showing the window
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
   }
 
   public addAction(

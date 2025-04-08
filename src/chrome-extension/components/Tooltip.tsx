@@ -5,6 +5,8 @@ interface TooltipProps {
   children: ReactNode;
   target?: ReactNode; // Make target optional
   className?: string; // Allow additional styling for the tooltip content
+  position?: "top" | "bottom"; // Add position prop
+  disabled?: boolean;
 }
 
 // Default target component (question mark icon button)
@@ -30,21 +32,33 @@ const DefaultTarget = () => (
   </button>
 );
 
-export const Tooltip = ({ children, target, className = "" }: TooltipProps) => {
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+export const Tooltip = ({
+  children,
+  target,
+  className = "",
+  position = "bottom", // Default to bottom
+  disabled = false,
+}: TooltipProps) => {
+  const [isTooltipVisible, setIsTooltipVisible] = useState(disabled);
 
   const Trigger = target ? <>{target}</> : <DefaultTarget />;
+
+  // Calculate position classes based on the prop
+  const positionClasses = {
+    top: "bottom-full mb-2",
+    bottom: "top-full mt-2",
+  }[position];
 
   return (
     <div className="relative inline-block">
       <div
-        onMouseEnter={() => setIsTooltipVisible(true)}
+        onMouseEnter={() => !disabled && setIsTooltipVisible(true)}
         onMouseLeave={() => setIsTooltipVisible(false)}
       >
         {Trigger}
       </div>
       <div
-        className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 p-2 bg-black text-xs text-gray-200 rounded shadow-lg transition-opacity duration-200 z-10 ${
+        className={`absolute w-max max-w-96 left-1/2 -translate-x-1/2 ${positionClasses} p-2 bg-black/60 text-xs text-gray-200 rounded shadow-lg transition-opacity duration-200 z-10 ${
           isTooltipVisible ? "opacity-100" : "opacity-0 pointer-events-none"
         } ${className}`}
         role="tooltip"
