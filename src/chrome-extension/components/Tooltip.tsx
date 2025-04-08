@@ -58,7 +58,7 @@ export const Tooltip = ({
         {Trigger}
       </div>
       <div
-        className={`absolute w-max max-w-96 left-1/2 -translate-x-1/2 ${positionClasses} p-2 bg-black/60 text-xs text-gray-200 rounded shadow-lg transition-opacity duration-200 z-10 ${
+        className={`absolute w-max max-w-96 left-1/2 -translate-x-1/2 ${positionClasses} p-2 bg-black/75 text-xs text-gray-200 rounded shadow-lg transition-opacity duration-200 z-10 ${
           isTooltipVisible ? "opacity-100" : "opacity-0 pointer-events-none"
         } ${className}`}
         role="tooltip"

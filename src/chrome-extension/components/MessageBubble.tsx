@@ -25,7 +25,7 @@ const MessageBubble = ({
       : "bg-[#1f1f1f]/85 text-white/90";
 
   // Use smaller padding for the main bubble if compact
-  const bubblePadding = "p-2";
+  const bubblePadding = compact ? "p-1" : "p-2";
 
   return (
     <div

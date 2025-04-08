@@ -439,7 +439,7 @@ export const Chat = ({
                 {showProviderDropdown && (
                   <div
                     ref={providerDropdownRef}
-                    className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto p-2 bg-black/60 text-xs text-gray-200 rounded shadow-lg z-20 border border-gray-700"
+                    className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto p-2 bg-black/75 text-xs text-gray-200 rounded shadow-lg z-20"
                   >
                     <ul>
                       {providerSettings.all.map((provider, index) => (
