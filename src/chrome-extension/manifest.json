@@ -8,10 +8,10 @@
   "options_page": "options.html",
   "description": "Extension to provide summaries, explanations, and other actions for text on the web, including PDFs",
   "icons": {
-    "16": "public/16.png",
-    "32": "public/32.png",
-    "48": "public/48.png",
-    "192": "public/192.png"
+    "16": "public/ra-16.png",
+    "32": "public/ra-32.png",
+    "48": "public/ra-48.png",
+    "192": "public/ra-192.png"
   },
   "permissions": [
     "storage",

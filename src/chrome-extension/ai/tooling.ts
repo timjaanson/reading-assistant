@@ -31,26 +31,28 @@ export const getTooling = async (
           .describe(
             "The query string to search for. Include the search terms you want to find including the topic or type of source you are looking for."
           ),
-        options: z.object({
-          timeRange: z
-            .enum(["year", "month", "week", "day"])
-            .optional()
-            .describe(
-              "The time range back from the current date to filter results. Useful when looking for sources that have published data."
-            ),
-          include_domains: z
-            .array(z.string())
-            .optional()
-            .describe("Include only sources from these domains"),
-          exclude_domains: z
-            .array(z.string())
-            .optional()
-            .describe("Exclude sources from these domains"),
-        }),
+        options: z
+          .object({
+            timeRange: z
+              .enum(["year", "month", "week", "day"])
+              .optional()
+              .describe(
+                "The time range back from the current date to filter results. Useful when looking for sources that have published data."
+              ),
+            include_domains: z
+              .array(z.string())
+              .optional()
+              .describe("Include only sources from these domains"),
+            exclude_domains: z
+              .array(z.string())
+              .optional()
+              .describe("Exclude sources from these domains"),
+          })
+          .optional(),
       }),
       execute: async (parameters: unknown) => {
         console.log("webSearch", parameters);
-        const options = (parameters as { options: SearchOptions }).options;
+        const options = (parameters as { options?: SearchOptions }).options;
         const query = (parameters as { query: string }).query;
         let result;
         switch (externalToolSettings.search.active?.id) {
@@ -58,7 +60,7 @@ export const getTooling = async (
             result = await tryCatch(searchBrave(query));
             break;
           case "tavily":
-            result = await tryCatch(searchTavily(query, options));
+            result = await tryCatch(searchTavily(query, options ?? {}));
             break;
           default:
             throw new Error(
