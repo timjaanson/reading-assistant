@@ -1,10 +1,10 @@
-import { CoreMessage } from "ai";
+import { CoreMessage, UIMessage } from "ai";
 
 export interface Chat {
-  id?: number; // Dexie will auto-generate this
+  id?: number;
   url?: string;
   name: string;
-  messages: CoreMessage[];
+  messages: UIMessage[];
   createdAt: Date;
   updatedAt: Date;
 }

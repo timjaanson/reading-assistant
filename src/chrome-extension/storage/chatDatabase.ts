@@ -1,6 +1,6 @@
 import Dexie, { Table } from "dexie";
 import { Chat, ChatPreview } from "../types/chat";
-import { CoreMessage } from "ai";
+import { UIMessage } from "ai";
 
 export class ChatDatabase extends Dexie {
   chats!: Table<Chat, number>;
@@ -15,7 +15,7 @@ export class ChatDatabase extends Dexie {
   async insertChat(
     name: string,
     url: string,
-    messages: CoreMessage[]
+    messages: UIMessage[]
   ): Promise<number> {
     console.log("Saving new chat with messages:", messages.length);
     const now = new Date();
@@ -37,7 +37,7 @@ export class ChatDatabase extends Dexie {
   async updateChat(
     id: number,
     name: string,
-    messages: CoreMessage[]
+    messages: UIMessage[]
   ): Promise<number> {
     console.log("Updating chat", id, "with messages:", messages.length);
     const now = new Date();

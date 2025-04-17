@@ -1,11 +1,11 @@
 import "../global.css";
 import { useState } from "react";
 import { TabButton } from "./TabButton";
-import { ChatTab } from "./ChatTab";
 import { ProviderSettingsTab } from "./ProviderSettingsTab";
 import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
 import ExtensionSettingsTab from "./ExtensionSettingsTab";
 import MemoryTab from "./MemoryTab";
+import { ExperimentsTab } from "./ExperimentsTab";
 
 export const Popup = () => {
   const [activeTab, setActiveTab] = useState<
@@ -14,13 +14,14 @@ export const Popup = () => {
     | "externalToolSettings"
     | "extensionSettings"
     | "memory"
+    | "experiments"
   >("chat");
 
   return (
     <div className="w-full h-full">
       {/* Navigation */}
       <nav className="border-b border-gray-700">
-        <div className="flex space-x-4 px-4">
+        <div className="flex space-x-4 px-4 overflow-y-auto">
           <TabButton
             isActive={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
@@ -51,13 +52,19 @@ export const Popup = () => {
           >
             Settings
           </TabButton>
+          <TabButton
+            isActive={activeTab === "experiments"}
+            onClick={() => setActiveTab("experiments")}
+          >
+            Experiments
+          </TabButton>
         </div>
       </nav>
 
       {/* Content */}
       <div className="h-[calc(100%-48px)] overflow-y-auto">
         {activeTab === "chat" ? (
-          <ChatTab />
+          <ExperimentsTab />
         ) : activeTab === "providerSettings" ? (
           <ProviderSettingsTab />
         ) : activeTab === "externalToolSettings" ? (

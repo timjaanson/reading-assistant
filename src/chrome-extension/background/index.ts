@@ -10,6 +10,9 @@ import { setupContextMenu } from "./context-menu";
 // Import and setup AI stream handler
 import { setupAiStreamHandler } from "./ai-stream-handler";
 
+// Import and setup experiment stream handler
+import { setupExperimentStreamHandler } from "./experiment-stream-handler";
+
 // Initialize PDF handler
 setupPdfHandler();
 
@@ -18,3 +21,6 @@ setupContextMenu();
 
 // Initialize AI stream handler
 setupAiStreamHandler();
+
+// Initialize experiment stream handler
+setupExperimentStreamHandler();

@@ -1,4 +1,4 @@
-import { CoreMessage, generateText, streamText } from "ai";
+import { CoreMessage, streamText } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -36,15 +36,18 @@ export const getStreamedTextResponse = async (
   }
 };
 
-export const getSyncTextResponse = async (
-  messages: CoreMessage[],
+// Updated to accept any message format
+export const getCustomBackendResponse = async (
+  messages: any[],
   options: GetTextResponseOptions = {}
 ) => {
   const languageModel = await getLanguageModel();
-  const response = await generateText({
+
+  const response = streamText({
     model: languageModel.model,
     system: options.systemPrompt || (await defaultSystemMessage()),
-    messages,
+    messages: messages,
   });
-  return response;
+
+  return response.toDataStreamResponse();
 };
