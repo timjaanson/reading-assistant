@@ -1,21 +1,27 @@
-import { UIMessage } from "ai";
 import Input from "../components/Input";
 import { useCallback, useEffect, useState } from "react";
 import { ChatPreview } from "../types/chat";
 import { chatDb } from "../storage/chatDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Chat2 } from "../components/Chat2";
+import { Chat2, SaveableChatValues } from "../components/Chat2";
 import { Spinner } from "../common/Spinner";
 
 export const ExperimentsTab = () => {
-  const [messages, setMessages] = useState<UIMessage[]>([]);
-  const [chats, setChats] = useState<ChatPreview[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<number | undefined>(
-    undefined
+  const [chatValues, setChatValues] = useState<SaveableChatValues>({
+    chatId: undefined,
+    chatName: "New Chat",
+    messages: [],
+  });
+  const [editingChatName, setEditingChatName] = useState(
+    chatValues.chatName || ""
   );
+  const [chats, setChats] = useState<ChatPreview[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
-  const [chatName, setChatName] = useState("New Chat");
+
+  useEffect(() => {
+    setEditingChatName(chatValues.chatName || "");
+  }, [chatValues.chatName]);
 
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
@@ -59,16 +65,15 @@ export const ExperimentsTab = () => {
           chat.messages?.length || 0,
           "messages"
         );
-        setChatName(chat.name);
-        setCurrentChatId(id);
 
-        // Ensure messages are properly set
-        if (Array.isArray(chat.messages) && chat.messages.length > 0) {
-          // Update both state and ref to avoid save loop
-          setMessages(chat.messages);
-        } else {
-          setMessages([]);
-        }
+        setChatValues({
+          chatId: id,
+          chatName: chat.name,
+          messages:
+            Array.isArray(chat.messages) && chat.messages.length > 0
+              ? chat.messages
+              : [],
+        });
 
         setIsSidebarOpen(false);
       }
@@ -78,9 +83,11 @@ export const ExperimentsTab = () => {
   }, []);
 
   const createNewChat = useCallback(() => {
-    setMessages([]);
-    setChatName("New Chat");
-    setCurrentChatId(undefined);
+    setChatValues({
+      chatId: undefined,
+      chatName: "New Chat",
+      messages: [],
+    });
     setIsSidebarOpen(false);
   }, []);
 
@@ -91,14 +98,22 @@ export const ExperimentsTab = () => {
       await chatDb.deleteChat(id);
 
       // If current chat was deleted, create a new chat
-      if (id === currentChatId) {
+      if (id === chatValues.chatId) {
         createNewChat();
       }
 
       await refreshChatList();
     },
-    [currentChatId, createNewChat, refreshChatList]
+    [chatValues.chatId, createNewChat, refreshChatList]
   );
+
+  // Update chatValues.chatName when input loses focus
+  const handleChatNameBlur = () => {
+    const trimmedName = editingChatName.trim();
+    if (trimmedName !== chatValues.chatName) {
+      setChatValues((prev) => ({ ...prev, chatName: trimmedName }));
+    }
+  };
 
   return (
     <div className="flex flex-col h-full relative">
@@ -111,8 +126,10 @@ export const ExperimentsTab = () => {
           ☰
         </button>
         <Input
-          value={chatName}
-          onChange={(e) => setChatName(e.target.value)}
+          required
+          value={editingChatName}
+          onChange={(e) => setEditingChatName(e.target.value)}
+          onBlur={handleChatNameBlur}
           className="flex-1 mx-2"
         />
         <button
@@ -180,9 +197,9 @@ export const ExperimentsTab = () => {
 
       <div className="flex-1 overflow-hidden">
         <Chat2
-          initialChatId={currentChatId}
-          chatName={chatName}
-          initialMessages={messages}
+          initialChatId={chatValues.chatId}
+          initialChatName={chatValues.chatName}
+          initialMessages={chatValues.messages}
         />
       </div>
     </div>
