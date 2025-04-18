@@ -14,7 +14,6 @@ export const Popup = () => {
     | "externalToolSettings"
     | "extensionSettings"
     | "memory"
-    | "experiments"
   >("chat");
 
   return (
@@ -51,12 +50,6 @@ export const Popup = () => {
             onClick={() => setActiveTab("extensionSettings")}
           >
             Settings
-          </TabButton>
-          <TabButton
-            isActive={activeTab === "experiments"}
-            onClick={() => setActiveTab("experiments")}
-          >
-            Experiments
           </TabButton>
         </div>
       </nav>

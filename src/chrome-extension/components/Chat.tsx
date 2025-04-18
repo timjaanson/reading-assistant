@@ -7,6 +7,7 @@ import { Tooltip } from "./Tooltip";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Provider, ProviderSettings } from "../types/settings";
 import { MessageRenderer } from "./MessageRenderer";
+import { StopIndicator } from "./StopIndicator";
 
 export type SaveableChatValues = {
   id: string;
@@ -299,6 +300,7 @@ export const Chat = ({
             <div className="relative w-full flex">
               <textarea
                 ref={textareaRef}
+                disabled={isBusy}
                 value={input}
                 onChange={(e) => {
                   handleInputChange(e);
@@ -315,7 +317,7 @@ export const Chat = ({
                 }}
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
-                placeholder="Type your message"
+                placeholder={isBusy ? "Generating..." : "Type your message"}
                 className="flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
                 rows={1}
               />
@@ -400,14 +402,7 @@ export const Chat = ({
             >
               {isBusy ? (
                 <span className="mx-1">
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 10 10"
-                    className="inline-block"
-                  >
-                    <rect width="10" height="10" fill="currentColor" />
-                  </svg>
+                  <StopIndicator />
                 </span>
               ) : (
                 "Send"
