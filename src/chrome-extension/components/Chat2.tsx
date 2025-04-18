@@ -24,7 +24,6 @@ type ChatProps = {
   initialUserMessage?: string;
   collapseInitialMessage?: boolean;
   sendInitialMessage?: boolean;
-  compact?: boolean;
 };
 
 export const Chat2 = ({
@@ -35,7 +34,6 @@ export const Chat2 = ({
   initialUserMessage,
   //collapseInitialMessage = false,
   sendInitialMessage = false,
-  compact = false,
 }: ChatProps) => {
   const [internalChatName, setInternalChatName] =
     useState<string>(initialChatName);
@@ -49,9 +47,29 @@ export const Chat2 = ({
   const [showProviderDropdown, setShowProviderDropdown] = useState(false);
   const providerIconRef = useRef<HTMLButtonElement>(null);
   const providerDropdownRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // This ensures useChat is reset when initialChatId changes (including undefined for new chat)
   const chatId = useMemo(() => initialChatId, [initialChatId]);
+
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = "auto";
+
+    // Calculate the number of rows based on scrollHeight and line height
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
+    const padding =
+      parseInt(getComputedStyle(textarea).paddingTop) +
+      parseInt(getComputedStyle(textarea).paddingBottom);
+    const minHeight = lineHeight + padding; // Height for 1 row
+    const maxHeight = lineHeight * 3 + padding; // Height for 3 rows
+
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${Math.max(newHeight, minHeight)}px`;
+  }, []);
 
   const {
     id,
@@ -189,6 +207,11 @@ export const Chat2 = ({
     }
   }, []);
 
+  // Adjust textarea height when input changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input, adjustTextareaHeight]);
+
   const submitMessageHandler = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       setError(null);
@@ -247,29 +270,12 @@ export const Chat2 = ({
     return provider.name || provider.provider;
   };
 
-  // Define conditional classes for messages container based on compact prop
-  const messagesContainerClasses = compact
-    ? "flex-1 overflow-y-auto p-2 space-y-1 bg-transparent"
-    : "flex-1 overflow-y-auto p-4 space-y-4 bg-transparent";
-
-  // Define conditional classes for input section based on compact prop
-  const inputContainerClasses = compact
-    ? "flex-shrink-0 bg-transparent p-1 border-t border-gray-900"
-    : "flex-shrink-0 bg-transparent p-4 border-t border-gray-900";
-  const inputFlexClasses = compact ? "flex space-x-1" : "flex space-x-2";
-  const textareaClasses = compact
-    ? "flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm"
-    : "flex-1 text-gray-200 border border-gray-800 rounded-md p-2 resize-none bg-[#1f1f1f]/50";
-  const buttonClasses = compact
-    ? "bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
-    : "bg-gray-200/80 text-gray-900 rounded-md px-4 py-2";
-
   return (
     <div className="flex flex-col h-full w-full mx-auto relative">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className={messagesContainerClasses}
+        className="flex-1 overflow-y-auto p-2 space-y-1 bg-transparent"
         onScroll={handleScroll}
       >
         {messages.map((message) => (
@@ -286,34 +292,38 @@ export const Chat2 = ({
       {showScrollButton && (
         <div
           onClick={scrollToBottom}
-          className={`absolute left-1/2 ${
-            compact ? "bottom-[40px]" : "bottom-[88px]"
-          } -translate-x-1/2 bg-gray-300/65 hover:bg-gray-300/80 text-gray-900 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10`}
+          className="absolute left-1/2 bottom-[40px] -translate-x-1/2 bg-gray-300/65 hover:bg-gray-300/80 text-gray-900 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
         >
           ↓
         </div>
       )}
 
       {/* Input Container */}
-      <div className={inputContainerClasses}>
+      <div className="flex-shrink-0 bg-transparent p-1 border-t border-gray-900">
         <form onSubmit={submitMessageHandler}>
-          <div className={inputFlexClasses}>
+          <div className="flex space-x-1">
             <div className="relative w-full flex">
               <textarea
+                ref={textareaRef}
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  adjustTextareaHeight();
+                }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     submitMessageHandler(e as any);
+                  } else if (e.key === "Enter" && e.shiftKey) {
+                    adjustTextareaHeight();
                   }
                 }}
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
                 placeholder="Type your message"
-                className={`${textareaClasses} w-full pr-6`}
-                rows={compact ? 1 : 2}
+                className="flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
+                rows={1}
               />
               {providerSettings && (
                 <div className="absolute top-1 right-1 z-10">
@@ -389,7 +399,11 @@ export const Chat2 = ({
               )}
             </div>
 
-            <button type="submit" disabled={isBusy} className={buttonClasses}>
+            <button
+              type="submit"
+              disabled={isBusy}
+              className="bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
+            >
               {isBusy ? (
                 <span className="mx-1">
                   <Spinner size={5} />

@@ -18,7 +18,6 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
       ...options,
       renderedComponent: (
         <Chat2
-          compact
           initialUserMessage={options.selectedText}
           initialChatName={sessionId}
           initialMessages={[]}
