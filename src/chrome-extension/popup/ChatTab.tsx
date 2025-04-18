@@ -1,11 +1,15 @@
 import Input from "../components/Input";
 import { useCallback, useEffect, useState } from "react";
-import { ChatPreview } from "../types/chat";
+import { ChatBehaviorProps, ChatPreview } from "../types/chat";
 import { chatDb } from "../storage/chatDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
 import { Chat } from "../components/Chat";
-import { Spinner } from "../common/Spinner";
+import { Spinner } from "../common/icons/Spinner";
 import { UIMessage } from "ai";
+
+type ChatTabProps = ChatBehaviorProps & {
+  initialChatName?: string;
+};
 
 type CurrentChatSelection = {
   id: string | undefined;
@@ -13,11 +17,17 @@ type CurrentChatSelection = {
   messages: UIMessage[];
 };
 
-export const ChatTab = () => {
+export const ChatTab = ({
+  initialChatName,
+  systemPrompt,
+  initialUserMessage,
+  collapseInitialMessage,
+  sendInitialMessage,
+}: ChatTabProps) => {
   const [currentChatSelection, setCurrentChatSelection] =
     useState<CurrentChatSelection>({
       id: undefined,
-      name: "New Chat",
+      name: initialChatName || "New Chat",
       messages: [],
     });
   const [chatInstanceKey, setChatInstanceKey] = useState<string>("initial");
@@ -234,6 +244,10 @@ export const ChatTab = () => {
           initialChatId={currentChatSelection.id}
           initialChatName={currentChatSelection.name}
           initialMessages={currentChatSelection.messages}
+          systemPrompt={systemPrompt}
+          initialUserMessage={initialUserMessage}
+          collapseInitialMessage={collapseInitialMessage}
+          sendInitialMessage={sendInitialMessage}
         />
       </div>
     </div>

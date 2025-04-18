@@ -5,6 +5,7 @@ import {
 } from "../storage/providerSettings";
 import { ProviderSettings } from "../types/settings";
 import { Input } from "../components/Input";
+import { Tooltip } from "../components/Tooltip";
 
 export const ProviderSettingsTab = () => {
   const [loadedProviderSettings, setLoadedProviderSettings] =
@@ -301,12 +302,35 @@ export const ProviderSettingsTab = () => {
         </div>
 
         <div className="space-y-2">
-          <label
-            htmlFor="providerOptions"
-            className="block text-sm font-medium text-gray-200"
-          >
-            Provider Options
-          </label>
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="providerOptions"
+              className="block text-sm font-medium text-gray-200"
+            >
+              Provider Options
+            </label>
+            <div
+              onClick={() =>
+                window.open(
+                  "https://sdk.vercel.ai/providers/ai-sdk-providers",
+                  "_blank"
+                )
+              }
+              className="cursor-pointer"
+            >
+              <Tooltip>
+                <p className="mb-1">
+                  Provider options are for Vercel's AI SDK.
+                </p>
+                <p className="mb-1">
+                  Clicking here will open a new tab to Vercel's documentation:
+                </p>
+                <p className="mb-1">
+                  https://sdk.vercel.ai/providers/ai-sdk-providers
+                </p>
+              </Tooltip>
+            </div>
+          </div>
           <textarea
             id="providerOptions"
             name="providerOptions"

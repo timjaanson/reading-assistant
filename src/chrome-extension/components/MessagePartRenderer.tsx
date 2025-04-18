@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Spinner } from "../common/Spinner";
+import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
 
 type CollapsibleSectionProps = {
   children: React.ReactNode;
   textColor: string;
-  openText?: string;
-  closeText?: string;
+  openText?: React.ReactNode;
+  closeText?: React.ReactNode;
   openIcon?: string;
   closeIcon?: string;
   initialCollapsed?: boolean;
@@ -86,7 +86,7 @@ export const TextPartRenderer = ({
             </li>
           ),
           code: ({ children }) => (
-            <code className="bg-gray-200/85 text-gray-700 px-1 py-0.5 rounded-sm">
+            <code className="font-mono bg-gray-800/75 text-gray-100 px-1 py-0.5 rounded-sm max-w-full overflow-x-auto inline-block">
               {children}
             </code>
           ),
@@ -144,8 +144,24 @@ export const ToolPartRenderer = ({
   const { state, toolName, toolCallId, args } = toolInvocation;
   const isLoading = state === "partial-call" || state === "call";
 
-  const openText = `Show tool (${toolName})${isLoading ? " " : ""}`;
-  const closeText = `Hide tool (${toolName})${isLoading ? " " : ""}`;
+  const spinnerColorCode = useMemo(() => {
+    const colorCode = textColor.split("text-")[1];
+    return colorCode;
+  }, [textColor]);
+
+  const openText = (
+    <div className="flex items-center gap-2">
+      <span>{`Show tool (${toolName})`}</span>
+      {isLoading && <Spinner color={spinnerColorCode} />}
+    </div>
+  );
+
+  const closeText = (
+    <div className="flex items-center gap-2">
+      <span>{`Hide tool (${toolName})`}</span>
+      {isLoading && <Spinner color={spinnerColorCode} />}
+    </div>
+  );
 
   return (
     <CollapsableSection
@@ -153,21 +169,21 @@ export const ToolPartRenderer = ({
       closeText={closeText}
       textColor={textColor}
     >
-      <div className={`mt-2 font-mono ${textColor}`}>
-        {isLoading && <Spinner />}
-
+      <div className={`mt-2 font-mono ${textColor} overflow-visible`}>
         {(state === "call" || state === "result") && (
           <>
             <div className="mb-1">
-              <span className="font-semibold">Tool ID:</span> {toolCallId}
+              <span className="font-semibold">Call ID:</span> {toolCallId}
             </div>
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
-              <pre
-                className={`bg-gray-800/50 p-1 rounded overflow-auto text-xs`}
-              >
-                {JSON.stringify(args, null, 2)}
-              </pre>
+              <div className="max-h-40 max-w-full overflow-auto">
+                <pre
+                  className={`font-mono bg-gray-800/75 p-1 rounded overflow-x-auto max-w-full text-xs`}
+                >
+                  {JSON.stringify(args, null, 2)}
+                </pre>
+              </div>
             </div>
           </>
         )}
@@ -175,9 +191,13 @@ export const ToolPartRenderer = ({
         {state === "result" && (
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
-            <pre className={`bg-gray-800/50 p-1 rounded overflow-auto text-xs`}>
-              {JSON.stringify((toolInvocation as any).result, null, 2)}
-            </pre>
+            <div className="max-h-56 max-w-full overflow-auto">
+              <pre
+                className={`font-mono bg-gray-800/75 p-1 rounded overflow-x-auto max-w-full text-xs`}
+              >
+                {JSON.stringify((toolInvocation as any).result, null, 2)}
+              </pre>
+            </div>
           </div>
         )}
       </div>

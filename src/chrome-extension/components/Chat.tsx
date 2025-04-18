@@ -7,7 +7,9 @@ import { Tooltip } from "./Tooltip";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Provider, ProviderSettings } from "../types/settings";
 import { MessageRenderer } from "./MessageRenderer";
-import { StopIndicator } from "./StopIndicator";
+import { StopIndicator } from "../common/icons/StopIndicator";
+import { LoadingDots } from "../common/icons/LoadingDots";
+import { ChatBehaviorProps } from "../types/chat";
 
 export type SaveableChatValues = {
   id: string;
@@ -15,14 +17,10 @@ export type SaveableChatValues = {
   messages: UIMessage[];
 };
 
-type ChatProps = {
+type ChatProps = ChatBehaviorProps & {
   initialChatId?: string;
   initialChatName: string;
   initialMessages: UIMessage[];
-  systemPrompt?: string;
-  initialUserMessage?: string;
-  collapseInitialMessage?: boolean;
-  sendInitialMessage?: boolean;
 };
 
 export const Chat = ({
@@ -354,10 +352,16 @@ export const Chat = ({
                 }}
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
-                placeholder={isBusy ? "Generating..." : "Type your message"}
+                placeholder={isBusy ? "" : "Type your message"}
                 className="flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
                 rows={1}
               />
+              {isBusy && (
+                <div className="absolute top-1/2 left-3 -translate-y-1/2 pointer-events-none">
+                  <LoadingDots size={2} backgroundColor="bg-gray-200" />
+                </div>
+              )}
+              {/* should show loading dots when isBusy is true, and placement on top of the input textarea */}
               {providerSettings && (
                 <div className="absolute top-1 right-1 z-10">
                   <Tooltip
@@ -367,6 +371,7 @@ export const Chat = ({
                       <button
                         ref={providerIconRef}
                         type="button"
+                        disabled={isBusy}
                         onClick={() =>
                           setShowProviderDropdown(!showProviderDropdown)
                         }
@@ -449,8 +454,9 @@ export const Chat = ({
         </form>
       </div>
       <div>
-        {/* error message */}
-        {error && <div className="text-red-500">{error}</div>}
+        {error && (
+          <div className="text-red-500 overflow-y-auto break-all">{error}</div>
+        )}
       </div>
     </div>
   );

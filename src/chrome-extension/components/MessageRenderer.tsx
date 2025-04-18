@@ -91,7 +91,7 @@ export const MessageRenderer = ({
 
   return (
     <div
-      className={`flex flex-col gap-1 p-1.5 rounded-lg ${bubbleColor()} max-w-4xl w-fit`}
+      className={`flex flex-col gap-1 p-1.5 rounded-lg ${bubbleColor()} max-w-7xl w-fit overflow-hidden`}
     >
       {collapsableMessage ? (
         <CollapsableSection textColor={textColor()}>

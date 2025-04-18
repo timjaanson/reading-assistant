@@ -1,4 +1,4 @@
-import { CoreMessage, UIMessage } from "ai";
+import { UIMessage } from "ai";
 
 export interface Chat {
   id: string;
@@ -16,16 +16,9 @@ export interface ChatPreview {
   updatedAt: Date;
 }
 
-// New interface for message collections
-export interface MessageCollection {
-  id: string | number | null; // Unique identifier for this collection
-  messages: CoreMessage[];
-}
-
-// Create a utility function to create MessageCollection objects
-export function createMessageCollection(
-  messages: CoreMessage[] = [],
-  id: string | number | null = null
-): MessageCollection {
-  return { id, messages };
-}
+export type ChatBehaviorProps = {
+  systemPrompt?: string;
+  initialUserMessage?: string;
+  collapseInitialMessage?: boolean;
+  sendInitialMessage?: boolean;
+};
