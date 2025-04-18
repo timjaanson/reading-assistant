@@ -98,6 +98,18 @@ export const Chat = ({
     [status]
   );
 
+  // Check if scroll button should be shown
+  const updateScrollButtonVisibility = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        messagesContainerRef.current;
+      // Only show button if content exceeds container height and we're not at the bottom
+      const hasScrollableContent = scrollHeight > clientHeight;
+      const isScrolledAway = scrollHeight - scrollTop - clientHeight > 50;
+      setShowScrollButton(hasScrollableContent && isScrolledAway);
+    }
+  }, []);
+
   useEffect(() => {
     if (initialUserMessage) {
       setMessages([{ id: "1", role: "user", content: initialUserMessage }]);
@@ -182,30 +194,56 @@ export const Chat = ({
     };
   }, [showProviderDropdown]);
 
+  // Set up observers to detect content changes
+  useEffect(() => {
+    const messagesContainer = messagesContainerRef.current;
+    if (!messagesContainer) return;
+
+    // Handle scroll events
+    const handleScroll = () => updateScrollButtonVisibility();
+    messagesContainer.addEventListener("scroll", handleScroll);
+
+    // Create a resize observer to detect content size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateScrollButtonVisibility();
+    });
+    resizeObserver.observe(messagesContainer);
+
+    // Create a mutation observer to detect DOM changes (like collapsing sections)
+    const mutationObserver = new MutationObserver(() => {
+      updateScrollButtonVisibility();
+    });
+
+    mutationObserver.observe(messagesContainer, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
+
+    // Initial check
+    updateScrollButtonVisibility();
+
+    return () => {
+      messagesContainer.removeEventListener("scroll", handleScroll);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [updateScrollButtonVisibility]);
+
+  // Update button visibility when messages change
+  useEffect(() => {
+    // Small delay to let the DOM update
+    const timeoutId = setTimeout(updateScrollButtonVisibility, 0);
+    return () => clearTimeout(timeoutId);
+  }, [messages, updateScrollButtonVisibility]);
+
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
         messagesContainerRef.current.scrollHeight;
     }
   };
-
-  const handleScroll = () => {
-    if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        messagesContainerRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // within 50px of bottom
-      setShowScrollButton(!isAtBottom);
-    }
-  };
-
-  useEffect(() => {
-    const messagesContainer = messagesContainerRef.current;
-    if (messagesContainer) {
-      messagesContainer.addEventListener("scroll", handleScroll);
-      return () =>
-        messagesContainer.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
 
   // Adjust textarea height when input changes
   useEffect(() => {
@@ -267,7 +305,6 @@ export const Chat = ({
       <div
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-2 space-y-2 bg-transparent"
-        onScroll={handleScroll}
       >
         {messages.map((message, index) => (
           <div

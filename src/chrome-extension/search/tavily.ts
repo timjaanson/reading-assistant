@@ -37,6 +37,7 @@ export const searchTavily = async (query: string, options: SearchOptions) => {
     if (externalToolSettings.search.active.apiKey) {
       const optionsWithDefaults = {
         topic: "general",
+        includeAnswer: true,
         searchDepth: "advanced",
         resultCount: 8,
         timeRange: options.timeRange ? options.timeRange : undefined,

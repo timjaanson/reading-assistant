@@ -1,5 +1,6 @@
 export type SearchOptions = {
   resultCount?: number;
+  includeAnswer?: boolean;
   searchDepth?: "basic" | "advanced";
   topic?: "general" | "news" | "finance";
   timeRange?: "year" | "month" | "week" | "day";
