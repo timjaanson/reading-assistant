@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChatPreview } from "../types/chat";
 import { chatDb } from "../storage/chatDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Chat2 } from "../components/Chat2";
+import { Chat } from "../components/Chat";
 import { Spinner } from "../common/Spinner";
 import { UIMessage } from "ai";
 
@@ -229,7 +229,7 @@ export const ChatTab = () => {
       )}
 
       <div className="flex-1 overflow-hidden">
-        <Chat2
+        <Chat
           key={chatInstanceKey}
           initialChatId={currentChatSelection.id}
           initialChatName={currentChatSelection.name}

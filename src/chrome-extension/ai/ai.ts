@@ -42,12 +42,23 @@ export const getCustomBackendResponse = async (
   options: GetTextResponseOptions = {}
 ) => {
   const languageModel = await getLanguageModel();
+  const tooling = await getTooling(languageModel);
 
   const response = streamText({
     model: languageModel.model,
     system: options.systemPrompt || (await defaultSystemMessage()),
     messages: messages,
+    tools: tooling?.tools,
+    toolChoice: tooling?.toolChoice,
+    maxSteps: 20,
+    providerOptions: languageModel.providerOptions,
+    onError: (error) => {
+      console.error("Error getting streamed text response", error);
+      throw error;
+    },
   });
 
-  return response.toDataStreamResponse();
+  return response.toDataStreamResponse({
+    sendReasoning: true,
+  });
 };

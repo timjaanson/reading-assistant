@@ -1,4 +1,8 @@
-import { LanguageModelV1 } from "ai";
+import {
+  extractReasoningMiddleware,
+  LanguageModelV1,
+  wrapLanguageModel,
+} from "ai";
 import { SettingsStorage } from "../storage/providerSettings";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOllama } from "ollama-ai-provider";
@@ -71,8 +75,22 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       throw new Error("Invalid provider from userSettings");
   }
 
+  const model = provider.languageModel(providerSettings.active.model, options);
+  let wrappedModel = model;
+
+  if (
+    ["ollama", "custom-provider-openai"].includes(
+      providerSettings.active.provider
+    )
+  ) {
+    wrappedModel = wrapLanguageModel({
+      model: model,
+      middleware: extractReasoningMiddleware({ tagName: "think" }),
+    });
+  }
+
   return {
-    model: provider.languageModel(providerSettings.active.model, options),
+    model: wrappedModel,
     toolUse: providerSettings.active.enableToolCalls,
     providerOptions: providerSettings.active.providerOptions,
     languageModelOptions: options,

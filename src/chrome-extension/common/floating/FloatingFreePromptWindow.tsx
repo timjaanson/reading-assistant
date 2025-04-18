@@ -1,5 +1,5 @@
 import { freePromptSystemMessage } from "../../ai/prompts";
-import { Chat2 } from "../../components/Chat2";
+import { Chat } from "../../components/Chat";
 import { AbstractFloatingEmbeddedWindow } from "./AbstractFloatingEmbeddedWindow";
 
 export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
@@ -17,12 +17,12 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
     super.renderComponent({
       ...options,
       renderedComponent: (
-        <Chat2
+        <Chat
           initialUserMessage={options.selectedText}
           initialChatName={sessionId}
           initialMessages={[]}
           systemPrompt={await freePromptSystemMessage()}
-          collapseInitialMessage={false}
+          collapseInitialMessage={true}
           sendInitialMessage={false}
         />
       ),
