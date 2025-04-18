@@ -1,7 +1,7 @@
 import { CoreMessage, UIMessage } from "ai";
 
 export interface Chat {
-  id?: number;
+  id: string;
   url?: string;
   name: string;
   messages: UIMessage[];
@@ -10,7 +10,7 @@ export interface Chat {
 }
 
 export interface ChatPreview {
-  id: number;
+  id: string;
   url?: string;
   name: string;
   updatedAt: Date;

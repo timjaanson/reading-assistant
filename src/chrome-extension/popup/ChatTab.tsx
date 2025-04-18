@@ -3,25 +3,34 @@ import { useCallback, useEffect, useState } from "react";
 import { ChatPreview } from "../types/chat";
 import { chatDb } from "../storage/chatDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Chat2, SaveableChatValues } from "../components/Chat2";
+import { Chat2 } from "../components/Chat2";
 import { Spinner } from "../common/Spinner";
+import { UIMessage } from "ai";
 
-export const ExperimentsTab = () => {
-  const [chatValues, setChatValues] = useState<SaveableChatValues>({
-    chatId: undefined,
-    chatName: "New Chat",
-    messages: [],
-  });
+type CurrentChatSelection = {
+  id: string | undefined;
+  name: string;
+  messages: UIMessage[];
+};
+
+export const ChatTab = () => {
+  const [currentChatSelection, setCurrentChatSelection] =
+    useState<CurrentChatSelection>({
+      id: undefined,
+      name: "New Chat",
+      messages: [],
+    });
+  const [chatInstanceKey, setChatInstanceKey] = useState<string>("initial");
   const [editingChatName, setEditingChatName] = useState(
-    chatValues.chatName || ""
+    currentChatSelection.name
   );
   const [chats, setChats] = useState<ChatPreview[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
 
   useEffect(() => {
-    setEditingChatName(chatValues.chatName || "");
-  }, [chatValues.chatName]);
+    setEditingChatName(currentChatSelection.name);
+  }, [currentChatSelection.name]);
 
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
@@ -54,7 +63,7 @@ export const ExperimentsTab = () => {
   }, []);
 
   // Load specific chat when selected
-  const loadChat = useCallback(async (id: number) => {
+  const loadChat = useCallback(async (id: string) => {
     try {
       const chat = await chatDb.getChat(id);
       if (chat) {
@@ -66,15 +75,16 @@ export const ExperimentsTab = () => {
           "messages"
         );
 
-        setChatValues({
-          chatId: id,
-          chatName: chat.name,
+        setCurrentChatSelection({
+          id: chat.id,
+          name: chat.name,
           messages:
             Array.isArray(chat.messages) && chat.messages.length > 0
               ? chat.messages
               : [],
         });
 
+        setChatInstanceKey(chat.id);
         setIsSidebarOpen(false);
       }
     } catch (error) {
@@ -83,35 +93,58 @@ export const ExperimentsTab = () => {
   }, []);
 
   const createNewChat = useCallback(() => {
-    setChatValues({
-      chatId: undefined,
-      chatName: "New Chat",
+    setCurrentChatSelection({
+      id: undefined,
+      name: "New Chat",
       messages: [],
     });
+
+    setChatInstanceKey(
+      `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    );
     setIsSidebarOpen(false);
   }, []);
 
   // Delete chat
   const deleteChat = useCallback(
-    async (id: number, e: React.MouseEvent) => {
+    async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       await chatDb.deleteChat(id);
 
       // If current chat was deleted, create a new chat
-      if (id === chatValues.chatId) {
+      if (id === currentChatSelection.id) {
         createNewChat();
       }
 
       await refreshChatList();
     },
-    [chatValues.chatId, createNewChat, refreshChatList]
+    [currentChatSelection.id, createNewChat, refreshChatList]
   );
 
-  // Update chatValues.chatName when input loses focus
-  const handleChatNameBlur = () => {
+  // Update chat name when input loses focus
+  const handleChatNameBlur = async () => {
     const trimmedName = editingChatName.trim();
-    if (trimmedName !== chatValues.chatName) {
-      setChatValues((prev) => ({ ...prev, chatName: trimmedName }));
+    if (trimmedName !== currentChatSelection.name) {
+      // Update local state
+      setCurrentChatSelection((prev) => ({ ...prev, name: trimmedName }));
+
+      // If this is an existing chat (has an ID), update the name in the database
+      if (currentChatSelection.id) {
+        try {
+          const chat = await chatDb.getChat(currentChatSelection.id);
+          if (chat) {
+            await chatDb.saveChat({
+              ...chat,
+              name: trimmedName,
+            });
+            console.log(`Updated name for chat ${currentChatSelection.id}`);
+            // Refresh the chat list to show the updated name
+            refreshChatList();
+          }
+        } catch (error) {
+          console.error("Error updating chat name:", error);
+        }
+      }
     }
   };
 
@@ -197,9 +230,10 @@ export const ExperimentsTab = () => {
 
       <div className="flex-1 overflow-hidden">
         <Chat2
-          initialChatId={chatValues.chatId}
-          initialChatName={chatValues.chatName}
-          initialMessages={chatValues.messages}
+          key={chatInstanceKey}
+          initialChatId={currentChatSelection.id}
+          initialChatName={currentChatSelection.name}
+          initialMessages={currentChatSelection.messages}
         />
       </div>
     </div>

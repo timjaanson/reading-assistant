@@ -1,6 +1,5 @@
 import { explainTextSystemMessage } from "../../ai/prompts";
-import Chat from "../../components/Chat";
-import { createMessageCollection } from "../../types/chat";
+import { Chat2 } from "../../components/Chat2";
 import { AbstractFloatingEmbeddedWindow } from "./AbstractFloatingEmbeddedWindow";
 
 export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
@@ -18,13 +17,14 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
     super.renderComponent({
       ...options,
       renderedComponent: (
-        <Chat
-          initialMessages={createMessageCollection([], sessionId)}
+        <Chat2
+          compact
           initialUserMessage={options.selectedText}
+          initialChatName={sessionId}
+          initialMessages={[]}
           systemPrompt={await explainTextSystemMessage()}
           collapseInitialMessage={true}
           sendInitialMessage={true}
-          compact={true}
         />
       ),
     });

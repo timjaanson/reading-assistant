@@ -11,29 +11,14 @@ import { Spinner } from "../common/Spinner";
 type AnyUIPart = UIMessage["parts"][number];
 
 export type SaveableChatValues = {
-  chatId?: number;
-  chatName?: string;
+  id: string;
+  chatName: string;
   messages: UIMessage[];
 };
 
-const chatValuesChanged = (a: SaveableChatValues, b: SaveableChatValues) => {
-  const baseCheck =
-    a.chatId !== b.chatId ||
-    a.chatName !== b.chatName ||
-    a.messages.length !== b.messages.length;
-  let lastMessageChanged = false;
-  if (a.messages.length > 0 && b.messages.length > 0) {
-    const lastMessageA = a.messages[a.messages.length - 1];
-    const lastMessageB = b.messages[b.messages.length - 1];
-    lastMessageChanged =
-      lastMessageA.parts.length !== lastMessageB.parts.length;
-  }
-  return baseCheck || lastMessageChanged;
-};
-
 type ChatProps = {
-  initialChatId?: number;
-  initialChatName?: string;
+  initialChatId?: string;
+  initialChatName: string;
   initialMessages: UIMessage[];
   systemPrompt?: string;
   initialUserMessage?: string;
@@ -52,13 +37,10 @@ export const Chat2 = ({
   sendInitialMessage = false,
   compact = false,
 }: ChatProps) => {
-  const [chatId, setChatId] = useState<number | undefined>(initialChatId);
-  const [chatName, setChatName] = useState<string | undefined>(initialChatName);
-  const chatSaveValues = useRef<SaveableChatValues>({
-    chatId: initialChatId,
-    chatName: chatName,
-    messages: initialMessages,
-  });
+  const [internalChatName, setInternalChatName] =
+    useState<string>(initialChatName);
+  const [isModified, setIsModified] = useState(false);
+  const chatSaveValues = useRef<SaveableChatValues | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +50,11 @@ export const Chat2 = ({
   const providerIconRef = useRef<HTMLButtonElement>(null);
   const providerDropdownRef = useRef<HTMLDivElement>(null);
 
+  // This ensures useChat is reset when initialChatId changes (including undefined for new chat)
+  const chatId = useMemo(() => initialChatId, [initialChatId]);
+
   const {
+    id,
     messages,
     setMessages,
     input,
@@ -77,7 +63,7 @@ export const Chat2 = ({
     status,
     reload,
   } = useChat({
-    id: chatId?.toString(),
+    id: chatId,
     initialMessages: initialMessages,
     fetch: createCustomBackgroundFetch(),
     body: {
@@ -100,20 +86,56 @@ export const Chat2 = ({
     }
   }, []);
 
+  // Initialize or update the saved chat values reference
   useEffect(() => {
-    if (messages.length === 1 && sendInitialMessage) {
+    if (id) {
+      chatSaveValues.current = {
+        id,
+        chatName: initialChatName,
+        messages: initialMessages,
+      };
+    }
+  }, [id, initialChatName, initialMessages]);
+
+  // Check for modifications
+  useEffect(() => {
+    if (chatSaveValues.current && id) {
+      const nameChanged = internalChatName !== chatSaveValues.current.chatName;
+      const messagesChanged =
+        messages.length !== chatSaveValues.current.messages.length;
+
+      // Check the last message content if there are messages
+      let lastMessageChanged = false;
+      if (messages.length > 0 && chatSaveValues.current.messages.length > 0) {
+        const lastCurrent = messages[messages.length - 1];
+        const lastSaved =
+          chatSaveValues.current.messages[
+            chatSaveValues.current.messages.length - 1
+          ];
+        lastMessageChanged =
+          lastCurrent.parts.length !== lastSaved.parts.length;
+      }
+
+      setIsModified(nameChanged || messagesChanged || lastMessageChanged);
+    }
+  }, [id, internalChatName, messages]);
+
+  useEffect(() => {
+    if (sendInitialMessage && initialUserMessage && messages.length === 1) {
       reload();
     }
-
-    //saving too much, creating duplicates as well
-    saveChat();
-  }, [messages, chatName, isBusy]);
+  }, [sendInitialMessage, initialUserMessage, messages, reload]);
 
   useEffect(() => {
-    setChatId(initialChatId);
-    setChatName(initialChatName);
-    setMessages(initialMessages);
-  }, [initialChatId, initialChatName, initialMessages]);
+    if (!isBusy && status === "ready" && messages.length > 0 && isModified) {
+      saveChat();
+    }
+  }, [isBusy, status, messages, isModified]);
+
+  // Update internal chat name when initialChatName changes
+  useEffect(() => {
+    setInternalChatName(initialChatName);
+  }, [initialChatName]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -177,30 +199,30 @@ export const Chat2 = ({
   );
 
   const saveChat = useCallback(async () => {
-    if (
-      !isBusy &&
-      chatName &&
-      messages.length > 0 &&
-      chatValuesChanged(chatSaveValues.current, { chatId, chatName, messages })
-    ) {
-      let chatNewId: number | undefined;
-      if (chatId) {
-        chatNewId = await chatDb.updateChat(chatId, chatName, messages);
-        console.log("Updated existing chat:", chatId);
-      } else if (chatName) {
-        chatNewId = await chatDb.insertChat(chatName, "", messages);
-        console.log(
-          `Created new chat with ID:${chatNewId} and name:${chatName}`
-        );
-      }
+    if (!id || messages.length === 0) return;
+
+    try {
+      await chatDb.saveChat({
+        id,
+        name: internalChatName,
+        url: "",
+        messages,
+      });
+
+      // Update saved values ref to track changes
       chatSaveValues.current = {
-        chatId: chatNewId,
-        chatName: chatName,
-        messages: messages,
+        id,
+        chatName: internalChatName,
+        messages: [...messages],
       };
-      setChatId(chatNewId);
+
+      setIsModified(false);
+      console.log(`Saved chat with ID: ${id}`);
+    } catch (error) {
+      console.error("Error saving chat:", error);
+      setError(error instanceof Error ? error.message : "Failed to save chat");
     }
-  }, [isBusy, chatId, chatName, messages]);
+  }, [id, internalChatName, messages]);
 
   const renderMessagePart = (part: AnyUIPart) => {
     switch (part.type) {

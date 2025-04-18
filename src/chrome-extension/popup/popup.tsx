@@ -5,7 +5,7 @@ import { ProviderSettingsTab } from "./ProviderSettingsTab";
 import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
 import ExtensionSettingsTab from "./ExtensionSettingsTab";
 import MemoryTab from "./MemoryTab";
-import { ExperimentsTab } from "./ExperimentsTab";
+import { ChatTab } from "./ChatTab";
 
 export const Popup = () => {
   const [activeTab, setActiveTab] = useState<
@@ -64,7 +64,7 @@ export const Popup = () => {
       {/* Content */}
       <div className="h-[calc(100%-48px)] overflow-y-auto">
         {activeTab === "chat" ? (
-          <ExperimentsTab />
+          <ChatTab />
         ) : activeTab === "providerSettings" ? (
           <ProviderSettingsTab />
         ) : activeTab === "externalToolSettings" ? (
