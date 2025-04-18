@@ -6,7 +6,6 @@ import { chatDb } from "../storage/chatDatabase";
 import { Tooltip } from "./Tooltip";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Provider, ProviderSettings } from "../types/settings";
-import { Spinner } from "../common/Spinner";
 import { MessageRenderer } from "./MessageRenderer";
 
 export type SaveableChatValues = {
@@ -77,6 +76,7 @@ export const Chat = ({
     input,
     handleInputChange,
     handleSubmit,
+    stop,
     status,
     reload,
   } = useChat({
@@ -394,13 +394,20 @@ export const Chat = ({
             </div>
 
             <button
-              type="submit"
-              disabled={isBusy}
+              type={isBusy ? "button" : "submit"}
+              onClick={isBusy ? () => stop() : undefined}
               className="bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
             >
               {isBusy ? (
                 <span className="mx-1">
-                  <Spinner size={5} />
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    className="inline-block"
+                  >
+                    <rect width="10" height="10" fill="currentColor" />
+                  </svg>
                 </span>
               ) : (
                 "Send"

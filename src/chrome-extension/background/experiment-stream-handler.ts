@@ -10,14 +10,31 @@ export const EXPERIMENT_STREAM_CHUNK = "STREAM_CHUNK";
 export const EXPERIMENT_STREAM_METADATA = "STREAM_METADATA";
 export const EXPERIMENT_STREAM_COMPLETE = "STREAM_COMPLETE";
 export const EXPERIMENT_STREAM_ERROR = "STREAM_ERROR";
+export const ABORT_STREAM = "ABORT_STREAM";
 
 interface ExperimentalStreamRequest {
   type: typeof GET_EXPERIMENT_STREAM;
   payload: {
     messages: any[];
     systemPrompt?: string;
+    requestId: string;
   };
 }
+
+interface AbortStreamRequest {
+  type: typeof ABORT_STREAM;
+  payload: {
+    requestId: string;
+  };
+}
+
+const activeStreams = new Map<
+  string,
+  {
+    reader?: ReadableStreamDefaultReader<Uint8Array> | null;
+    abortController: AbortController;
+  }
+>();
 
 /**
  * Sets up a handler for the experiment stream that processes getCustomBackendResponse
@@ -33,7 +50,32 @@ export function setupExperimentStreamHandler() {
     }
 
     port.onMessage.addListener(async (message) => {
-      // Type guard for the experiment stream message
+      if (isAbortStreamRequest(message)) {
+        const { requestId } = message.payload;
+        const activeStream = activeStreams.get(requestId);
+
+        if (activeStream) {
+          console.log(`[experiment-handler] Aborting stream ${requestId}`);
+          // Signal abort to the AI API
+          activeStream.abortController.abort();
+
+          if (activeStream.reader) {
+            try {
+              activeStream.reader.cancel("Stream aborted by user");
+            } catch (error) {
+              console.error(
+                `[experiment-handler] Error cancelling reader:`,
+                error
+              );
+            }
+          }
+
+          activeStreams.delete(requestId);
+        }
+
+        return;
+      }
+
       if (!isExperimentalStreamRequest(message)) {
         console.warn("Received invalid message format:", message);
         port.postMessage({
@@ -43,22 +85,34 @@ export function setupExperimentStreamHandler() {
         return;
       }
 
-      const { messages, systemPrompt } = message.payload;
+      const { messages, systemPrompt, requestId } = message.payload;
       console.log(
         "Background received stream request with messages:",
-        messages.length
+        messages.length,
+        "requestId:",
+        requestId
       );
+
+      // Create an AbortController for this stream
+      const abortController = new AbortController();
+
+      abortController.signal.addEventListener("abort", () => {
+        console.log(
+          `[experiment-handler] AbortController signal was triggered for ${requestId}`
+        );
+      });
+
+      activeStreams.set(requestId, { abortController });
 
       let reader: ReadableStreamDefaultReader<Uint8Array> | null | undefined =
         null;
 
       try {
-        // Get the Response from getCustomBackendResponse
         const response = await getCustomBackendResponse(messages, {
           systemPrompt,
+          abortSignal: abortController.signal,
         });
 
-        // Send response metadata immediately
         port.postMessage({
           type: EXPERIMENT_STREAM_METADATA,
           payload: {
@@ -68,11 +122,16 @@ export function setupExperimentStreamHandler() {
           },
         });
 
-        // Get a reader from the response body
         reader = response.body?.getReader();
         if (!reader) {
           throw new Error("Could not get reader from response");
         }
+
+        // Store the reader to enable cancellation
+        activeStreams.set(requestId, {
+          reader,
+          abortController,
+        });
 
         // Stream chunks to the client immediately as they arrive
         let done = false;
@@ -80,8 +139,14 @@ export function setupExperimentStreamHandler() {
           const result = await reader.read();
           done = result.done;
 
+          if (abortController.signal.aborted) {
+            console.log(
+              `[experiment-handler] Detected abort during read loop for ${requestId}`
+            );
+            break;
+          }
+
           if (result.value) {
-            // Convert the Uint8Array to a Base64 string for transmission
             const base64Chunk = arrayBufferToBase64(result.value.buffer);
             port.postMessage({
               type: EXPERIMENT_STREAM_CHUNK,
@@ -92,16 +157,22 @@ export function setupExperimentStreamHandler() {
 
         // Signal successful completion after the loop
         port.postMessage({ type: EXPERIMENT_STREAM_COMPLETE });
-        console.log("Background finished streaming response");
       } catch (error) {
-        console.error("Error in experiment stream handler:", error);
-        port.postMessage({
-          type: EXPERIMENT_STREAM_ERROR,
-          payload:
-            error instanceof Error
-              ? { message: error.message }
-              : { message: "Unknown error" },
-        });
+        if (abortController.signal.aborted) {
+          console.log(`[experiment-handler] Stream was aborted: ${requestId}`);
+          port.postMessage({ type: EXPERIMENT_STREAM_COMPLETE });
+        } else {
+          console.error(`[experiment-handler] Error in stream handler:`, error);
+          port.postMessage({
+            type: EXPERIMENT_STREAM_ERROR,
+            payload:
+              error instanceof Error
+                ? { message: error.message }
+                : { message: "Unknown error" },
+          });
+        }
+      } finally {
+        activeStreams.delete(requestId);
       }
     });
 
@@ -124,7 +195,18 @@ function isExperimentalStreamRequest(
     typeof message === "object" &&
     message.type === GET_EXPERIMENT_STREAM &&
     message.payload &&
-    Array.isArray(message.payload.messages)
+    Array.isArray(message.payload.messages) &&
+    typeof message.payload.requestId === "string"
+  );
+}
+
+function isAbortStreamRequest(message: any): message is AbortStreamRequest {
+  return (
+    message &&
+    typeof message === "object" &&
+    message.type === ABORT_STREAM &&
+    message.payload &&
+    typeof message.payload.requestId === "string"
   );
 }
 
