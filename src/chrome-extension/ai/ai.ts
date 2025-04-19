@@ -2,6 +2,7 @@ import { CoreMessage, streamText } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
+import { getActiveMCPClients } from "./mcp-clients";
 
 export type GetTextResponseOptions = {
   systemPrompt?: string;
@@ -45,6 +46,24 @@ export const getCustomBackendResponse = async (
 ) => {
   const languageModel = await getLanguageModel();
   const tooling = await getTooling(languageModel);
+  const mcpClients = await getActiveMCPClients(languageModel);
+
+  //iterate clients inside try catch and return tools from all as single array
+  const mcpTools = [];
+  for (const client of mcpClients) {
+    try {
+      const toolsResult = await client.tools();
+      mcpTools.push(toolsResult);
+    } catch (error) {
+      console.error(`Error loading tools from MCP client:`, error);
+    }
+  }
+
+  // Merge all tools into a single object
+  const allTools = { ...(tooling?.tools || {}) };
+  mcpTools.forEach((toolSet) => {
+    Object.assign(allTools, toolSet);
+  });
 
   // Keep only the abort signal listener
   if (options.abortSignal) {
@@ -57,7 +76,7 @@ export const getCustomBackendResponse = async (
     model: languageModel.model,
     system: options.systemPrompt || (await defaultSystemMessage()),
     messages: messages,
-    tools: tooling?.tools,
+    tools: allTools,
     toolChoice: tooling?.toolChoice,
     maxSteps: 20,
     providerOptions: languageModel.providerOptions,
@@ -66,9 +85,19 @@ export const getCustomBackendResponse = async (
       console.error("Error getting streamed text response", error);
       throw error;
     },
+    onFinish: () => {
+      mcpClients.forEach((client) => {
+        try {
+          client.close();
+        } catch (error) {
+          console.error("Error closing MCP client", error);
+        }
+      });
+    },
   });
 
   return response.toDataStreamResponse({
     sendReasoning: true,
+    sendSources: true,
   });
 };

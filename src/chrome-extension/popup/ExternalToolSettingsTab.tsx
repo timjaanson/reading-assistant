@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { ExternalToolSettings } from "../types/settings";
+import { ExternalToolSettings, MCPServer } from "../types/settings";
 import {
   ExternalToolsStorage,
   defaultExternalToolSettings,
 } from "../storage/externalToolSettings";
 import { Input } from "../components/Input";
+import { Button } from "../common/Button";
 
 export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ExternalToolSettings>(
@@ -15,12 +16,15 @@ export const ExternalToolSettingsTab = () => {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
+  const [headersInputs, setHeadersInputs] = useState<string[]>([]);
+  const [headersErrors, setHeadersErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const loadedSettings =
           await ExternalToolsStorage.loadExternalToolSettings();
+
         setSettings(loadedSettings);
         setSelectedToolIndex(
           loadedSettings.search.active
@@ -29,8 +33,23 @@ export const ExternalToolSettingsTab = () => {
               )
             : 0
         );
+
+        // Initialize headers inputs with pretty-formatted JSON strings
+        const formattedHeaders = loadedSettings.mcp.servers.map((server) =>
+          JSON.stringify(server.headers, null, 2)
+        );
+        setHeadersInputs(formattedHeaders);
+        setHeadersErrors(loadedSettings.mcp.servers.map(() => ""));
       } catch (error) {
         console.error("Failed to load external tool settings", error);
+        // On error, fall back to defaults
+        setSettings(defaultExternalToolSettings);
+        setHeadersInputs(
+          defaultExternalToolSettings.mcp.servers.map(() =>
+            JSON.stringify({}, null, 2)
+          )
+        );
+        setHeadersErrors(defaultExternalToolSettings.mcp.servers.map(() => ""));
       }
     };
 
@@ -38,10 +57,42 @@ export const ExternalToolSettingsTab = () => {
   }, []);
 
   const handleSaveSettings = async () => {
+    // First validate all JSON inputs
+    let isValid = true;
+    const newErrors = [...headersErrors];
+
+    for (let i = 0; i < headersInputs.length; i++) {
+      try {
+        JSON.parse(headersInputs[i]);
+        newErrors[i] = "";
+      } catch (e) {
+        newErrors[i] = "Invalid JSON format";
+        isValid = false;
+      }
+    }
+
+    setHeadersErrors(newErrors);
+
+    if (!isValid) {
+      setSaveStatus("error");
+      return;
+    }
+
+    // Parse headers and update settings before saving
+    const updatedSettings = { ...settings };
+    for (let i = 0; i < updatedSettings.mcp.servers.length; i++) {
+      try {
+        updatedSettings.mcp.servers[i].headers = JSON.parse(headersInputs[i]);
+      } catch (e) {
+        // This shouldn't happen as we've already validated
+        console.error("Error parsing JSON headers", e);
+      }
+    }
+
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      await ExternalToolsStorage.saveExternalToolSettings(settings);
+      await ExternalToolsStorage.saveExternalToolSettings(updatedSettings);
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (error) {
@@ -79,7 +130,6 @@ export const ExternalToolSettingsTab = () => {
     const checked = e.target.checked;
 
     setSettings((prev) => {
-      // If unchecking, set active to null
       if (!checked) {
         return {
           ...prev,
@@ -101,6 +151,103 @@ export const ExternalToolSettingsTab = () => {
     });
   };
 
+  // MCP Server handlers
+  const handleAddMCPServer = () => {
+    setSettings((prev) => ({
+      ...prev,
+      mcp: {
+        ...prev.mcp,
+        servers: [
+          ...prev.mcp.servers,
+          {
+            active: false,
+            name: "New Server",
+            url: "",
+            headers: {},
+          },
+        ],
+      },
+    }));
+
+    // Add empty headers input for the new server
+    setHeadersInputs((prev) => [...prev, JSON.stringify({}, null, 2)]);
+    setHeadersErrors((prev) => [...prev, ""]);
+  };
+
+  const handleDeleteMCPServer = (index: number) => {
+    if (confirm("Are you sure you want to delete this server?")) {
+      setSettings((prev) => {
+        const newServers = [...prev.mcp.servers];
+        newServers.splice(index, 1);
+        return {
+          ...prev,
+          mcp: {
+            ...prev.mcp,
+            servers: newServers,
+          },
+        };
+      });
+
+      // Remove the corresponding headers input
+      setHeadersInputs((prev) => {
+        const newInputs = [...prev];
+        newInputs.splice(index, 1);
+        return newInputs;
+      });
+
+      setHeadersErrors((prev) => {
+        const newErrors = [...prev];
+        newErrors.splice(index, 1);
+        return newErrors;
+      });
+    }
+  };
+
+  const handleMCPServerChange = (
+    index: number,
+    field: keyof MCPServer,
+    value: any
+  ) => {
+    setSettings((prev) => {
+      const newServers = [...prev.mcp.servers];
+      newServers[index] = {
+        ...newServers[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        mcp: {
+          ...prev.mcp,
+          servers: newServers,
+        },
+      };
+    });
+  };
+
+  const handleHeadersChange = (serverIndex: number, value: string) => {
+    setHeadersInputs((prev) => {
+      const newInputs = [...prev];
+      newInputs[serverIndex] = value;
+      return newInputs;
+    });
+
+    // Validate JSON as user types
+    try {
+      JSON.parse(value);
+      setHeadersErrors((prev) => {
+        const newErrors = [...prev];
+        newErrors[serverIndex] = "";
+        return newErrors;
+      });
+    } catch (e) {
+      setHeadersErrors((prev) => {
+        const newErrors = [...prev];
+        newErrors[serverIndex] = "Invalid JSON format";
+        return newErrors;
+      });
+    }
+  };
+
   // Get the currently selected tool
   const selectedTool = settings.search.options[selectedToolIndex] || null;
 
@@ -108,12 +255,12 @@ export const ExternalToolSettingsTab = () => {
   const isSelectedToolActive = settings.search.active?.id === selectedTool?.id;
 
   return (
-    <div className="p-4">
+    <div className="p-4 h-full overflow-y-auto">
       <h2 className="text-lg font-semibold mb-4 text-gray-200">
         External Tool Settings
       </h2>
 
-      <div className="mb-4">
+      <div className="mb-6">
         <h3 className="text-md font-medium mb-2 text-gray-200">Search Tools</h3>
 
         <div className="space-y-2 mb-3">
@@ -167,21 +314,128 @@ export const ExternalToolSettingsTab = () => {
             placeholder={`Enter ${selectedTool?.name} API Key`}
           />
         </div>
+      </div>
 
-        <button
-          onClick={handleSaveSettings}
-          disabled={isSaving}
-          className="px-4 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400"
-        >
-          {isSaving ? "Saving..." : "Save"}
-        </button>
-        {saveStatus === "success" && (
-          <span className="ml-2 text-green-400">Settings saved!</span>
-        )}
-        {saveStatus === "error" && (
-          <span className="ml-2 text-red-400">Failed to save settings</span>
+      {/* MCP Servers Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-md font-medium text-gray-200">MCP Servers</h3>
+          <Button onClick={handleAddMCPServer}>+ Add Server</Button>
+        </div>
+
+        {settings.mcp.servers.length === 0 ? (
+          <div className="text-gray-400 text-sm py-2">
+            No MCP servers configured. Click "Add Server" to add one.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {settings.mcp.servers.map((server, serverIndex) => (
+              <div
+                key={serverIndex}
+                className="p-3 border border-gray-700 rounded-md bg-[#1f1f1f]/30"
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={server.active}
+                      onChange={(e) =>
+                        handleMCPServerChange(
+                          serverIndex,
+                          "active",
+                          e.target.checked
+                        )
+                      }
+                      className="mr-2"
+                    />
+                    <label className="text-sm font-medium text-gray-200">
+                      Active
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteMCPServer(serverIndex)}
+                    className="text-red-400 hover:text-red-500"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                      Name
+                    </label>
+                    <Input
+                      type="text"
+                      value={server.name}
+                      onChange={(e) =>
+                        handleMCPServerChange(
+                          serverIndex,
+                          "name",
+                          e.target.value
+                        )
+                      }
+                      className="w-full"
+                      placeholder="Server name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                      URL
+                    </label>
+                    <Input
+                      type="text"
+                      value={server.url}
+                      onChange={(e) =>
+                        handleMCPServerChange(
+                          serverIndex,
+                          "url",
+                          e.target.value
+                        )
+                      }
+                      className="w-full"
+                      placeholder="http://localhost:8080/sse"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                      Headers (JSON format)
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        value={headersInputs[serverIndex] || "{}"}
+                        rows={3}
+                        onChange={(e) =>
+                          handleHeadersChange(serverIndex, e.target.value)
+                        }
+                        className="w-full text-gray-200 border border-gray-800 rounded-md resize-y bg-[#1f1f1f]/50 p-2 font-mono text-sm"
+                        placeholder='{ "X-API-Key": "your-api-key" }'
+                      />
+                      {headersErrors[serverIndex] && (
+                        <div className="text-red-400 text-xs mt-1">
+                          {headersErrors[serverIndex]}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      <Button onClick={handleSaveSettings} disabled={isSaving}>
+        {isSaving ? "Saving..." : "Save"}
+      </Button>
+      {saveStatus === "success" && (
+        <span className="ml-2 text-green-400">Settings saved!</span>
+      )}
+      {saveStatus === "error" && (
+        <span className="ml-2 text-red-400">Failed to save settings</span>
+      )}
     </div>
   );
 };

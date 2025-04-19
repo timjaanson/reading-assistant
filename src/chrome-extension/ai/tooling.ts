@@ -81,7 +81,7 @@ export const getTooling = async (
   if (externalToolSettings.search.active?.id === "tavily") {
     tools["urlExtractor"] = {
       description:
-        "Extract the content from up to 10 URLs at a time. Returns the content for each URL.",
+        "Extract the content from up to 10 URLs at a time. Returns the text and image content for each URL without html tags.",
       parameters: z.object({
         urls: z.array(z.string()).describe("The URLs to extract content from"),
       }),

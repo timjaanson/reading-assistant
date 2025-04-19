@@ -59,7 +59,8 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       });
       options = {
         // enabling google search (grounding) breaks other tool calls
-        //useSearchGrounding: true,
+        // it is enabled when tool calls are disabled
+        useSearchGrounding: !providerSettings.active.enableToolCalls,
         structuredOutputs: true,
       };
       break;

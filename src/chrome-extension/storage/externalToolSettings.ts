@@ -17,6 +17,9 @@ export const defaultExternalToolSettings: ExternalToolSettings = {
     ],
     active: null,
   },
+  mcp: {
+    servers: [],
+  },
 };
 
 export class ExternalToolsStorage {
@@ -38,9 +41,21 @@ export class ExternalToolsStorage {
       const result = await chrome.storage.local.get(
         StorageKeys.ExternalToolSettings
       );
-      return (
-        result[StorageKeys.ExternalToolSettings] || defaultExternalToolSettings
-      );
+
+      const storedSettings =
+        result[StorageKeys.ExternalToolSettings] || defaultExternalToolSettings;
+
+      if (!storedSettings.mcp) {
+        storedSettings.mcp = { ...defaultExternalToolSettings.mcp };
+      }
+
+      if (!storedSettings.mcp.servers) {
+        storedSettings.mcp.servers = [
+          ...defaultExternalToolSettings.mcp.servers,
+        ];
+      }
+
+      return storedSettings;
     } catch (error) {
       console.error("Error loading external tool settings:", error);
       throw error;

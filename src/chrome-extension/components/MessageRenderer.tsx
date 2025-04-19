@@ -5,6 +5,8 @@ import {
   ReasoningPartRenderer,
   TextPartRenderer,
   ToolPartRenderer,
+  FilePartRenderer,
+  SourcePartRenderer,
 } from "./MessagePartRenderer";
 
 type MessagePart = UIMessage["parts"][number];
@@ -42,11 +44,14 @@ const PartRenderer = ({
       );
 
     case "source":
+      return <SourcePartRenderer source={part.source} textColor={textColor} />;
     case "file":
       return (
-        <div className={`text-xs ${textColor}`}>
-          NOT HANDLED TYPE: [{part.type}]
-        </div>
+        <FilePartRenderer
+          mimeType={part.mimeType}
+          data={part.data}
+          textColor={textColor}
+        />
       );
     default:
       // Handle potential unknown part types gracefully
@@ -78,20 +83,35 @@ export const MessageRenderer = ({
 
   const messageContent = (
     <>
-      {validParts.map((part, index) => (
-        <PartRenderer key={index} part={part} textColor={textColor()} />
-      ))}
+      {validParts
+        .filter((part) => part.type !== "source")
+        .map((part, index) => (
+          <PartRenderer key={index} part={part} textColor={textColor()} />
+        ))}
 
-      {/* Render message content if parts are not available (fallback/legacy) */}
       {validParts.length === 0 && message.content && (
         <div>LEGACY RENDERING:{message.content}</div>
+      )}
+
+      {validParts.some((part) => part.type === "source") && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {validParts
+            .filter((part) => part.type === "source")
+            .map((part, index) => (
+              <PartRenderer
+                key={`source-${index}`}
+                part={part}
+                textColor={textColor()}
+              />
+            ))}
+        </div>
       )}
     </>
   );
 
   return (
     <div
-      className={`flex flex-col gap-1 p-1.5 rounded-lg ${bubbleColor()} max-w-7xl w-fit overflow-hidden`}
+      className={`flex flex-col gap-1 p-1.5 pl-3 rounded-lg ${bubbleColor()} max-w-7xl w-fit overflow-hidden`}
     >
       {collapsableMessage ? (
         <CollapsableSection textColor={textColor()}>

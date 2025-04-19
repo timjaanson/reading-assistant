@@ -1,4 +1,5 @@
 import { useState, useEffect, ChangeEvent } from "react";
+import { Tooltip } from "../components/Tooltip";
 
 import { ExtensionSettings } from "../types/extensionSettings";
 import {
@@ -7,6 +8,7 @@ import {
 } from "../storage/extensionSettings";
 import { tryCatch } from "../util/try-catch";
 import { Input } from "../components/Input";
+import { CodeBlock } from "../components/CodeBlock";
 
 const ExtensionSettingsTab = () => {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
@@ -119,6 +121,22 @@ const ExtensionSettingsTab = () => {
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-200 mb-1">
             Allowed urls (comma separated, supports wildcards with *):
+            <Tooltip>
+              <p className="mb-1">
+                Comma separated values that determine where the tooltip is
+                shown.
+              </p>
+              <p className="mb-1">
+                Supports wildcards with * for matching multiple URLs.
+              </p>
+              <p className="mb-1">
+                The value "PDF" is a special case which allows tooltip when
+                viewing PDFs.
+              </p>
+              <p className="mb-1">
+                Example: <CodeBlock>PDF, *wikipedia.org/*</CodeBlock>
+              </p>
+            </Tooltip>
             <Input
               type="text"
               value={allowedUrlsInput}

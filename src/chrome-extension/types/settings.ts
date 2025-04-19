@@ -21,9 +21,19 @@ export interface ExternalTool {
   apiKey: string;
 }
 
+export interface MCPServer {
+  active: boolean;
+  name: string;
+  url: string;
+  headers: Record<string, string>;
+}
+
 export interface ExternalToolSettings {
   search: {
     options: ExternalTool[];
     active: ExternalTool | null;
+  };
+  mcp: {
+    servers: MCPServer[];
   };
 }

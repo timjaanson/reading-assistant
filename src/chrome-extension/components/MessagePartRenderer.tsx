@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
+import { CodeBlock } from "./CodeBlock";
 
 type CollapsibleSectionProps = {
   children: React.ReactNode;
@@ -19,8 +20,8 @@ export const CollapsableSection = ({
   textColor,
   openText = "Show message",
   closeText = "Close message",
-  openIcon = "→",
-  closeIcon = "↓",
+  openIcon = "▸",
+  closeIcon = "▾",
   initialCollapsed = true,
 }: CollapsibleSectionProps) => {
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
@@ -85,25 +86,34 @@ export const TextPartRenderer = ({
               {children}
             </li>
           ),
-          code: ({ children }) => (
-            <code className="font-mono bg-gray-800/75 text-gray-100 px-1 py-0.5 rounded-sm max-w-full overflow-x-auto inline-block">
-              {children}
-            </code>
-          ),
+          code: ({ children }) => <CodeBlock>{children}</CodeBlock>,
           table: ({ node, ...props }) => (
-            <table
-              className={`w-full border-collapse ${textColor}`}
-              {...props}
-            />
+            <div className="max-w-full overflow-x-auto p-2">
+              <table
+                className={`border-collapse ${textColor} w-max`}
+                {...props}
+              />
+            </div>
           ),
           thead: ({ node, ...props }) => (
             <thead
-              className={`border-b border-gray-400 ${textColor}`}
+              className={`border-b border-gray-500 ${textColor}`}
               {...props}
             />
           ),
+          th: ({ node, ...props }) => (
+            <th className={`p-3 font-bold ${textColor}`} {...props} />
+          ),
+          tr: ({ node, children, ...props }) => (
+            <tr
+              className={`border-b border-gray-500 last:border-b-0 ${textColor}`}
+              {...props}
+            >
+              {children}
+            </tr>
+          ),
           td: ({ node, ...props }) => (
-            <td className={`border border-gray-500 ${textColor}`} {...props} />
+            <td className={`p-3 max-w-48 ${textColor}`} {...props} />
           ),
           p: ({ node, ...props }) => (
             <p className={`whitespace-pre-line ${textColor}`} {...props} />
@@ -178,11 +188,7 @@ export const ToolPartRenderer = ({
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
               <div className="max-h-40 max-w-full overflow-auto">
-                <pre
-                  className={`font-mono bg-gray-800/75 p-1 rounded overflow-x-auto max-w-full text-xs`}
-                >
-                  {JSON.stringify(args, null, 2)}
-                </pre>
+                <CodeBlock>{JSON.stringify(args, null, 2)}</CodeBlock>
               </div>
             </div>
           </>
@@ -192,15 +198,80 @@ export const ToolPartRenderer = ({
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
             <div className="max-h-56 max-w-full overflow-auto">
-              <pre
-                className={`font-mono bg-gray-800/75 p-1 rounded overflow-x-auto max-w-full text-xs`}
-              >
+              <CodeBlock>
                 {JSON.stringify((toolInvocation as any).result, null, 2)}
-              </pre>
+              </CodeBlock>
             </div>
           </div>
         )}
       </div>
     </CollapsableSection>
+  );
+};
+
+export const FilePartRenderer = ({
+  mimeType,
+  data,
+  textColor,
+}: {
+  mimeType: string;
+  data: string;
+  textColor: string;
+}) => {
+  if (mimeType.startsWith("image/")) {
+    return (
+      <div className="mt-2">
+        <img
+          src={`data:${mimeType};base64,${data}`}
+          alt="File content"
+          className="max-w-full rounded"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`mt-2 ${textColor}`}>
+      <div className="text-sm">File: {mimeType}</div>
+      <div className="text-xs">Content not displayable</div>
+    </div>
+  );
+};
+
+export const SourcePartRenderer = ({
+  source,
+  textColor,
+}: {
+  source: {
+    id: string;
+    url: string;
+    title?: string;
+  };
+  textColor: string;
+}) => {
+  let displayName = source.title || "Source";
+
+  try {
+    if (!source.title && source.url) {
+      const url = new URL(source.url);
+      displayName = url.hostname || url.pathname || source.url;
+    }
+  } catch (e) {
+    displayName = source.title || source.url || "Source";
+  }
+
+  return (
+    <span
+      className={`${textColor} text-sm px-2 py-1 rounded-lg bg-black/20 inline-flex items-center`}
+    >
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${textColor} hover:underline`}
+      >
+        {displayName}
+      </a>
+    </span>
   );
 };
