@@ -10,6 +10,7 @@ import { MessageRenderer } from "./MessageRenderer";
 import { StopIndicator } from "../common/icons/StopIndicator";
 import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
+import { SendIcon } from "../common/icons/Send";
 
 export type SaveableChatValues = {
   id: string;
@@ -149,10 +150,15 @@ export const Chat = ({
   }, [id, internalChatName, messages]);
 
   useEffect(() => {
-    if (sendInitialMessage && initialUserMessage && messages.length === 1) {
+    if (
+      sendInitialMessage &&
+      !isBusy &&
+      initialUserMessage &&
+      messages.length === 1
+    ) {
       reload();
     }
-  }, [sendInitialMessage, initialUserMessage, messages, reload]);
+  }, [sendInitialMessage, isBusy, initialUserMessage, messages, reload]);
 
   useEffect(() => {
     if (!isBusy && status === "ready" && messages.length > 0 && isModified) {
@@ -332,7 +338,7 @@ export const Chat = ({
       <div className="flex-shrink-0 bg-transparent p-1 border-t border-gray-900">
         <form onSubmit={submitMessageHandler}>
           <div className="flex space-x-1">
-            <div className="relative w-full flex">
+            <div className="relative w-full flex text-sm">
               <textarea
                 ref={textareaRef}
                 disabled={isBusy}
@@ -442,13 +448,9 @@ export const Chat = ({
               onClick={isBusy ? () => stop() : undefined}
               className="bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
             >
-              {isBusy ? (
-                <span className="mx-1">
-                  <StopIndicator />
-                </span>
-              ) : (
-                "Send"
-              )}
+              <span className="mx-1 flex items-center justify-center">
+                {isBusy ? <StopIndicator /> : <SendIcon />}
+              </span>
             </button>
           </div>
         </form>

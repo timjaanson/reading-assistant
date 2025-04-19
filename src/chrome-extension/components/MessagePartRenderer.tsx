@@ -20,8 +20,8 @@ export const CollapsableSection = ({
   textColor,
   openText = "Show message",
   closeText = "Close message",
-  openIcon = "▸",
-  closeIcon = "▾",
+  openIcon = "▶︎",
+  closeIcon = "▼︎",
   initialCollapsed = true,
 }: CollapsibleSectionProps) => {
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
