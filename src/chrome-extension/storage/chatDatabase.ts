@@ -1,7 +1,8 @@
 import Dexie, { Table } from "dexie";
 import { Chat, ChatPreview } from "../types/chat";
+import { IChatDatabase } from "../types/database";
 
-export class ChatDatabase extends Dexie {
+export class ChatDatabase extends Dexie implements IChatDatabase {
   chats!: Table<Chat, string>;
 
   constructor() {

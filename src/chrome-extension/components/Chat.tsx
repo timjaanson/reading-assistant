@@ -2,7 +2,6 @@ import { useChat } from "@ai-sdk/react";
 import { createCustomBackgroundFetch } from "../ai/custom-fetch";
 import { UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { chatDb } from "../storage/chatDatabase";
 import { Tooltip } from "./Tooltip";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Provider, ProviderSettings } from "../types/settings";
@@ -11,6 +10,7 @@ import { StopIndicator } from "../common/icons/StopIndicator";
 import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
 import { SendIcon } from "../common/icons/Send";
+import { chatDbProxy } from "../storage/wrappers";
 
 export type SaveableChatValues = {
   id: string;
@@ -269,14 +269,13 @@ export const Chat = ({
     if (!id || messages.length === 0) return;
 
     try {
-      await chatDb.saveChat({
+      await chatDbProxy.saveChat({
         id,
         name: internalChatName,
         url: pageUrl ? pageUrl.toString() : undefined,
         messages,
       });
 
-      // Update saved values ref to track changes
       chatSaveValues.current = {
         id,
         chatName: internalChatName,

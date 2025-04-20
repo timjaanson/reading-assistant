@@ -10,6 +10,9 @@ import { setupContextMenu } from "./context-menu";
 // Import and setup experiment stream handler
 import { setupExperimentStreamHandler } from "./experiment-stream-handler";
 
+// Import and setup database handler
+import { setupDatabaseHandler } from "./database-handler";
+
 // Initialize PDF handler
 setupPdfHandler();
 
@@ -18,3 +21,6 @@ setupContextMenu();
 
 // Initialize experiment stream handler
 setupExperimentStreamHandler();
+
+// Initialize database handler
+setupDatabaseHandler();

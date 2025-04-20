@@ -46,7 +46,7 @@ export function setupExperimentStreamHandler() {
 
     // Only handle connections for our experiment stream
     if (port.name !== EXPERIMENTAL_STREAM_PORT_NAME) {
-      return;
+      return false;
     }
 
     port.onMessage.addListener(async (message) => {

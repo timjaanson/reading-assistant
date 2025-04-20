@@ -19,6 +19,8 @@ export default defineConfig({
     }),
   ],
   build: {
+    sourcemap: true,
+    chunkSizeWarningLimit: 10000,
     rollupOptions: {
       input: {
         popup: resolve(__dirname, "popup.html"),
@@ -40,6 +42,5 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 10000,
   },
 });

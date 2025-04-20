@@ -1,7 +1,8 @@
 import Dexie, { Table } from "dexie";
 import { MemoryItem, NewMemoryData } from "../types/memory";
+import { IMemoryDatabase } from "../types/database";
 
-export class MemoryDatabase extends Dexie {
+export class MemoryDatabase extends Dexie implements IMemoryDatabase {
   memories!: Table<MemoryItem, number>;
 
   constructor() {

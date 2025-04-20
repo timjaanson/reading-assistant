@@ -1,4 +1,4 @@
-import { memoryDb } from "../storage/memoryDatabase";
+import { memoryDbProxy } from "../storage/wrappers";
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
 export const defaultSystemMessage = async (url?: URL) => `## Your role
@@ -126,12 +126,18 @@ Macro-economics in the 21st century
 `;
 
 const getMemories = async () => {
-  const memories = await memoryDb.getActiveMemories();
-  console.log("Memories", memories);
-  return memories
-    .map(
-      (memory) =>
-        `ID:${memory.id} updated: ${memory.updatedAt} - ${memory.content}`
-    )
-    .join("\n");
+  try {
+    const memories = await memoryDbProxy.getActiveMemories();
+    console.log("[prompts] Retrieved memories:", memories.length);
+
+    return memories
+      .map(
+        (memory) =>
+          `ID:${memory.id} updated: ${memory.updatedAt} - ${memory.content}`
+      )
+      .join("\n");
+  } catch (error) {
+    console.warn("[prompts] Error fetching memories:", error);
+    return "";
+  }
 };
