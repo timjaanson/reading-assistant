@@ -18,6 +18,12 @@ type CurrentChatSelection = {
   url?: URL;
 };
 
+// New type for grouped chats
+type ChatGroup = {
+  url: URL | null;
+  chats: ChatPreview[];
+};
+
 export const ChatTab = ({
   initialChatName,
   systemPrompt,
@@ -36,7 +42,7 @@ export const ChatTab = ({
   const [editingChatName, setEditingChatName] = useState(
     currentChatSelection.name
   );
-  const [chats, setChats] = useState<ChatPreview[]>([]);
+  const [chats, setChats] = useState<ChatGroup[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
 
@@ -44,17 +50,40 @@ export const ChatTab = ({
     setEditingChatName(currentChatSelection.name);
   }, [currentChatSelection.name]);
 
+  const groupChats = useCallback((chats: ChatPreview[]) => {
+    const groupedChats: ChatGroup[] = [];
+    let currentGroup: ChatGroup | null = null;
+
+    chats.forEach((chat) => {
+      if (
+        !currentGroup ||
+        chat.url?.toString() !== currentGroup.url?.toString()
+      ) {
+        currentGroup = {
+          url: chat.url ? new URL(chat.url) : null,
+          chats: [chat],
+        };
+        groupedChats.push(currentGroup);
+      } else {
+        currentGroup.chats.push(chat);
+      }
+    });
+
+    return groupedChats;
+  }, []);
+
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
     try {
       const allChats = await chatDbProxy.getAllChatPreviews();
-      setChats(allChats);
+
+      setChats(groupChats(allChats));
     } catch (error) {
       console.error("Error loading chats:", error);
     } finally {
       setIsLoadingChats(false);
     }
-  }, []);
+  }, [groupChats]);
 
   // Load chat list on component mount
   useEffect(() => {
@@ -71,8 +100,9 @@ export const ChatTab = ({
   // Refresh chat list
   const refreshChatList = useCallback(async () => {
     const allChats = await chatDbProxy.getAllChatPreviews();
-    setChats(allChats);
-  }, []);
+
+    setChats(groupChats(allChats));
+  }, [groupChats]);
 
   // Load specific chat when selected
   const loadChat = useCallback(async (id: string) => {
@@ -160,6 +190,41 @@ export const ChatTab = ({
     }
   };
 
+  const prettyUrl = (url: URL) => {
+    if (!url) {
+      return "Unknown URL";
+    }
+
+    const hostname = url.hostname || "";
+    const pathname = url.pathname || "";
+
+    // If the path is just "/" or empty, use just the hostname
+    if (pathname === "/" || pathname === "") {
+      return hostname;
+    }
+
+    // Split the path into segments and remove empty segments
+    const segments = pathname.split("/").filter((segment) => segment !== "");
+
+    if (segments.length === 0) {
+      return hostname;
+    }
+
+    let lastSegment = "";
+    if (pathname.endsWith("/")) {
+      // For paths ending with "/", use the second-to-last segment if available
+      lastSegment =
+        segments.length > 1
+          ? segments[segments.length - 2] + "/"
+          : segments[segments.length - 1] + "/";
+    } else {
+      // Otherwise use the last segment
+      lastSegment = segments[segments.length - 1];
+    }
+
+    return `${hostname} - ${lastSegment}`;
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       <div className="flex items-center p-2 border-b border-gray-700">
@@ -213,30 +278,34 @@ export const ChatTab = ({
                   No saved chats
                 </div>
               ) : (
-                chats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
-                    onClick={() => loadChat(chat.id)}
-                  >
-                    {chat.url && (
-                      <span className="text-xs text-gray-400 overflow-x-auto">
-                        {chat.url.toString()}
-                      </span>
-                    )}
-                    <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">
-                      {chat.name}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {getCompactLocaleDateTime(chat.updatedAt)}
-                    </span>
-                    <button
-                      className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100 text-gray-300"
-                      onClick={(e) => deleteChat(chat.id, e)}
-                      title="Delete chat"
-                    >
-                      ×
-                    </button>
+                chats.map((group, groupIndex) => (
+                  <div key={groupIndex} className="mb-3">
+                    <div className="text-xs text-gray-400 font-medium mb-1 px-3">
+                      {group.url ? prettyUrl(group.url) : "Extension"}
+                    </div>
+                    <div className="border-l-2 border-gray-600 pl-2">
+                      {group.chats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
+                          onClick={() => loadChat(chat.id)}
+                        >
+                          <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">
+                            {chat.name}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {getCompactLocaleDateTime(chat.updatedAt)}
+                          </span>
+                          <button
+                            className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100 text-gray-300"
+                            onClick={(e) => deleteChat(chat.id, e)}
+                            title="Delete chat"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))
               )}

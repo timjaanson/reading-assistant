@@ -8,7 +8,7 @@ export class ChatDatabase extends Dexie implements IChatDatabase {
   constructor() {
     super("AssistantChatsDB");
     this.version(1).stores({
-      chats: "id, name, updatedAt, url, [updatedAt+url]",
+      chats: "id, name, updatedAt, url",
     });
   }
 
@@ -49,13 +49,13 @@ export class ChatDatabase extends Dexie implements IChatDatabase {
   async getAllChatPreviews(): Promise<ChatPreview[]> {
     console.log("Getting all chat previews");
     return this.chats
-      .orderBy(["updatedAt", "url"])
+      .orderBy("updatedAt")
       .reverse()
       .toArray((chats) =>
         chats.map((chat) => ({
           id: chat.id,
           name: chat.name,
-          url: chat.url ? new URL(chat.url) : undefined,
+          url: chat.url,
           updatedAt: chat.updatedAt,
         }))
       );

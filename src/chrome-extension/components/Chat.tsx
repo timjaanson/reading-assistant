@@ -181,25 +181,6 @@ export const Chat = ({
     loadSettings();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showProviderDropdown &&
-        providerIconRef.current &&
-        !providerIconRef.current.contains(event.target as Node) &&
-        providerDropdownRef.current &&
-        !providerDropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowProviderDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showProviderDropdown]);
-
   // Set up observers to detect content changes
   useEffect(() => {
     const messagesContainer = messagesContainerRef.current;
@@ -422,6 +403,7 @@ export const Chat = ({
                             key={`${provider.provider}-${provider.model}-${index}`}
                           >
                             <button
+                              type="button"
                               onClick={() => handleProviderSelect(index)}
                               className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-gray-400/20 ${
                                 providerSettings.active?.provider ===

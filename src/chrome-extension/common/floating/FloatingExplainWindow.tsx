@@ -19,7 +19,7 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
           pageUrl={this.currentPageUrl}
           initialUserMessage={options.selectedText}
           initialChatName={"Explain"}
-          systemPrompt={await explainTextSystemMessage()}
+          systemPrompt={await explainTextSystemMessage(this.currentPageUrl)}
           collapseInitialMessage={true}
           sendInitialMessage={true}
         />

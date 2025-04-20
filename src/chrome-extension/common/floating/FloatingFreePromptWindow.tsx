@@ -18,7 +18,7 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
           initialMessages={[]}
           pageUrl={this.currentPageUrl}
           initialChatName={"Custom"}
-          systemPrompt={await freePromptSystemMessage()}
+          systemPrompt={await freePromptSystemMessage(this.currentPageUrl)}
           initialUserMessage={options.selectedText}
           collapseInitialMessage={true}
           sendInitialMessage={false}

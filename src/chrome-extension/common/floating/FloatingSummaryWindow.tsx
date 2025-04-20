@@ -18,7 +18,7 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
           initialMessages={[]}
           initialChatName={"Summary"}
           pageUrl={this.currentPageUrl}
-          systemPrompt={await summarizeTextSystemMessage()}
+          systemPrompt={await summarizeTextSystemMessage(this.currentPageUrl)}
           initialUserMessage={options.selectedText}
           collapseInitialMessage={true}
           sendInitialMessage={true}
