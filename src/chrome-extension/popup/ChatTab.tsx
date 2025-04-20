@@ -15,6 +15,7 @@ type CurrentChatSelection = {
   id: string | undefined;
   name: string;
   messages: UIMessage[];
+  url?: URL;
 };
 
 export const ChatTab = ({
@@ -29,6 +30,7 @@ export const ChatTab = ({
       id: undefined,
       name: initialChatName || "New Chat",
       messages: [],
+      url: undefined,
     });
   const [chatInstanceKey, setChatInstanceKey] = useState<string>("initial");
   const [editingChatName, setEditingChatName] = useState(
@@ -217,6 +219,11 @@ export const ChatTab = ({
                     className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
                     onClick={() => loadChat(chat.id)}
                   >
+                    {chat.url && (
+                      <span className="text-xs text-gray-400 overflow-x-auto">
+                        {chat.url.toString()}
+                      </span>
+                    )}
                     <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">
                       {chat.name}
                     </span>
@@ -241,6 +248,7 @@ export const ChatTab = ({
       <div className="flex-1 overflow-hidden">
         <Chat
           key={chatInstanceKey}
+          pageUrl={currentChatSelection.url}
           initialChatId={currentChatSelection.id}
           initialChatName={currentChatSelection.name}
           initialMessages={currentChatSelection.messages}

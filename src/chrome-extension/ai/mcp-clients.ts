@@ -27,7 +27,7 @@ export const getActiveMCPClients = async (
           })
         );
       } catch (error) {
-        console.error(
+        console.warn(
           `Error creating MCP client for server ${server.name} ${server.url}:`,
           error
         );

@@ -1,4 +1,4 @@
-import { CoreMessage, streamText } from "ai";
+import { streamText } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -7,36 +7,6 @@ import { getActiveMCPClients } from "./mcp-clients";
 export type GetTextResponseOptions = {
   systemPrompt?: string;
   abortSignal?: AbortSignal;
-};
-
-export const getStreamedTextResponse = async (
-  messages: CoreMessage[],
-  options: GetTextResponseOptions = {}
-) => {
-  try {
-    const languageModel = await getLanguageModel();
-    const tooling = await getTooling(languageModel);
-
-    const stream = streamText({
-      model: languageModel.model,
-      system: options.systemPrompt || (await defaultSystemMessage()),
-      messages,
-      tools: tooling?.tools,
-      toolChoice: tooling?.toolChoice,
-      maxSteps: 10,
-      providerOptions: languageModel.providerOptions,
-      abortSignal: options.abortSignal,
-      onError: (error) => {
-        console.error("Error getting streamed text response", error);
-        throw error;
-      },
-    });
-
-    return stream;
-  } catch (error) {
-    console.error("Error getting streamed text response", error);
-    throw error;
-  }
 };
 
 // Updated to accept any message format
@@ -72,29 +42,36 @@ export const getCustomBackendResponse = async (
     });
   }
 
-  const response = streamText({
-    model: languageModel.model,
-    system: options.systemPrompt || (await defaultSystemMessage()),
-    messages: messages,
-    tools: allTools,
-    toolChoice: tooling?.toolChoice,
-    maxSteps: 20,
-    providerOptions: languageModel.providerOptions,
-    abortSignal: options.abortSignal,
-    onError: (error) => {
-      console.error("Error getting streamed text response", error);
-      throw error;
-    },
-    onFinish: () => {
-      mcpClients.forEach((client) => {
-        try {
-          client.close();
-        } catch (error) {
-          console.error("Error closing MCP client", error);
-        }
-      });
-    },
-  });
+  let response;
+  try {
+    const prompt = options.systemPrompt || (await defaultSystemMessage());
+    response = streamText({
+      model: languageModel.model,
+      system: prompt,
+      messages: messages,
+      tools: allTools,
+      toolChoice: tooling?.toolChoice,
+      maxSteps: 20,
+      providerOptions: languageModel.providerOptions,
+      abortSignal: options.abortSignal,
+      onError: (error) => {
+        console.error("Error getting streamed text response", error);
+        throw error;
+      },
+      onFinish: () => {
+        mcpClients.forEach((client) => {
+          try {
+            client.close();
+          } catch (error) {
+            console.warn("Error closing MCP client", error);
+          }
+        });
+      },
+    });
+  } catch (error) {
+    console.error("Error getting streamed text response", error);
+    throw error;
+  }
 
   return response.toDataStreamResponse({
     sendReasoning: true,

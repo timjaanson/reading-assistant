@@ -26,9 +26,11 @@ export abstract class AbstractFloatingEmbeddedWindow {
   };
 
   private title: string;
+  public currentPageUrl: URL;
 
   constructor(title: string, options?: Partial<FloatingEmbeddedWindowOptions>) {
     this.title = title;
+    this.currentPageUrl = this.getCurrentPageUrl();
     this.options = { ...this.options, ...options };
     this.element = this.createContainer();
     this.header = this.createHeader();
@@ -42,6 +44,18 @@ export abstract class AbstractFloatingEmbeddedWindow {
     this.root = createRoot(this.contentContainer);
     this.setupDragHandlers();
     this.addResizeHandles();
+  }
+
+  private getCurrentPageUrl(): URL {
+    let url = new URL(window.location.href);
+    if (
+      url.origin.includes("chrome-extension://") &&
+      url.pathname.includes("pdf-viewer.html") &&
+      url.searchParams.has("url")
+    ) {
+      url = new URL(decodeURIComponent(url.searchParams.get("url")!));
+    }
+    return url;
   }
 
   public abstract show(options: FloatingWindowShowOptions): Promise<void>;

@@ -11,7 +11,7 @@ export interface Chat {
 
 export interface ChatPreview {
   id: string;
-  url?: string;
+  url?: URL;
   name: string;
   updatedAt: Date;
 }

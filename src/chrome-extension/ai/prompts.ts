@@ -1,7 +1,7 @@
 import { memoryDb } from "../storage/memoryDatabase";
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
-export const defaultSystemMessage = async () => `## Your role
+export const defaultSystemMessage = async (url?: URL) => `## Your role
 You are a helpful assistant inside a Chrome extension called "Reading Assistant".
 
 ## Response format
@@ -11,12 +11,13 @@ You are a helpful assistant inside a Chrome extension called "Reading Assistant"
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+${url ? `The user is currently on the page: ${url.toString()}` : ""}
 
 ### User added information that takes precedence and can override formatting rules or instructions
 ${await getMemories()}
 `;
 
-export const summarizeTextSystemMessage = async () => `## Your role
+export const summarizeTextSystemMessage = async (url?: URL) => `## Your role
 You are a helpful assistant inside a Chrome extension.
 
 ## Response format
@@ -42,12 +43,13 @@ You are a helpful assistant inside a Chrome extension.
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+${url ? `The user is currently on the page: ${url.toString()}` : ""}
 
 ### User added information that takes precedence and can override formatting rules or instructions
 ${await getMemories()}
 `;
 
-export const explainTextSystemMessage = async () => `## Your role
+export const explainTextSystemMessage = async (url?: URL) => `## Your role
 You are a helpful assistant inside a Chrome extension that is for assisted reading.
 
 ## Response format
@@ -74,12 +76,13 @@ You are a helpful assistant inside a Chrome extension that is for assisted readi
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+${url ? `The user is currently on the page: ${url.toString()}` : ""}
 
 ### User added information that takes precedence and can override formatting rules or instructions
 ${await getMemories()}
 `;
 
-export const freePromptSystemMessage = async () => `## Your role
+export const freePromptSystemMessage = async (url?: URL) => `## Your role
 You are a helpful assistant inside a Chrome extension called "Reading Assistant".
 
 ## Task
@@ -94,6 +97,7 @@ You are a helpful assistant inside a Chrome extension called "Reading Assistant"
 
 ## Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
+${url ? `The user is currently on the page: ${url.toString()}` : ""}
 
 ### User added information that takes precedence and can override formatting rules or instructions
 ${await getMemories()}

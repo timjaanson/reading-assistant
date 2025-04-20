@@ -7,7 +7,7 @@ export class ChatDatabase extends Dexie {
   constructor() {
     super("AssistantChatsDB");
     this.version(1).stores({
-      chats: "id, name, updatedAt",
+      chats: "id, name, updatedAt, url, [updatedAt+url]",
     });
   }
 
@@ -19,7 +19,8 @@ export class ChatDatabase extends Dexie {
 
     const chatToSave: Chat = {
       ...chatData,
-      createdAt: existing?.createdAt || now, // Keep original creation date
+      url: chatData.url?.toString(),
+      createdAt: existing?.createdAt || now,
       updatedAt: now,
     };
 
@@ -47,12 +48,13 @@ export class ChatDatabase extends Dexie {
   async getAllChatPreviews(): Promise<ChatPreview[]> {
     console.log("Getting all chat previews");
     return this.chats
-      .orderBy("updatedAt")
+      .orderBy(["updatedAt", "url"])
       .reverse()
       .toArray((chats) =>
         chats.map((chat) => ({
           id: chat.id,
           name: chat.name,
+          url: chat.url ? new URL(chat.url) : undefined,
           updatedAt: chat.updatedAt,
         }))
       );

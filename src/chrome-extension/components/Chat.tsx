@@ -20,12 +20,14 @@ export type SaveableChatValues = {
 
 type ChatProps = ChatBehaviorProps & {
   initialChatId?: string;
+  pageUrl?: URL;
   initialChatName: string;
   initialMessages: UIMessage[];
 };
 
 export const Chat = ({
   initialChatId,
+  pageUrl,
   initialChatName,
   initialMessages,
   systemPrompt,
@@ -270,7 +272,7 @@ export const Chat = ({
       await chatDb.saveChat({
         id,
         name: internalChatName,
-        url: "",
+        url: pageUrl ? pageUrl.toString() : undefined,
         messages,
       });
 
@@ -287,7 +289,7 @@ export const Chat = ({
       console.error("Error saving chat:", error);
       setError(error instanceof Error ? error.message : "Failed to save chat");
     }
-  }, [id, internalChatName, messages]);
+  }, [id, internalChatName, messages, pageUrl]);
 
   const handleProviderSelect = async (index: number | null) => {
     try {

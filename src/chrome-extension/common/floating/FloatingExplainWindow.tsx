@@ -1,5 +1,5 @@
 import { explainTextSystemMessage } from "../../ai/prompts";
-import { ChatTab } from "../../popup/ChatTab";
+import { Chat } from "../../components/Chat";
 import { AbstractFloatingEmbeddedWindow } from "./AbstractFloatingEmbeddedWindow";
 
 export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
@@ -11,15 +11,14 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
     selectedText: string;
     anchorPoint?: { x: number; y: number };
   }): Promise<void> {
-    // Generate a unique ID for this explain session
-    const sessionId = `explain-${Date.now()}`;
-
     super.renderComponent({
       ...options,
       renderedComponent: (
-        <ChatTab
+        <Chat
+          initialMessages={[]}
+          pageUrl={this.currentPageUrl}
           initialUserMessage={options.selectedText}
-          initialChatName={sessionId}
+          initialChatName={"Explain"}
           systemPrompt={await explainTextSystemMessage()}
           collapseInitialMessage={true}
           sendInitialMessage={true}
