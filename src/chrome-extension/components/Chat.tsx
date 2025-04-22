@@ -341,7 +341,7 @@ export const Chat = ({
                 type="button"
                 onClick={handleFileButtonClick}
                 disabled={isBusy}
-                className="absolute text-md right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="absolute text-md cursor-pointer right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-100 transition-colors"
               >
                 +
               </button>
