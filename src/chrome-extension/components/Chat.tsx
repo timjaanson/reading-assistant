@@ -11,6 +11,7 @@ import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
 import { SendIcon } from "../common/icons/Send";
 import { chatDbProxy } from "../storage/wrappers";
+import { Button } from "../common/Button";
 
 export type SaveableChatValues = {
   id: string;
@@ -341,7 +342,7 @@ export const Chat = ({
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
                 placeholder={isBusy ? "" : "Type your message"}
-                className="flex-1 text-gray-200 border border-gray-800 rounded-md p-1 resize-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
+                className="flex-1 text-gray-200 border border-gray-800 rounded-md py-2 px-3 resize-none scrollbar-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
                 rows={1}
               />
               {isBusy && (
@@ -363,7 +364,7 @@ export const Chat = ({
                         onClick={() =>
                           setShowProviderDropdown(!showProviderDropdown)
                         }
-                        className={`p-0.5 rounded ${
+                        className={`p-0.5 rounded cursor-pointer ${
                           providerSettings.active
                             ? "text-gray-400 hover:text-gray-200"
                             : "text-red-500 hover:text-red-400"
@@ -426,15 +427,14 @@ export const Chat = ({
               )}
             </div>
 
-            <button
+            <Button
               type={isBusy ? "button" : "submit"}
               onClick={isBusy ? () => stop() : undefined}
-              className="bg-gray-200/80 text-gray-900 rounded-md px-2 py-1 text-sm"
             >
               <span className="mx-1 flex items-center justify-center">
                 {isBusy ? <StopIndicator /> : <SendIcon />}
               </span>
-            </button>
+            </Button>
           </div>
         </form>
       </div>
