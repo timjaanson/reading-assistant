@@ -42,6 +42,8 @@ export const Chat = ({
   const [error, setError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // This ensures useChat is reset when initialChatId changes (including undefined for new chat)
   const chatId = useMemo(() => initialChatId, [initialChatId]);
@@ -148,13 +150,13 @@ export const Chat = ({
   useEffect(() => {
     if (
       sendInitialMessage &&
-      !isBusy &&
+      status === "ready" &&
       initialUserMessage &&
       messages.length === 1
     ) {
       reload();
     }
-  }, [sendInitialMessage, isBusy, initialUserMessage, messages, reload]);
+  }, [sendInitialMessage, status, initialUserMessage, messages, reload]);
 
   useEffect(() => {
     if (!isBusy && status === "ready" && messages.length > 0 && isModified) {
@@ -227,9 +229,17 @@ export const Chat = ({
     async (e: React.FormEvent<HTMLFormElement>) => {
       setError(null);
       e.preventDefault();
-      handleSubmit(e as any);
+      handleSubmit(e as any, {
+        experimental_attachments: files,
+      });
+
+      // Reset files after submission
+      setFiles(undefined);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     },
-    [handleSubmit]
+    [handleSubmit, files]
   );
 
   const saveChat = useCallback(async () => {
@@ -256,6 +266,12 @@ export const Chat = ({
       setError(error instanceof Error ? error.message : "Failed to save chat");
     }
   }, [id, internalChatName, messages, pageUrl]);
+
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <div className="text-sm flex flex-col h-full w-full mx-auto relative">
@@ -321,6 +337,25 @@ export const Chat = ({
                   <LoadingDots size={2} backgroundColor="bg-gray-200" />
                 </div>
               )}
+              <button
+                type="button"
+                onClick={handleFileButtonClick}
+                disabled={isBusy}
+                className="absolute text-md right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                +
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setFiles(e.target.files);
+                  }
+                }}
+              />
             </div>
 
             <ProviderQuickSelect disabled={isBusy} />
