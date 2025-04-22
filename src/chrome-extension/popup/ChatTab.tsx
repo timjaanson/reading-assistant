@@ -229,7 +229,7 @@ export const ChatTab = ({
     <div className="flex flex-col h-full relative">
       <div className="flex items-center p-2 border-b border-gray-700">
         <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded text-gray-200"
+          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded-sm text-gray-200"
           onClick={() => setIsSidebarOpen(true)}
           title="Open chats"
         >
@@ -243,7 +243,7 @@ export const ChatTab = ({
           className="flex-1 mx-2"
         />
         <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded text-gray-200"
+          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded-sm text-gray-200"
           onClick={createNewChat}
           title="New chat"
         >
@@ -287,7 +287,7 @@ export const ChatTab = ({
                       {group.chats.map((chat) => (
                         <div
                           key={chat.id}
-                          className="p-3 rounded mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
+                          className="p-3 rounded-sm mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
                           onClick={() => loadChat(chat.id)}
                         >
                           <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">

@@ -17,7 +17,7 @@ export const CopyButton = ({ onClick }: CopyButtonProps) => {
 
   return (
     <button
-      className="bg-transparent hover:bg-gray-600 text-white p-1 rounded text-xs w-7 h-7 flex items-center justify-center cursor-pointer"
+      className="bg-transparent hover:bg-gray-600 text-white p-1 rounded-sm text-xs w-7 h-7 flex items-center justify-center cursor-pointer"
       onClick={handleClick}
       title="Copy to clipboard"
     >

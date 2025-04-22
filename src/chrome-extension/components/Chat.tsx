@@ -317,7 +317,7 @@ export const Chat = ({
       )}
 
       {/* Input Container */}
-      <div className="flex-shrink-0 bg-transparent p-1 border-t border-gray-900">
+      <div className="shrink-0 bg-transparent p-1 border-t border-gray-900">
         <form onSubmit={submitMessageHandler}>
           <div className="flex space-x-1">
             <div className="relative w-full flex text-sm">
@@ -395,7 +395,7 @@ export const Chat = ({
                   {showProviderDropdown && (
                     <div
                       ref={providerDropdownRef}
-                      className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto p-2 bg-black/95 text-xs text-gray-200 rounded shadow-lg z-20"
+                      className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto p-2 bg-black/95 text-xs text-gray-200 rounded-sm shadow-lg z-20"
                     >
                       <ul>
                         {providerSettings.all.map((provider, index) => (

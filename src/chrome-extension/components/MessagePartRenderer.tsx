@@ -224,7 +224,7 @@ export const FilePartRenderer = ({
         <img
           src={`data:${mimeType};base64,${data}`}
           alt="File content"
-          className="max-w-full rounded"
+          className="max-w-full rounded-sm"
         />
       </div>
     );

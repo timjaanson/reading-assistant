@@ -101,13 +101,13 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
           <div className="items-center">Pages: {numPages}</div>
           <button
             onClick={zoomOut}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
           >
             Zoom -
           </button>
           <button
             onClick={zoomIn}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
           >
             Zoom +
           </button>
@@ -117,11 +117,11 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
               type="text"
               readOnly
               value={url}
-              className="text-xs text-gray-500 bg-gray-100 border border-gray-300 rounded px-2 py-1"
+              className="text-xs text-gray-500 bg-gray-100 border border-gray-300 rounded-sm px-2 py-1"
             />
             <button
               onClick={copyUrl}
-              className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
+              className="px-2 py-1 text-xs bg-white border border-gray-300 rounded-sm hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
             >
               Copy
             </button>
@@ -130,7 +130,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
 
         <button
           onClick={downloadPdf}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded cursor-pointer hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
+          className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
         >
           Download PDF
         </button>

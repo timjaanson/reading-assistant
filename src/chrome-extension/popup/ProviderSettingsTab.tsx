@@ -167,7 +167,7 @@ export const ProviderSettingsTab = () => {
             name="provider"
             value={selectedProviderIndex}
             onChange={handleProviderSelectChange}
-            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200"
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200"
           >
             {loadedProviderSettings.all.map((setting, index) => (
               <option key={setting.provider} value={index}>
@@ -338,7 +338,7 @@ export const ProviderSettingsTab = () => {
             onChange={handleProviderOptionsChange}
             placeholder="Enter provider options as JSON"
             rows={2}
-            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
+            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y min-h-[80px] font-mono"
           />
         </div>
 

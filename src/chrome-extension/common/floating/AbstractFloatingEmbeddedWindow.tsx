@@ -327,7 +327,7 @@ export abstract class AbstractFloatingEmbeddedWindow {
         parent.shadowRoot?.appendChild(this.element);
       } else {
         console.warn(
-          "Parent element does not have a shadow root, falling back to appending to parent"
+          "Parent element does not have a shadow-sm root, falling back to appending to parent"
         );
         parent?.appendChild(this.element);
       }

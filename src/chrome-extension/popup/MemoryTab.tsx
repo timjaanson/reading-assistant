@@ -10,9 +10,9 @@ const destructiveButtonClasses = `text-red-400 hover:text-red-700 text-xs p-2`;
 const checkboxLabelClasses =
   "flex items-center space-x-2 text-sm text-gray-300 cursor-pointer";
 const textareaClasses =
-  "text-sm block w-full px-3 py-2 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y placeholder-gray-500 disabled:opacity-50";
+  "text-sm block w-full px-3 py-2 border border-gray-700 rounded-md focus:outline-hidden focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y placeholder-gray-500 disabled:opacity-50";
 const editableTextClasses =
-  "cursor-pointer hover:bg-gray-700/30 rounded px-1 py-0.5";
+  "cursor-pointer hover:bg-gray-700/30 rounded-sm px-1 py-0.5";
 
 export const MemoryTab = () => {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
@@ -183,7 +183,7 @@ export const MemoryTab = () => {
       </div>
 
       {/* Add New Memory Form */}
-      <div className="mb-1 p-2 border border-gray-700 rounded bg-[#272522]">
+      <div className="mb-1 p-2 border border-gray-700 rounded-sm bg-[#272522]">
         <h3 className="text-md font-medium mb-2 text-gray-300">
           Add New Memory
         </h3>
@@ -224,7 +224,7 @@ export const MemoryTab = () => {
           {memories.map((item) => (
             <li
               key={item.id}
-              className="p-2 border border-gray-600 rounded bg-[#2d2b28] flex flex-col space-y-1"
+              className="p-2 border border-gray-600 rounded-sm bg-[#2d2b28] flex flex-col space-y-1"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1 mr-4">
@@ -262,7 +262,7 @@ export const MemoryTab = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center space-x-2 flex-shrink-0">
+                <div className="flex items-center space-x-2 shrink-0">
                   <label className={checkboxLabelClasses}>
                     <input
                       type="checkbox"

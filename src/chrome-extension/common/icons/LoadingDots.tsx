@@ -13,7 +13,7 @@ export const LoadingDots: FC<LoadingDotsProps> = ({
     width: `${(size * 0.25) / 2}rem`,
     height: `${size * 0.25}rem`,
   };
-  const dotClasses = `${backgroundColor} rounded-full animate-loadingDot`;
+  const dotClasses = `${backgroundColor} rounded-full animate-bounce`;
 
   return (
     <div className="flex items-center justify-center space-x-1">
