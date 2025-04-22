@@ -273,6 +273,22 @@ export const Chat = ({
     }
   };
 
+  const handleRemoveFile = (fileToRemove: File) => {
+    if (!files) return;
+
+    const dataTransfer = new DataTransfer();
+    Array.from(files).forEach((file) => {
+      if (file !== fileToRemove) {
+        dataTransfer.items.add(file);
+      }
+    });
+
+    setFiles(dataTransfer.files);
+    if (fileInputRef.current) {
+      fileInputRef.current.files = dataTransfer.files;
+    }
+  };
+
   return (
     <div className="text-sm flex flex-col h-full w-full mx-auto relative">
       {/* Messages Container */}
@@ -294,6 +310,28 @@ export const Chat = ({
           </div>
         ))}
       </div>
+
+      {/* Selected Files Indicator */}
+      {files && files.length > 0 && (
+        <div className="flex flex-wrap gap-2 pb-2 px-2">
+          {Array.from(files).map((file, index) => (
+            <div
+              key={`${file.name}-${index}`}
+              className="inline-flex items-center bg-black/70 text-white rounded-md px-2 py-1 text-xs"
+            >
+              <span className="truncate max-w-[150px]">{file.name}</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveFile(file)}
+                className="ml-2 text-white hover:text-gray-300"
+                aria-label="Remove file"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {showScrollButton && (
         <div
