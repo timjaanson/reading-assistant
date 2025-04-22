@@ -81,6 +81,19 @@ const FileIcon = ({ color }: { color: string }) => {
   );
 };
 
+const isImageAttachment = (attachment: {
+  name?: string;
+  contentType?: string;
+  url: string;
+}) => {
+  // Check if contentType exists and starts with 'image/'
+  return (
+    attachment.contentType?.startsWith("image/") ||
+    // If no contentType, check if URL ends with common image extensions
+    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(attachment.url)
+  );
+};
+
 const AttachmentsRenderer = ({
   attachments,
   textColor,
@@ -98,16 +111,30 @@ const AttachmentsRenderer = ({
     <div
       className={`flex flex-col gap-1 mt-1 ${isUserMessage ? "self-end" : ""}`}
     >
-      <div
-        className={`${bubbleColor} p-1.5 pl-3 rounded-lg w-fit ${textColor}`}
-      >
-        {attachments.map((attachment, index) => (
-          <div key={index} className="text-sm flex items-center">
-            <FileIcon color={textColor} />
-            <span>{attachment.name || "Attachment"}</span>
-          </div>
-        ))}
-      </div>
+      {attachments.map((attachment, index) => (
+        <div
+          key={index}
+          className={`${bubbleColor} p-1.5 rounded-lg w-fit ${textColor}`}
+        >
+          {isImageAttachment(attachment) ? (
+            <div className="flex flex-col">
+              <img
+                src={attachment.url}
+                alt={attachment.name || "Image attachment"}
+                className="max-w-[300px] max-h-[300px] object-contain rounded"
+              />
+              {attachment.name && (
+                <div className="text-sm mt-1 pl-1">{attachment.name}</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm flex items-center pl-1.5">
+              <FileIcon color={textColor} />
+              <span>{attachment.name || "Attachment"}</span>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
