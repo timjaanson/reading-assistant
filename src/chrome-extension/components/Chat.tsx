@@ -8,7 +8,7 @@ import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
 import { SendIcon } from "../common/icons/Send";
 import { chatDbProxy } from "../storage/wrappers";
-import { Button } from "../common/Button";
+import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 
 export type SaveableChatValues = {

@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import { resolve } from "path";
+import path, { resolve } from "path";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
@@ -20,6 +20,11 @@ export default defineConfig({
       ],
     }),
   ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   build: {
     sourcemap: true,
     chunkSizeWarningLimit: 10000,
