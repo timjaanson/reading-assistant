@@ -7,7 +7,7 @@ import {
   GET_EXPERIMENT_STREAM,
   KEEPALIVE_PING,
   KEEPALIVE_PONG,
-} from "../background/experiment-stream-handler";
+} from "../background/experimental-stream-handler";
 
 // This function creates a fetch implementation that uses the background script to process requests
 // It maintains compatibility with useChat by reconstructing a Response with a ReadableStream
@@ -42,6 +42,7 @@ export const createCustomBackgroundFetch = () => {
       // Set up keepalive mechanism
       keepaliveInterval = setInterval(() => {
         if (port) {
+          // manifest v3 workers time out connections after 30s if no messages are sent
           port.postMessage({
             type: KEEPALIVE_PING,
           });

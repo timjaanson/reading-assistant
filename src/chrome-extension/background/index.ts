@@ -8,7 +8,7 @@ import { setupPdfHandler } from "./pdf-handler";
 import { setupContextMenu } from "./context-menu";
 
 // Import and setup experiment stream handler
-import { setupExperimentStreamHandler } from "./experiment-stream-handler";
+import { setupExperimentStreamHandler } from "./experimental-stream-handler";
 
 // Import and setup database handler
 import { setupDatabaseHandler } from "./database-handler";
