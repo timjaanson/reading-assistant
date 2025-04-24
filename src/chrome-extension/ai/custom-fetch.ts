@@ -5,6 +5,8 @@ import {
   EXPERIMENT_STREAM_COMPLETE,
   EXPERIMENT_STREAM_ERROR,
   GET_EXPERIMENT_STREAM,
+  KEEPALIVE_PING,
+  KEEPALIVE_PONG,
 } from "../background/experiment-stream-handler";
 
 // This function creates a fetch implementation that uses the background script to process requests
@@ -16,6 +18,7 @@ export const createCustomBackgroundFetch = () => {
   >();
 
   return async (_input: RequestInfo | URL, init?: RequestInit) => {
+    let keepaliveInterval: NodeJS.Timeout | null = null;
     try {
       if (!init?.body) {
         throw new Error("No request body provided");
@@ -35,6 +38,15 @@ export const createCustomBackgroundFetch = () => {
       const port = chrome.runtime.connect({
         name: EXPERIMENTAL_STREAM_PORT_NAME,
       });
+
+      // Set up keepalive mechanism
+      keepaliveInterval = setInterval(() => {
+        if (port) {
+          port.postMessage({
+            type: KEEPALIVE_PING,
+          });
+        }
+      }, 25000); // Send keepalive ping every 25 seconds
 
       abortControllers.set(requestId, { port, controller });
 
@@ -150,6 +162,9 @@ export const createCustomBackgroundFetch = () => {
           }
           abortControllers.delete(requestId);
           port.disconnect();
+        } else if (message.type === KEEPALIVE_PONG) {
+          // Received pong response, connection is alive
+          console.debug("Keepalive pong received");
         }
       });
 
@@ -218,6 +233,10 @@ export const createCustomBackgroundFetch = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
+    } finally {
+      if (keepaliveInterval) {
+        clearInterval(keepaliveInterval);
+      }
     }
   };
 };

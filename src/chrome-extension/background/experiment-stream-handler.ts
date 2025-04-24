@@ -11,6 +11,8 @@ export const EXPERIMENT_STREAM_METADATA = "STREAM_METADATA";
 export const EXPERIMENT_STREAM_COMPLETE = "STREAM_COMPLETE";
 export const EXPERIMENT_STREAM_ERROR = "STREAM_ERROR";
 export const ABORT_STREAM = "ABORT_STREAM";
+export const KEEPALIVE_PING = "KEEPALIVE_PING";
+export const KEEPALIVE_PONG = "KEEPALIVE_PONG";
 
 interface ExperimentalStreamRequest {
   type: typeof GET_EXPERIMENT_STREAM;
@@ -44,12 +46,17 @@ export function setupExperimentStreamHandler() {
   chrome.runtime.onConnect.addListener((port) => {
     console.log("Connection received:", port.name);
 
-    // Only handle connections for our experiment stream
+    // Only handle connections for our experimental stream
     if (port.name !== EXPERIMENTAL_STREAM_PORT_NAME) {
       return false;
     }
 
     port.onMessage.addListener(async (message) => {
+      if (message.type === KEEPALIVE_PING) {
+        port.postMessage({ type: KEEPALIVE_PONG });
+        return;
+      }
+
       if (isAbortStreamRequest(message)) {
         const { requestId } = message.payload;
         const activeStream = activeStreams.get(requestId);
