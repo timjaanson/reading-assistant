@@ -3,16 +3,25 @@ import { MemoryItem } from "../types/memory";
 import { memoryDb } from "../storage/memoryDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
 import { Tooltip } from "../components/Tooltip";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const primaryButtonClasses =
-  "px-2 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400";
-const destructiveButtonClasses = `text-red-400 hover:text-red-700 text-xs p-2`;
-const checkboxLabelClasses =
-  "flex items-center space-x-2 text-sm text-gray-300 cursor-pointer";
+  "px-2 py-2 rounded-md hover:bg-gray-300/80 disabled:opacity-50";
+const destructiveButtonClasses = `text-destructive hover:text-destructive/70 text-xs p-2`;
 const textareaClasses =
-  "text-sm block w-full px-3 py-2 border border-gray-700 rounded-md focus:outline-hidden focus:ring-2 focus:ring-white/90 bg-[#1f1f1f]/50 text-gray-200 resize-y placeholder-gray-500 disabled:opacity-50";
+  "text-sm block w-full px-3 py-2 border rounded-md focus:outline-hidden focus:ring-2 resize-y placeholder-muted disabled:opacity-50";
 const editableTextClasses =
-  "cursor-pointer hover:bg-gray-700/30 rounded-sm px-1 py-0.5";
+  "cursor-pointer hover:bg-muted/30 rounded-sm px-1 py-0.5";
 
 export const MemoryTab = () => {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
@@ -162,7 +171,7 @@ export const MemoryTab = () => {
   return (
     <div className="p-4 flex flex-col h-full">
       <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-lg font-semibold text-gray-200">Manage Memory</h2>
+        <h2 className="text-lg font-semibold">Manage Memory</h2>
         <Tooltip>
           <p className="mb-1">
             Active memories are added to the end of all system prompts.
@@ -183,113 +192,114 @@ export const MemoryTab = () => {
       </div>
 
       {/* Add New Memory Form */}
-      <div className="mb-1 p-2 border border-gray-700 rounded-sm bg-[#272522]">
-        <h3 className="text-md font-medium mb-2 text-gray-300">
-          Add New Memory
-        </h3>
-        <div className="space-y-2">
-          <textarea
-            placeholder="Memory Content"
-            value={newContent}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setNewContent(e.target.value)
-            }
-            rows={3}
-            disabled={isLoading}
-            className={textareaClasses}
-          />
-          <button
-            onClick={handleAddMemory}
-            disabled={isLoading || !newContent.trim()}
-            className={primaryButtonClasses}
-          >
-            {isLoading ? "Adding..." : "Add Memory"}
-          </button>
-        </div>
-        {error && <p className="text-red-500 text-sm mt-3">Error: {error}</p>}
-      </div>
+      <Card className="mb-1">
+        <CardHeader>
+          <CardTitle className="text-md font-medium">Add New Memory</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Memory Content"
+              value={newContent}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setNewContent(e.target.value)
+              }
+              rows={3}
+              disabled={isLoading}
+              className={textareaClasses}
+            />
+            <Button
+              onClick={handleAddMemory}
+              disabled={isLoading || !newContent.trim()}
+              className={primaryButtonClasses}
+            >
+              {isLoading ? "Adding..." : "Add Memory"}
+            </Button>
+          </div>
+          {error && (
+            <p className="text-destructive text-sm mt-3">Error: {error}</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Memory List */}
       <div className="flex-1 overflow-y-auto mt-2">
-        <h3 className="text-md font-medium mb-2 text-gray-300">
+        <h3 className="text-md font-medium mb-2">
           Stored Memories ({memories.length})
         </h3>
-        {isLoading && memories.length === 0 && (
-          <p className="text-gray-400">Loading...</p>
-        )}
-        {!isLoading && memories.length === 0 && (
-          <p className="text-gray-400">No memories stored yet.</p>
-        )}
+        {isLoading && memories.length === 0 && <p>Loading...</p>}
+        {!isLoading && memories.length === 0 && <p>No memories stored yet.</p>}
         <ul className="space-y-2">
           {memories.map((item) => (
-            <li
-              key={item.id}
-              className="p-2 border border-gray-600 rounded-sm bg-[#2d2b28] flex flex-col space-y-1"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 mr-4">
-                  {editingMemoryId === item.id ? (
-                    <textarea
-                      value={editText}
-                      onChange={handleEditChange}
-                      onBlur={() => handleEditSave(item.id)}
-                      className={`${textareaClasses} text-xs h-auto`}
-                      rows={3}
-                      autoFocus
-                      disabled={isLoading}
-                      aria-label="Edit memory content"
-                    />
-                  ) : (
-                    <p
-                      className={`text-xs text-gray-200 whitespace-pre-wrap ${editableTextClasses}`}
-                      onClick={() =>
-                        !isLoading && handleEditStart(item.id, item.content)
-                      }
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (
-                          !isLoading &&
-                          (e.key === "Enter" || e.key === " ")
-                        ) {
-                          e.preventDefault();
-                          handleEditStart(item.id, item.content);
+            <Card key={item.id}>
+              <CardContent className="pt-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 mr-4">
+                    {editingMemoryId === item.id ? (
+                      <Textarea
+                        value={editText}
+                        onChange={handleEditChange}
+                        onBlur={() => handleEditSave(item.id)}
+                        className={`${textareaClasses} text-xs h-auto`}
+                        rows={3}
+                        autoFocus
+                        disabled={isLoading}
+                        aria-label="Edit memory content"
+                      />
+                    ) : (
+                      <p
+                        className={`text-xs whitespace-pre-wrap ${editableTextClasses}`}
+                        onClick={() =>
+                          !isLoading && handleEditStart(item.id, item.content)
                         }
-                      }}
-                      title="Click to edit"
-                    >
-                      {item.content}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center space-x-2 shrink-0">
-                  <label className={checkboxLabelClasses}>
-                    <input
-                      type="checkbox"
-                      checked={item.active}
-                      onChange={() => handleToggleActive(item.id, item.active)}
-                      disabled={isLoading}
-                    />
-                    <span>Active</span>
-                  </label>
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (
+                            !isLoading &&
+                            (e.key === "Enter" || e.key === " ")
+                          ) {
+                            e.preventDefault();
+                            handleEditStart(item.id, item.content);
+                          }
+                        }}
+                        title="Click to edit"
+                      >
+                        {item.content}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={item.active}
+                        onCheckedChange={() =>
+                          handleToggleActive(item.id, item.active)
+                        }
+                        disabled={isLoading}
+                        id={`active-switch-${item.id}`}
+                      />
+                      <Label htmlFor={`active-switch-${item.id}`}>Active</Label>
+                    </div>
 
-                  <button
-                    onClick={() => handleDeleteMemory(item.id)}
-                    disabled={isLoading}
-                    title="Delete Memory"
-                    className={destructiveButtonClasses}
-                  >
-                    ✕
-                  </button>
+                    <button
+                      onClick={() => handleDeleteMemory(item.id)}
+                      disabled={isLoading}
+                      title="Delete Memory"
+                      className={destructiveButtonClasses}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="text-xs text-gray-500 pt-1 border-t border-gray-700/50">
+              </CardContent>
+              <CardFooter className="text-xs border-t">
                 <span>Created: {getCompactLocaleDateTime(item.createdAt)}</span>
                 <span className="ml-4">
                   Updated: {getCompactLocaleDateTime(item.updatedAt)}
                 </span>
-              </div>
-            </li>
+              </CardFooter>
+            </Card>
           ))}
         </ul>
       </div>

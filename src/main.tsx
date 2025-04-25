@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Popup } from "./chrome-extension/popup/popup";
 import "./chrome-extension/global.css";
+import { ThemeProvider } from "./chrome-extension/theme/theme-provider";
 
 // compute popup size based on screen availability
 const availWidth = window.screen.availWidth;
@@ -11,14 +12,16 @@ const heightPx = Math.min(availHeight * 0.66, 600);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <div
-      style={{
-        width: `${widthPx}px`,
-        height: `${heightPx}px`,
-        backgroundColor: "#322f2c",
-      }}
-    >
-      <Popup />
-    </div>
+    <ThemeProvider>
+      <div
+        className="bg-background text-foreground"
+        style={{
+          width: `${widthPx}px`,
+          height: `${heightPx}px`,
+        }}
+      >
+        <Popup />
+      </div>
+    </ThemeProvider>
   </StrictMode>
 );

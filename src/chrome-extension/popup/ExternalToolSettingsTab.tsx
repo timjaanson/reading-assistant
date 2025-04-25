@@ -4,8 +4,19 @@ import {
   ExternalToolsStorage,
   defaultExternalToolSettings,
 } from "../storage/externalToolSettings";
-import { Input } from "../components/Input";
-import { Button } from "../common/Button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ExternalToolSettings>(
@@ -103,8 +114,8 @@ export const ExternalToolSettingsTab = () => {
     }
   };
 
-  const handleToolSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedToolIndex(Number(e.target.value));
+  const handleToolSelectChange = (value: string) => {
+    setSelectedToolIndex(Number(value));
   };
 
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,9 +137,7 @@ export const ExternalToolSettingsTab = () => {
     });
   };
 
-  const handleActiveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-
+  const handleActiveChange = (checked: boolean) => {
     setSettings((prev) => {
       if (!checked) {
         return {
@@ -256,57 +265,49 @@ export const ExternalToolSettingsTab = () => {
 
   return (
     <div className="p-4 h-full overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4 text-gray-200">
-        External Tool Settings
-      </h2>
+      <h2 className="text-lg font-semibold mb-4">External Tool Settings</h2>
 
       <div className="mb-6">
-        <h3 className="text-md font-medium mb-2 text-gray-200">Search Tools</h3>
+        <h3 className="text-md font-medium mb-2">Search Tools</h3>
 
         <div className="space-y-2 mb-3">
-          <label
-            htmlFor="searchTool"
-            className="block text-sm font-medium text-gray-200"
-          >
+          <Label htmlFor="searchTool" className="block text-sm font-medium">
             Select Search Tool
-          </label>
-          <select
-            id="searchTool"
-            value={selectedToolIndex}
-            onChange={handleToolSelectChange}
-            className="block w-full rounded-md border border-gray-700 py-2 px-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#1f1f1f]/50 text-gray-200"
+          </Label>
+          <Select
+            value={selectedToolIndex.toString()}
+            onValueChange={handleToolSelectChange}
           >
-            {settings.search.options.map((tool, index) => (
-              <option key={tool.id} value={index}>
-                {tool.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a search tool" />
+            </SelectTrigger>
+            <SelectContent>
+              {settings.search.options.map((tool, index) => (
+                <SelectItem key={tool.id} value={index.toString()}>
+                  {tool.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-x-2 mb-3">
-          <div className="flex">
-            <input
+          <div className="flex items-center space-x-2">
+            <Switch
               id="activeTool"
-              type="checkbox"
               checked={isSelectedToolActive}
-              onChange={handleActiveChange}
-              className="mr-2"
+              onCheckedChange={handleActiveChange}
             />
-            <label
-              htmlFor="activeTool"
-              className="text-sm font-medium text-gray-200"
-            >
-              Active Tool
-            </label>
+            <Label htmlFor="activeTool">Active Tool</Label>
           </div>
         </div>
 
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-200 mb-1">
+          <Label htmlFor="apiKey" className="block text-sm font-medium mb-1">
             API Key
-          </label>
+          </Label>
           <Input
+            id="apiKey"
             type="password"
             value={selectedTool?.apiKey || ""}
             onChange={handleApiKeyChange}
@@ -319,52 +320,42 @@ export const ExternalToolSettingsTab = () => {
       {/* MCP Servers Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-md font-medium text-gray-200">MCP Servers</h3>
+          <h3 className="text-md font-medium">MCP Servers</h3>
           <Button onClick={handleAddMCPServer}>+ Add Server</Button>
         </div>
 
         {settings.mcp.servers.length === 0 ? (
-          <div className="text-gray-400 text-sm py-2">
+          <div className="text-sm py-2">
             No MCP servers configured. Click "Add Server" to add one.
           </div>
         ) : (
           <div className="space-y-6">
             {settings.mcp.servers.map((server, serverIndex) => (
-              <div
-                key={serverIndex}
-                className="p-3 border border-gray-700 rounded-md bg-[#1f1f1f]/30"
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={server.active}
-                      onChange={(e) =>
-                        handleMCPServerChange(
-                          serverIndex,
-                          "active",
-                          e.target.checked
-                        )
-                      }
-                      className="mr-2"
-                    />
-                    <label className="text-sm font-medium text-gray-200">
-                      Active
-                    </label>
+              <Card key={serverIndex}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={server.active}
+                        onCheckedChange={(checked) =>
+                          handleMCPServerChange(serverIndex, "active", checked)
+                        }
+                      />
+                      <Label>Active</Label>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteMCPServer(serverIndex)}
+                      className="hover:opacity-80"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleDeleteMCPServer(serverIndex)}
-                    className="text-red-400 hover:text-red-500"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="space-y-3">
+                </CardHeader>
+                <CardContent className="space-y-3 py-0">
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                    <Label className="block text-sm font-medium mb-1">
                       Name
-                    </label>
+                    </Label>
                     <Input
                       type="text"
                       value={server.name}
@@ -381,9 +372,9 @@ export const ExternalToolSettingsTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                    <Label className="block text-sm font-medium mb-1">
                       URL
-                    </label>
+                    </Label>
                     <Input
                       type="text"
                       value={server.url}
@@ -400,17 +391,17 @@ export const ExternalToolSettingsTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                    <Label className="block text-sm font-medium mb-1">
                       Headers (JSON format)
-                    </label>
+                    </Label>
                     <div className="relative">
-                      <textarea
+                      <Textarea
                         value={headersInputs[serverIndex] || "{}"}
                         rows={3}
                         onChange={(e) =>
                           handleHeadersChange(serverIndex, e.target.value)
                         }
-                        className="w-full text-gray-200 border border-gray-800 rounded-md resize-y bg-[#1f1f1f]/50 p-2 font-mono text-sm"
+                        className="w-full resize-y font-mono text-sm"
                         placeholder='{ "X-API-Key": "your-api-key" }'
                       />
                       {headersErrors[serverIndex] && (
@@ -420,8 +411,8 @@ export const ExternalToolSettingsTab = () => {
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

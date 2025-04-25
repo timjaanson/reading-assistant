@@ -7,8 +7,14 @@ import {
   setExtensionSettings,
 } from "../storage/extensionSettings";
 import { tryCatch } from "../util/try-catch";
-import { Input } from "../components/Input";
+import { Input } from "@/components/ui/input";
 import { CodeBlock } from "../components/CodeBlock";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { useTheme } from "../theme/theme-provider";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const ExtensionSettingsTab = () => {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
@@ -17,6 +23,7 @@ const ExtensionSettingsTab = () => {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
+  const { theme } = useTheme();
 
   useEffect(() => {
     getExtensionSettings().then((storedSettings: ExtensionSettings) => {
@@ -27,16 +34,16 @@ const ExtensionSettingsTab = () => {
     });
   }, []);
 
-  if (!settings) return <div className="p-4 text-gray-200">Loading...</div>;
+  if (!settings) return <div className="p-4">Loading...</div>;
 
-  const handleTooltipActiveChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleTooltipActiveChange = (checked: boolean) => {
     const newSettings = {
       ...settings,
       whenSelectingText: {
         ...settings.whenSelectingText,
         hoveringTooltip: {
           ...settings.whenSelectingText.hoveringTooltip,
-          active: e.target.checked,
+          active: checked,
         },
       },
     };
@@ -63,14 +70,14 @@ const ExtensionSettingsTab = () => {
     setSettings(newSettings);
   };
 
-  const handleContextMenuActiveChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleContextMenuActiveChange = (checked: boolean) => {
     const newSettings = {
       ...settings,
       whenSelectingText: {
         ...settings.whenSelectingText,
         contextMenu: {
           ...settings.whenSelectingText.contextMenu,
-          active: e.target.checked,
+          active: checked,
         },
       },
     };
@@ -97,84 +104,100 @@ const ExtensionSettingsTab = () => {
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4 text-gray-200">
-        Extension Settings
-      </h2>
-      <h3 className="text-md font-medium mb-2 text-gray-200">
-        When Selecting Text
-      </h3>
+    <div className="p-4 overflow-x-hidden">
+      <h2 className="text-lg font-semibold mb-4">Extension Settings</h2>
 
-      <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2 text-gray-200">
-          Hovering Tooltip
-        </h4>
-        <label className="flex items-center mb-2">
-          <input
-            type="checkbox"
-            checked={settings.whenSelectingText.hoveringTooltip.active}
-            onChange={handleTooltipActiveChange}
-            className="mr-2"
-          />
-          <span className="text-sm text-gray-200">Enable Hovering Tooltip</span>
-        </label>
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-200 mb-1">
-            Allowed urls (comma separated, supports wildcards with *):
-            <Tooltip>
-              <p className="mb-1">
-                Comma separated values that determine where the tooltip is
-                shown.
-              </p>
-              <p className="mb-1">
-                Supports wildcards with * for matching multiple URLs.
-              </p>
-              <p className="mb-1">
-                The value "PDF" is a special case which allows tooltip when
-                viewing PDFs.
-              </p>
-              <p className="mb-1">
-                Example: <CodeBlock>PDF, *wikipedia.org/*</CodeBlock>
-              </p>
-            </Tooltip>
-            <Input
-              type="text"
-              value={allowedUrlsInput}
-              onChange={handleFileTypesChange}
-              className="w-full mt-1"
-            />
-          </label>
-        </div>
-      </div>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Theme</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Current theme: {theme}</span>
+              <ThemeToggle />
+            </div>
+            <div className="text-xs mt-1">
+              Light theme applies in bright environments, Dark theme is designed
+              for low-light settings, and System follows your device preference.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2 text-gray-200">
-          Right-click Context Menu
-        </h4>
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={settings.whenSelectingText.contextMenu.active}
-            onChange={handleContextMenuActiveChange}
-            className="mr-2"
-          />
-          <span className="text-sm text-gray-200">Enable Context Menu</span>
-        </label>
-      </div>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>When Selecting Text</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h4 className="text-sm font-medium mb-2">Hovering Tooltip</h4>
+            <div className="flex items-center space-x-2 mb-2">
+              <Switch
+                id="hover-tooltip"
+                checked={settings.whenSelectingText.hoveringTooltip.active}
+                onCheckedChange={handleTooltipActiveChange}
+              />
+              <Label htmlFor="hover-tooltip">Enable Hovering Tooltip</Label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Allowed urls (comma separated, supports wildcards with *):
+                <Tooltip>
+                  <p className="mb-1">
+                    Comma separated values that determine where the tooltip is
+                    shown.
+                  </p>
+                  <p className="mb-1">
+                    Supports wildcards with * for matching multiple URLs.
+                  </p>
+                  <p className="mb-1">
+                    The value "PDF" is a special case which allows tooltip when
+                    viewing PDFs.
+                  </p>
+                  <p className="mb-1">
+                    Example: <CodeBlock>PDF, *wikipedia.org/*</CodeBlock>
+                  </p>
+                </Tooltip>
+                <Input
+                  type="text"
+                  value={allowedUrlsInput}
+                  onChange={handleFileTypesChange}
+                  className="w-full mt-1"
+                />
+              </label>
+            </div>
+          </div>
 
-      <div className="mt-6">
-        <button
+          <div>
+            <h4 className="text-sm font-medium mb-2">
+              Right-click Context Menu
+            </h4>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="context-menu"
+                checked={settings.whenSelectingText.contextMenu.active}
+                onCheckedChange={handleContextMenuActiveChange}
+              />
+              <Label htmlFor="context-menu">Enable Context Menu</Label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="mt-6 flex items-center">
+        <Button
           onClick={handleSaveSettings}
           disabled={isSaving}
-          className="px-4 py-2 bg-gray-200/80 text-gray-900 rounded-md hover:bg-gray-300/80 disabled:bg-gray-500/40 disabled:text-gray-400"
+          className="px-4 py-2 rounded-md"
         >
           {isSaving ? "Saving..." : "Save"}
-        </button>
+        </Button>
         {saveStatus === "success" && (
-          <span className="ml-2 text-green-400">Settings saved!</span>
+          <span className="ml-2 text-green-500">Settings saved!</span>
         )}
         {saveStatus === "error" && (
-          <span className="ml-2 text-red-400">Failed to save settings</span>
+          <span className="ml-2 text-destructive">Failed to save settings</span>
         )}
       </div>
     </div>

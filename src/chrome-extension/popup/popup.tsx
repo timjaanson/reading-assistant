@@ -17,9 +17,9 @@ export const Popup = () => {
   >("chat");
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full flex flex-col">
       {/* Navigation */}
-      <nav className="border-b border-gray-700">
+      <nav className="border-b">
         <div className="flex space-x-4 px-4 overflow-y-auto">
           <TabButton
             isActive={activeTab === "chat"}
@@ -55,7 +55,7 @@ export const Popup = () => {
       </nav>
 
       {/* Content */}
-      <div className="h-[calc(100%-48px)] overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         {activeTab === "chat" ? (
           <ChatTab />
         ) : activeTab === "providerSettings" ? (

@@ -1,4 +1,4 @@
-import Input from "../components/Input";
+import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useState } from "react";
 import { ChatBehaviorProps, ChatPreview } from "../types/chat";
 import { getCompactLocaleDateTime } from "../util/datetime";
@@ -6,6 +6,13 @@ import { Chat } from "../components/Chat";
 import { Spinner } from "../common/icons/Spinner";
 import { UIMessage } from "ai";
 import { chatDbProxy } from "../storage/wrappers";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 type ChatTabProps = ChatBehaviorProps & {
   initialChatName?: string;
@@ -227,77 +234,46 @@ export const ChatTab = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      <div className="flex items-center p-2 border-b border-gray-700">
-        <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded-sm text-gray-200"
-          onClick={() => setIsSidebarOpen(true)}
-          title="Open chats"
-        >
-          ☰
-        </button>
-        <Input
-          required
-          value={editingChatName}
-          onChange={(e) => setEditingChatName(e.target.value)}
-          onBlur={handleChatNameBlur}
-          className="flex-1 mx-2"
-        />
-        <button
-          className="bg-transparent border-none cursor-pointer text-base p-1 hover:bg-gray-700/40 rounded-sm text-gray-200"
-          onClick={createNewChat}
-          title="New chat"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Sidebar for chat history */}
-      {isSidebarOpen && (
-        <div
-          className="absolute inset-0 bg-black bg-opacity-50 z-10"
-          onClick={() => setIsSidebarOpen(false)}
-        >
-          <div
-            className="absolute top-0 left-0 bottom-0 w-[280px] bg-[#272522] shadow-md flex flex-col z-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center p-3 border-b border-gray-700">
-              <h3 className="m-0 text-base text-gray-200">Your Chats</h3>
-              <button
-                className="bg-transparent border-none text-xl cursor-pointer p-0 px-1 text-gray-300"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex items-center p-2 border-b">
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <SheetTrigger asChild>
+            <button
+              className="bg-transparent border-none cursor-pointer text-base p-1 rounded-sm"
+              title="Open chats"
+            >
+              ☰
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <SheetHeader>
+              <SheetTitle>Your Chats</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto scrollbar-none">
               {isLoadingChats ? (
                 <Spinner />
               ) : chats.length === 0 ? (
-                <div className="text-center text-gray-400 py-6">
-                  No saved chats
-                </div>
+                <div className="text-center py-6">No saved chats</div>
               ) : (
                 chats.map((group, groupIndex) => (
                   <div key={groupIndex} className="mb-3">
-                    <div className="text-xs text-gray-400 font-medium mb-1 px-3">
+                    <div className="text-xs font-medium mb-1 px-3">
                       {group.url ? prettyUrl(group.url) : "Extension"}
                     </div>
-                    <div className="border-l-2 border-gray-600 pl-2">
+                    <div className="border-l-2 pl-2">
                       {group.chats.map((chat) => (
                         <div
                           key={chat.id}
-                          className="p-3 rounded-sm mb-1 cursor-pointer relative flex flex-col hover:bg-gray-700/30"
+                          className="p-3 rounded-sm mb-1 cursor-pointer relative flex flex-col"
                           onClick={() => loadChat(chat.id)}
                         >
-                          <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6 text-gray-200">
+                          <span className="font-medium mb-1 whitespace-nowrap overflow-hidden text-ellipsis pr-6">
                             {chat.name}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs">
                             {getCompactLocaleDateTime(chat.updatedAt)}
                           </span>
                           <button
-                            className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100 text-gray-300"
+                            className="absolute right-2 top-2 bg-transparent border-none text-base cursor-pointer opacity-50 hover:opacity-100"
                             onClick={(e) => deleteChat(chat.id, e)}
                             title="Delete chat"
                           >
@@ -310,9 +286,23 @@ export const ChatTab = ({
                 ))
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </SheetContent>
+        </Sheet>
+        <Input
+          required
+          value={editingChatName}
+          onChange={(e) => setEditingChatName(e.target.value)}
+          onBlur={handleChatNameBlur}
+          className="flex-1 mx-2"
+        />
+        <button
+          className="bg-transparent border-none cursor-pointer text-base p-1 rounded-sm"
+          onClick={createNewChat}
+          title="New chat"
+        >
+          +
+        </button>
+      </div>
 
       <div className="flex-1 overflow-hidden">
         <Chat

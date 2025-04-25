@@ -22,6 +22,7 @@ export class FloatingFreePromptWindow extends AbstractFloatingEmbeddedWindow {
           initialUserMessage={options.selectedText}
           collapseInitialMessage={true}
           sendInitialMessage={false}
+          isRootComponent={true}
         />
       ),
     });

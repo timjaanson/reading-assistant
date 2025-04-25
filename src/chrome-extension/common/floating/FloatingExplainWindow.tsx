@@ -22,6 +22,7 @@ export class FloatingExplainWindow extends AbstractFloatingEmbeddedWindow {
           systemPrompt={await explainTextSystemMessage(this.currentPageUrl)}
           collapseInitialMessage={true}
           sendInitialMessage={true}
+          isRootComponent={true}
         />
       ),
     });

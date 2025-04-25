@@ -22,6 +22,7 @@ export class FloatingSummaryWindow extends AbstractFloatingEmbeddedWindow {
           initialUserMessage={options.selectedText}
           collapseInitialMessage={true}
           sendInitialMessage={true}
+          isRootComponent={true}
         />
       ),
     });

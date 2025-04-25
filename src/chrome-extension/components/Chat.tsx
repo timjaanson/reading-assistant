@@ -10,6 +10,8 @@ import { SendIcon } from "../common/icons/Send";
 import { chatDbProxy } from "../storage/wrappers";
 import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
+import { ThemeProvider } from "../theme/theme-provider";
+import { Textarea } from "@/components/ui/textarea";
 
 export type SaveableChatValues = {
   id: string;
@@ -22,6 +24,22 @@ type ChatProps = ChatBehaviorProps & {
   pageUrl?: URL;
   initialChatName: string;
   initialMessages: UIMessage[];
+  isRootComponent?: boolean;
+};
+
+// Wrapper component for when Chat is used as a root
+const ChatRoot = (props: ChatProps) => {
+  if (props.isRootComponent) {
+    return (
+      <ThemeProvider>
+        <div className="h-full w-full">
+          <Chat {...props} isRootComponent={false} />
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  return <Chat {...props} />;
 };
 
 export const Chat = ({
@@ -33,7 +51,27 @@ export const Chat = ({
   initialUserMessage,
   collapseInitialMessage = false,
   sendInitialMessage = false,
+  isRootComponent = false,
 }: ChatProps) => {
+  // If this is a root component, use the wrapper
+  if (isRootComponent) {
+    return (
+      <ChatRoot
+        {...{
+          initialChatId,
+          pageUrl,
+          initialChatName,
+          initialMessages,
+          systemPrompt,
+          initialUserMessage,
+          collapseInitialMessage,
+          sendInitialMessage,
+          isRootComponent,
+        }}
+      />
+    );
+  }
+
   const [internalChatName, setInternalChatName] =
     useState<string>(initialChatName);
   const [isModified, setIsModified] = useState(false);
@@ -44,6 +82,7 @@ export const Chat = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRowsRef = useRef(1);
 
   // This ensures useChat is reset when initialChatId changes (including undefined for new chat)
   const chatId = useMemo(() => initialChatId, [initialChatId]);
@@ -52,19 +91,9 @@ export const Chat = ({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = "auto";
-
-    // Calculate the number of rows based on scrollHeight and line height
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
-    const padding =
-      parseInt(getComputedStyle(textarea).paddingTop) +
-      parseInt(getComputedStyle(textarea).paddingBottom);
-    const minHeight = lineHeight + padding; // Height for 1 row
-    const maxHeight = lineHeight * 3 + padding; // Height for 3 rows
-
-    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-    textarea.style.height = `${Math.max(newHeight, minHeight)}px`;
+    //set textarea rows to the number of rows in the textarea based on new lines but not more than 3
+    textAreaRowsRef.current = Math.min(textarea.value.split("\n").length, 3);
+    textarea.rows = textAreaRowsRef.current;
   }, []);
 
   const {
@@ -317,13 +346,13 @@ export const Chat = ({
           {Array.from(files).map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className="inline-flex items-center bg-black/70 text-white rounded-md px-2 py-1 text-xs"
+              className="inline-flex items-center rounded-md px-2 py-1 text-xs"
             >
               <span className="truncate max-w-[150px]">{file.name}</span>
               <button
                 type="button"
                 onClick={() => handleRemoveFile(file)}
-                className="ml-2 text-white hover:text-gray-300"
+                className="ml-2"
                 aria-label="Remove file"
               >
                 ×
@@ -336,18 +365,18 @@ export const Chat = ({
       {showScrollButton && (
         <div
           onClick={scrollToBottom}
-          className="absolute left-1/2 bottom-[40px] -translate-x-1/2 bg-gray-300/65 hover:bg-gray-300/80 text-gray-900 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
+          className="absolute left-1/2 bottom-[40px] -translate-x-1/2 bg-opacity-65 hover:bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
         >
           ↓
         </div>
       )}
 
       {/* Input Container */}
-      <div className="shrink-0 bg-transparent p-1 border-t border-gray-900">
+      <div className="shrink-0 bg-transparent p-1 border-t">
         <form onSubmit={submitMessageHandler}>
           <div className="flex items-center space-x-1">
-            <div className="relative w-full flex text-sm">
-              <textarea
+            <div className="relative w-full flex text-sm max-h-24">
+              <Textarea
                 ref={textareaRef}
                 disabled={isBusy}
                 value={input}
@@ -367,19 +396,19 @@ export const Chat = ({
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
                 placeholder={isBusy ? "" : "Type your message"}
-                className="flex-1 text-gray-200 border border-gray-800 rounded-md py-2 px-3 resize-none scrollbar-none bg-[#1f1f1f]/50 text-sm w-full pr-6"
-                rows={1}
+                className="flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-6"
+                rows={textAreaRowsRef.current}
               />
               {isBusy && (
                 <div className="absolute top-1/2 left-3 -translate-y-1/2 pointer-events-none">
-                  <LoadingDots size={2} backgroundColor="bg-gray-200" />
+                  <LoadingDots size={2} />
                 </div>
               )}
               <button
                 type="button"
                 onClick={handleFileButtonClick}
                 disabled={isBusy}
-                className="absolute text-md cursor-pointer right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-100 transition-colors"
+                className="absolute text-md cursor-pointer right-2 top-1/2 -translate-y-1/2 transition-colors"
               >
                 +
               </button>
@@ -411,7 +440,9 @@ export const Chat = ({
       </div>
       <div>
         {error && (
-          <div className="text-red-500 overflow-y-auto break-all">{error}</div>
+          <div className="text-destructive overflow-y-auto break-all">
+            {error}
+          </div>
         )}
       </div>
     </div>
