@@ -109,12 +109,12 @@ const AttachmentsRenderer = ({
 
   return (
     <div
-      className={`flex flex-col gap-1 mt-1 ${isUserMessage ? "self-end" : ""}`}
+      className={`flex flex-col gap-1 mt-1 ${isUserMessage ? "items-end" : ""}`}
     >
       {attachments.map((attachment, index) => (
         <div
           key={index}
-          className={`${bubbleColor} p-1.5 rounded-lg w-fit ${textColor}`}
+          className={`${bubbleColor} border dark:border-none p-1.5 rounded-lg w-fit ${textColor}`}
         >
           {isImageAttachment(attachment) ? (
             <div className="flex flex-col">
@@ -147,11 +147,13 @@ export const MessageRenderer = ({
   const isUserMessage = role === "user";
 
   const bubbleColor = useCallback(() => {
-    return isUserMessage ? "bg-gray-200/80" : "bg-[#1f1f1f]/85";
+    return isUserMessage ? "bg-primary" : "bg-secondary";
   }, [isUserMessage]);
 
   const textColor = useCallback(() => {
-    return isUserMessage ? "text-gray-900" : "text-white/90";
+    return isUserMessage
+      ? "text-primary-foreground"
+      : "text-secondary-foreground";
   }, [isUserMessage]);
 
   // Ensure parts is always an array, even if undefined in the message prop initially
@@ -188,7 +190,7 @@ export const MessageRenderer = ({
   return (
     <div className={`flex flex-col ${isUserMessage ? "items-end" : ""}`}>
       <div
-        className={`flex flex-col gap-1 p-1.5 pl-3 rounded-lg ${bubbleColor()} max-w-7xl w-fit overflow-hidden`}
+        className={`flex flex-col gap-1 p-1.5 pl-3 rounded-lg ${bubbleColor()} border dark:border-none max-w-7xl w-fit overflow-hidden`}
       >
         {collapsableMessage ? (
           <CollapsableSection textColor={textColor()}>

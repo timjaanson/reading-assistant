@@ -117,10 +117,6 @@ const ExtensionSettingsTab = () => {
               <span className="text-sm">Current theme: {theme}</span>
               <ThemeToggle />
             </div>
-            <div className="text-xs mt-1">
-              Light theme applies in bright environments, Dark theme is designed
-              for low-light settings, and System follows your device preference.
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -131,14 +127,13 @@ const ExtensionSettingsTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="text-sm font-medium mb-2">Hovering Tooltip</h4>
             <div className="flex items-center space-x-2 mb-2">
               <Switch
                 id="hover-tooltip"
                 checked={settings.whenSelectingText.hoveringTooltip.active}
                 onCheckedChange={handleTooltipActiveChange}
               />
-              <Label htmlFor="hover-tooltip">Enable Hovering Tooltip</Label>
+              <Label htmlFor="hover-tooltip">Hovering Tooltip</Label>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -170,16 +165,13 @@ const ExtensionSettingsTab = () => {
           </div>
 
           <div>
-            <h4 className="text-sm font-medium mb-2">
-              Right-click Context Menu
-            </h4>
             <div className="flex items-center space-x-2">
               <Switch
                 id="context-menu"
                 checked={settings.whenSelectingText.contextMenu.active}
                 onCheckedChange={handleContextMenuActiveChange}
               />
-              <Label htmlFor="context-menu">Enable Context Menu</Label>
+              <Label htmlFor="context-menu">Right-click Context Menu</Label>
             </div>
           </div>
         </CardContent>
