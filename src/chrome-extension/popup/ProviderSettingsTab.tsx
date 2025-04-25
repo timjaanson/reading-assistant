@@ -276,9 +276,8 @@ export const ProviderSettingsTab = () => {
                   "_blank"
                 )
               }
-              className="cursor-pointer"
             >
-              <Tooltip>
+              <Tooltip className="cursor-pointer">
                 <p className="mb-1">
                   Provider options are for Vercel's AI SDK.
                 </p>

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { ThemeProvider } from "../theme/theme-provider";
 import { Textarea } from "@/components/ui/textarea";
+import { Paperclip } from "lucide-react";
+import { File as FileIcon } from "lucide-react";
 
 export type SaveableChatValues = {
   id: string;
@@ -386,12 +388,13 @@ export const Chat = ({
 
       {/* Selected Files Indicator */}
       {files && files.length > 0 && (
-        <div className="flex flex-wrap gap-2 pb-2 px-2">
+        <div className="flex flex-wrap gap-2 py-1 px-2">
           {Array.from(files).map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className="inline-flex items-center rounded-md px-2 py-1 text-xs"
+              className="inline-flex gap-1 items-center bg-card/80 rounded-md px-2 py-1 text-xs"
             >
+              <FileIcon size={8} className="text-foreground" />
               <span className="truncate max-w-[150px]">{file.name}</span>
               <button
                 type="button"
@@ -399,7 +402,7 @@ export const Chat = ({
                 className="ml-2"
                 aria-label="Remove file"
               >
-                ×
+                <span className="text-foreground cursor-pointer">×</span>
               </button>
             </div>
           ))}
@@ -409,7 +412,7 @@ export const Chat = ({
       {showScrollButton && (
         <div
           onClick={scrollToBottom}
-          className="absolute left-1/2 bottom-[40px] -translate-x-1/2 bg-opacity-65 hover:bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
+          className="absolute left-1/2 bottom-[50px] -translate-x-1/2 text-foreground bg-card/50 hover:bg-card rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
         >
           ↓
         </div>
@@ -444,17 +447,18 @@ export const Chat = ({
                 rows={textAreaRowsRef.current}
               />
               {isBusy && (
-                <div className="absolute top-1/2 left-3 -translate-y-1/2 pointer-events-none">
-                  <LoadingDots size={2} />
+                <div className="absolute top-1/2 left-4 -translate-y-1/2 pointer-events-none">
+                  <LoadingDots size={3} />
                 </div>
               )}
               <button
                 type="button"
                 onClick={handleFileButtonClick}
                 disabled={isBusy}
+                title="Attach file"
                 className="absolute text-md cursor-pointer right-2 top-1/2 -translate-y-1/2 transition-colors"
               >
-                +
+                <Paperclip className="text-foreground p-1" />
               </button>
               <input
                 type="file"
@@ -475,7 +479,7 @@ export const Chat = ({
               type={isBusy ? "button" : "submit"}
               onClick={isBusy ? () => stop() : undefined}
             >
-              <span className="mx-1 flex items-center justify-center">
+              <span className="px-2 py-1 flex items-center justify-center">
                 {isBusy ? <StopIndicator /> : <SendIcon />}
               </span>
             </Button>

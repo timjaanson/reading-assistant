@@ -127,24 +127,34 @@ const ExtensionSettingsTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <Switch
-                id="hover-tooltip"
-                checked={settings.whenSelectingText.hoveringTooltip.active}
-                onCheckedChange={handleTooltipActiveChange}
-              />
-              <Label htmlFor="hover-tooltip">Hovering Tooltip</Label>
+            <div className="flex items-center space-x-8 mb-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="hover-tooltip"
+                  checked={settings.whenSelectingText.hoveringTooltip.active}
+                  onCheckedChange={handleTooltipActiveChange}
+                />
+                <Label htmlFor="hover-tooltip">Hovering Tooltip</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="context-menu"
+                  checked={settings.whenSelectingText.contextMenu.active}
+                  onCheckedChange={handleContextMenuActiveChange}
+                />
+                <Label htmlFor="context-menu">Right-click Context Menu</Label>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
                 Allowed urls (comma separated, supports wildcards with *):
                 <Tooltip>
                   <p className="mb-1">
-                    Comma separated values that determine where the tooltip is
-                    shown.
+                    Comma separated values that determine on which pages the
+                    tooltip/context menu is shown.
                   </p>
                   <p className="mb-1">
-                    Supports wildcards with * for matching multiple URLs.
+                    Supports wildcards with * for matching partial URLs.
                   </p>
                   <p className="mb-1">
                     The value "PDF" is a special case which allows tooltip when
@@ -161,17 +171,6 @@ const ExtensionSettingsTab = () => {
                   className="w-full mt-1"
                 />
               </label>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="context-menu"
-                checked={settings.whenSelectingText.contextMenu.active}
-                onCheckedChange={handleContextMenuActiveChange}
-              />
-              <Label htmlFor="context-menu">Right-click Context Menu</Label>
             </div>
           </div>
         </CardContent>

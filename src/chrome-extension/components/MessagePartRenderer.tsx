@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Spinner } from "../common/icons/Spinner";
@@ -154,22 +154,17 @@ export const ToolPartRenderer = ({
   const { state, toolName, toolCallId, args } = toolInvocation;
   const isLoading = state === "partial-call" || state === "call";
 
-  const spinnerColorCode = useMemo(() => {
-    const colorCode = textColor.split("text-")[1];
-    return colorCode;
-  }, [textColor]);
-
   const openText = (
     <div className="flex items-center gap-2">
       <span>{`Show tool (${toolName})`}</span>
-      {isLoading && <Spinner color={spinnerColorCode} />}
+      {isLoading && <Spinner />}
     </div>
   );
 
   const closeText = (
     <div className="flex items-center gap-2">
       <span>{`Hide tool (${toolName})`}</span>
-      {isLoading && <Spinner color={spinnerColorCode} />}
+      {isLoading && <Spinner />}
     </div>
   );
 

@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Menu, MessageSquarePlus } from "lucide-react";
 
 type ChatTabProps = ChatBehaviorProps & {
   initialChatName?: string;
@@ -240,9 +241,9 @@ export const ChatTab = ({
           <SheetTrigger asChild>
             <button
               className="bg-transparent border-none cursor-pointer text-base p-1 rounded-sm"
-              title="Open chats"
+              title="Chat history"
             >
-              ☰
+              <Menu size={16} className="text-foreground" />
             </button>
           </SheetTrigger>
           <SheetContent side="left">
@@ -304,7 +305,7 @@ export const ChatTab = ({
           onClick={createNewChat}
           title="New chat"
         >
-          +
+          <MessageSquarePlus size={16} className="text-foreground" />
         </button>
       </div>
 

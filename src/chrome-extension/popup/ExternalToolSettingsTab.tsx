@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CircleX } from "lucide-react";
 
 export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ExternalToolSettings>(
@@ -345,9 +346,9 @@ export const ExternalToolSettingsTab = () => {
                     </div>
                     <button
                       onClick={() => handleDeleteMCPServer(serverIndex)}
-                      className="hover:opacity-80"
+                      className="cursor-pointer opacity-80 hover:opacity-100"
                     >
-                      ×
+                      <CircleX size={16} className="text-destructive" />
                     </button>
                   </div>
                 </CardHeader>

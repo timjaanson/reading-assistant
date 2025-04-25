@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 
 interface TooltipProps {
@@ -10,24 +11,8 @@ interface TooltipProps {
 
 // Default target component (question mark icon button)
 const DefaultTarget = () => (
-  <button
-    className="text-gray-400 hover:text-gray-200 flex items-center"
-    aria-label="Help"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
+  <button className="flex items-center m-1" aria-label="Help">
+    <Info size={14} className="text-foreground" />
   </button>
 );
 
@@ -35,10 +20,10 @@ export const Tooltip = ({
   children,
   target,
   className = "",
-  position = "bottom", // Default to bottom
+  position = "bottom",
   disabled = false,
 }: TooltipProps) => {
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false); // Tooltip starts hidden
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [tooltipStyle, setTooltipStyle] = useState({});
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -46,18 +31,15 @@ export const Tooltip = ({
 
   const Trigger = target ? <>{target}</> : <DefaultTarget />;
 
-  // Calculate position classes based on the prop
   const positionClasses = {
     top: "bottom-full mb-2",
     bottom: "top-full mt-2",
   }[position];
 
-  // Effect to handle initial disabled state (though onMouseEnter already checks)
-  // and to recalculate position if visibility or dimensions change.
   useEffect(() => {
     if (disabled) {
-      setIsTooltipVisible(false); // Ensure hidden if disabled
-      return; // No need to calculate position if disabled
+      setIsTooltipVisible(false);
+      return;
     }
 
     if (
@@ -74,11 +56,10 @@ export const Tooltip = ({
       const triggerRect = triggerElement.getBoundingClientRect();
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
 
-      // Check if tooltip has valid dimensions before calculating
       if (tooltipRect.width === 0 || tooltipRect.height === 0) return;
 
       const viewportWidth = window.innerWidth;
-      const margin = 8; // Viewport margin in pixels
+      const margin = 8;
 
       // Calculate the ideal horizontal center relative to the trigger, in viewport coordinates
       const idealViewportLeft =
@@ -114,7 +95,7 @@ export const Tooltip = ({
       </div>
       <div
         ref={tooltipRef}
-        className={`absolute w-max max-w-96 ${positionClasses} p-2 bg-black/75 text-xs text-gray-200 rounded shadow-lg transition-opacity duration-200 z-10 ${
+        className={`absolute w-max max-w-96 ${positionClasses} p-2 bg-card text-xs rounded-lg shadow-lg transition-opacity duration-200 z-10 ${
           isTooltipVisible ? "opacity-100" : "opacity-0 pointer-events-none"
         } ${className}`}
         style={tooltipStyle}

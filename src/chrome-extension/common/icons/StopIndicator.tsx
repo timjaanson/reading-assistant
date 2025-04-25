@@ -1,29 +1,15 @@
-type StopIndicatorProps = {
-  size?: number;
-};
+import { Square } from "lucide-react";
 
-export const StopIndicator = ({ size = 8 }: StopIndicatorProps) => {
+export const StopIndicator = () => {
   return (
-    <div className="inline-flex items-center justify-center relative">
-      {/* Core stop square */}
-      <div
-        className="animate-pulse"
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          backgroundColor: "currentColor",
-        }}
+    <div className="inline-flex items-center justify-center relative w-4 h-4">
+      <Square
+        size={4}
+        className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
       />
-
-      {/* Subtle pulsing halo effect */}
-      <div
-        className="absolute inset-0 opacity-60 animate-ping"
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          backgroundColor: "currentColor",
-          animationDuration: "1.5s",
-        }}
+      <Square
+        size={4}
+        className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
       />
     </div>
   );

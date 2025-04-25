@@ -14,12 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { CircleX } from "lucide-react";
 
-const primaryButtonClasses =
-  "px-2 py-2 rounded-md hover:bg-gray-300/80 disabled:opacity-50";
-const destructiveButtonClasses = `text-destructive hover:text-destructive/70 text-xs p-2`;
-const textareaClasses =
-  "text-sm block w-full px-3 py-2 border rounded-md focus:outline-hidden focus:ring-2 resize-y placeholder-muted disabled:opacity-50";
 const editableTextClasses =
   "cursor-pointer hover:bg-muted/30 rounded-sm px-1 py-0.5";
 
@@ -206,12 +202,11 @@ export const MemoryTab = () => {
               }
               rows={3}
               disabled={isLoading}
-              className={textareaClasses}
+              className="resize-y"
             />
             <Button
               onClick={handleAddMemory}
               disabled={isLoading || !newContent.trim()}
-              className={primaryButtonClasses}
             >
               {isLoading ? "Adding..." : "Add Memory"}
             </Button>
@@ -240,7 +235,7 @@ export const MemoryTab = () => {
                         value={editText}
                         onChange={handleEditChange}
                         onBlur={() => handleEditSave(item.id)}
-                        className={`${textareaClasses} text-xs h-auto`}
+                        className="resize-y text-xs h-auto"
                         rows={3}
                         autoFocus
                         disabled={isLoading}
@@ -286,9 +281,9 @@ export const MemoryTab = () => {
                       onClick={() => handleDeleteMemory(item.id)}
                       disabled={isLoading}
                       title="Delete Memory"
-                      className={destructiveButtonClasses}
+                      className="cursor-pointer opacity-80 hover:opacity-100"
                     >
-                      ✕
+                      <CircleX size={16} className="text-destructive" />
                     </button>
                   </div>
                 </div>

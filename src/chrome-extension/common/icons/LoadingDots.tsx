@@ -9,7 +9,7 @@ export const LoadingDots: FC<LoadingDotsProps> = ({ size = 4 }) => {
     width: `${(size * 0.25) / 2}rem`,
     height: `${size * 0.25}rem`,
   };
-  const dotClasses = `bg-accent rounded-full animate-bounce`;
+  const dotClasses = `bg-primary dark:bg-foreground rounded-full animate-bounce`;
 
   return (
     <div className="flex items-center justify-center space-x-1">
@@ -19,11 +19,11 @@ export const LoadingDots: FC<LoadingDotsProps> = ({ size = 4 }) => {
       ></span>
       <span
         style={dotStyle}
-        className={`${dotClasses} [animation-delay:0.2s]`}
+        className={`${dotClasses} [animation-delay:0.25s]`}
       ></span>
       <span
         style={dotStyle}
-        className={`${dotClasses} [animation-delay:0.4s]`}
+        className={`${dotClasses} [animation-delay:0.5s]`}
       ></span>
     </div>
   );
