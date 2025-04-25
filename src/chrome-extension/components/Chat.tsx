@@ -1,6 +1,6 @@
 import { useChat } from "@ai-sdk/react";
 import { createCustomBackgroundFetch } from "../ai/custom-fetch";
-import { UIMessage } from "ai";
+import { ToolInvocation, UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageRenderer } from "./MessageRenderer";
 import { StopIndicator } from "../common/icons/StopIndicator";
@@ -77,7 +77,7 @@ export const Chat = ({
   const [isModified, setIsModified] = useState(false);
   const chatSaveValues = useRef<SaveableChatValues | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [visualError, setVisualError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
@@ -106,6 +106,8 @@ export const Chat = ({
     stop,
     status,
     reload,
+    error,
+    addToolResult,
   } = useChat({
     id: chatId,
     initialMessages: initialMessages,
@@ -113,16 +115,56 @@ export const Chat = ({
     body: {
       systemPrompt: systemPrompt,
     },
-    onError(error) {
-      console.error("Error in useChat", error);
-      setError(error.message);
-    },
   });
 
   const isBusy = useMemo(
     () => status === "submitted" || status === "streaming",
     [status]
   );
+
+  useEffect(() => {
+    if (error) {
+      console.error("Error in useChat hook", error);
+      setVisualError(error.message);
+
+      if (status === "error" && messages.length > 0) {
+        const pendingToolInvocationsFromMessages = messages
+          .filter((message) =>
+            message.parts.some(
+              (part) =>
+                part.type === "tool-invocation" &&
+                part.toolInvocation.state === "call"
+            )
+          )
+          .flatMap((message) =>
+            message.parts
+              .filter(
+                (part) =>
+                  part.type === "tool-invocation" &&
+                  part.toolInvocation.state === "call"
+              )
+              .map(
+                (part) =>
+                  (part as { toolInvocation: ToolInvocation }).toolInvocation
+              )
+          );
+        if (pendingToolInvocationsFromMessages.length > 0) {
+          console.warn(
+            "Attempting to fix invalid messages state. Adding errors as results for tool calls without results.",
+            pendingToolInvocationsFromMessages
+          );
+          pendingToolInvocationsFromMessages.forEach((toolInvocation) => {
+            addToolResult({
+              toolCallId: toolInvocation.toolCallId,
+              result:
+                error.message +
+                " Most likely caused by invalid arguments for tool-call or invalid tool-call in general.",
+            });
+          });
+        }
+      }
+    }
+  }, [error, status, messages, addToolResult]);
 
   // Check if scroll button should be shown
   const updateScrollButtonVisibility = useCallback(() => {
@@ -256,7 +298,7 @@ export const Chat = ({
 
   const submitMessageHandler = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
-      setError(null);
+      setVisualError(null);
       e.preventDefault();
       handleSubmit(e as any, {
         experimental_attachments: files,
@@ -292,7 +334,9 @@ export const Chat = ({
       console.log(`Saved chat with ID: ${id}`);
     } catch (error) {
       console.error("Error saving chat:", error);
-      setError(error instanceof Error ? error.message : "Failed to save chat");
+      setVisualError(
+        error instanceof Error ? error.message : "Failed to save chat"
+      );
     }
   }, [id, internalChatName, messages, pageUrl]);
 
@@ -439,9 +483,9 @@ export const Chat = ({
         </form>
       </div>
       <div>
-        {error && (
+        {visualError && (
           <div className="text-destructive overflow-y-auto break-all">
-            {error}
+            {visualError}
           </div>
         )}
       </div>
