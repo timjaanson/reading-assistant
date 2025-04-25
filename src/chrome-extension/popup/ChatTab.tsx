@@ -9,6 +9,7 @@ import { chatDbProxy } from "../storage/wrappers";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -247,6 +248,9 @@ export const ChatTab = ({
           <SheetContent side="left">
             <SheetHeader>
               <SheetTitle>Your Chats</SheetTitle>
+              <SheetDescription className="sr-only">
+                Your saved chats
+              </SheetDescription>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto scrollbar-none">
               {isLoadingChats ? (
