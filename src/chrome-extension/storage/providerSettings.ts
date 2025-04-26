@@ -1,63 +1,81 @@
-import { Provider, ProviderSettings } from "../types/settings";
+import {
+  FlatModelsList,
+  Model,
+  Provider,
+  ProviderId,
+  ProviderSettings,
+} from "../types/settings";
 import { StorageKeys } from "./settings";
 
 export const defaultProviderSettings: ProviderSettings = {
   all: [
     {
-      provider: "ollama",
-      url: "http://localhost:11434/api",
-      enableToolCalls: false,
+      providerId: "openai",
+      name: "OpenAI",
       apiKey: "",
-      providerOptions: {},
-      model: "gemma3:4b",
-    },
-    {
-      provider: "openai",
-      apiKey: "",
-      enableToolCalls: true,
-      model: "gpt-4o-mini",
-      providerOptions: {},
-    },
-    {
-      provider: "anthropic",
-      apiKey: "",
-      enableToolCalls: true,
-      model: "claude-3-7-sonnet-latest",
       providerOptions: {
-        anthropic: {
-          thinking: {
-            budgetTokens: 8000,
-            type: "enabled",
-          },
-        },
+        openai: {},
       },
+      models: [
+        {
+          providerId: "openai",
+          modelId: "gpt-4.1-mini",
+          name: "GPT 4.1 Mini",
+          enableToolCalls: true,
+        },
+      ],
     },
     {
-      provider: "google",
+      providerId: "anthropic",
+      name: "Anthropic",
       apiKey: "",
-      enableToolCalls: false,
-      model: "gemini-2.0-flash",
-      providerOptions: {},
+      providerOptions: {
+        anthropic: {},
+      },
+      models: [],
     },
     {
-      provider: "custom-provider-openai",
-      name: "openai-compliant-provider",
+      providerId: "google",
+      name: "Google",
+      apiKey: "",
+      providerOptions: {
+        google: {},
+      },
+      models: [],
+    },
+    {
+      providerId: "openrouter",
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1",
+      apiKey: "",
+      providerOptions: {
+        openai: {},
+      },
+      models: [],
+    },
+    {
+      providerId: "openai-compatible",
+      name: "OpenAI Compatible",
       url: "https://custom.example-provider.com/v1",
       apiKey: "",
-      enableToolCalls: false,
-      model: "llama3.1:8b",
-      providerOptions: {},
+      providerOptions: {
+        openai: {},
+      },
+      models: [],
     },
   ],
   active: null,
 };
 
 export class SettingsStorage {
-  static async saveProviderSettings(settings: ProviderSettings): Promise<void> {
+  static async saveProviderSettings(
+    settings: ProviderSettings
+  ): Promise<ProviderSettings> {
     try {
       await chrome.storage.local.set({
         [StorageKeys.ProviderSettings]: settings,
       });
+      return await this.loadProviderSettings();
     } catch (error) {
       console.error("Error saving settings:", error);
       throw error;
@@ -69,59 +87,107 @@ export class SettingsStorage {
       const result = await chrome.storage.local.get(
         StorageKeys.ProviderSettings
       );
-      return result[StorageKeys.ProviderSettings] || defaultProviderSettings;
+      const providerSettings =
+        (result[StorageKeys.ProviderSettings] as ProviderSettings) ||
+        defaultProviderSettings;
+
+      defaultProviderSettings.all.forEach((provider) => {
+        if (
+          !providerSettings.all.find(
+            (p) => p.providerId === provider.providerId
+          )
+        ) {
+          providerSettings.all.push(provider);
+        }
+      });
+      return providerSettings;
     } catch (error) {
       console.error("Error loading settings:", error);
       throw error;
     }
   }
 
+  static async loadFlatModelsList(): Promise<FlatModelsList> {
+    const providerSettings = await this.loadProviderSettings();
+    const activeModel = providerSettings.active;
+    const models = providerSettings.all.flatMap((provider) =>
+      provider.models.map((model) => ({
+        ...model,
+        active: model.modelId === activeModel?.modelId,
+        providerName: provider.name || "",
+      }))
+    );
+    return {
+      models,
+      active: activeModel,
+    };
+  }
+
   static async updateProviderSettings(
-    partialSettings: Partial<ProviderSettings>
+    providerSettings: ProviderSettings
   ): Promise<ProviderSettings> {
     const currentSettings = await this.loadProviderSettings();
     const newSettings = {
-      ...currentSettings,
-      ...partialSettings,
-      all: {
-        ...currentSettings.all,
-        ...(partialSettings.all || {}),
-      },
+      all: providerSettings.all,
+      active: currentSettings.active,
     };
     await this.saveProviderSettings(newSettings);
     return newSettings;
   }
 
-  static async setActiveProvider(
-    providerIndex: number | null
+  static async findProviderById(
+    providerId: ProviderId
+  ): Promise<Provider | undefined> {
+    const currentSettings = await this.loadProviderSettings();
+    return currentSettings.all.find(
+      (provider) => provider.providerId === providerId
+    );
+  }
+
+  static async findModelByProviderIdAndModelId(
+    providerId: ProviderId,
+    modelId: string
+  ): Promise<Model | undefined> {
+    const provider = await this.findProviderById(providerId);
+    return provider?.models.find((model) => model.modelId === modelId);
+  }
+
+  static async getActiveModel(): Promise<Model | null> {
+    const currentSettings = await this.loadProviderSettings();
+    if (!currentSettings.active) {
+      return null;
+    }
+    const activeModel = await this.findModelByProviderIdAndModelId(
+      currentSettings.active.providerId,
+      currentSettings.active.modelId
+    );
+    return activeModel || null;
+  }
+
+  static async setActiveModel(
+    providerId: ProviderId,
+    modelId: string
   ): Promise<ProviderSettings> {
     const currentSettings = await this.loadProviderSettings();
-    let activeProvider: Provider | null = null;
+    let activeModel: Model | null = null;
 
-    // Validate index if not null and find the provider object
-    if (
-      providerIndex !== null &&
-      providerIndex >= 0 &&
-      providerIndex < currentSettings.all.length
-    ) {
-      activeProvider = currentSettings.all[providerIndex];
-    } else if (providerIndex !== null) {
-      console.error("Invalid provider index:", providerIndex);
-      // Optionally throw an error or return current settings without change
-      throw new Error(
-        `Invalid provider index to set as active: ${providerIndex}`
-      );
+    const model = await this.findModelByProviderIdAndModelId(
+      providerId,
+      modelId
+    );
+
+    if (!model) {
+      throw new Error(`Model ${modelId} not found for provider ${providerId}`);
     }
+
+    activeModel = model;
 
     const newSettings = {
       ...currentSettings,
-      active: activeProvider, // Store the object or null
+      active: activeModel,
     };
+
     await this.saveProviderSettings(newSettings);
-    console.log(
-      "Active provider set to:",
-      activeProvider ? activeProvider.provider : "None"
-    );
     return newSettings;
   }
 }

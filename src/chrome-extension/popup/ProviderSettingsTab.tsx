@@ -1,305 +1,509 @@
 import { useEffect, useState } from "react";
-import {
-  defaultProviderSettings,
-  SettingsStorage,
-} from "../storage/providerSettings";
-import { ProviderSettings } from "../types/settings";
+import { SettingsStorage } from "../storage/providerSettings";
+import { Provider, ProviderSettings, Model } from "../types/settings";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "../components/Tooltip";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const ProviderSettingsTab = () => {
-  const [loadedProviderSettings, setLoadedProviderSettings] =
-    useState<ProviderSettings>(defaultProviderSettings);
-  const [selectedProviderIndex, setSelectedProviderIndex] = useState<number>(0);
-  const [providerOptionsText, setProviderOptionsText] = useState<string>("");
+  const [providerSettings, setProviderSettings] =
+    useState<ProviderSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "success" | "error" | "json-error"
   >("idle");
 
   useEffect(() => {
-    const loadUserSettings = async () => {
-      const settings = await SettingsStorage.loadProviderSettings();
-      setLoadedProviderSettings(settings);
-      setSelectedProviderIndex(
-        settings.active
-          ? settings.all.findIndex(
-              (s) => s.provider === settings.active!.provider
-            )
-          : 0
-      );
-    };
-    loadUserSettings();
+    setIsLoading(true);
+    try {
+      const loadUserSettings = async () => {
+        const settings = await SettingsStorage.loadProviderSettings();
+        setProviderSettings(settings);
+      };
+      loadUserSettings();
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    // Update the providerOptionsText when the selected provider changes
-    const currentOptions =
-      loadedProviderSettings.all[selectedProviderIndex]?.providerOptions;
-    setProviderOptionsText(
-      currentOptions ? JSON.stringify(currentOptions, null, 2) : ""
-    );
-  }, [selectedProviderIndex, loadedProviderSettings]);
-
-  const handleProviderSelectChange = (value: string) => {
-    setSelectedProviderIndex(Number(value));
-  };
-
-  const handleProviderFieldChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  const handleProviderChange = (
+    providerId: string,
+    field: keyof Provider,
+    value: string
   ) => {
-    const { name, value } = e.target;
-    setLoadedProviderSettings((prev) => {
-      const newSettingsArray = [...prev.all];
-      const updatedProvider = {
-        ...newSettingsArray[selectedProviderIndex],
-        [name]: value,
-      };
-      newSettingsArray[selectedProviderIndex] = updatedProvider;
+    if (!providerSettings) return;
 
-      const isActive = prev.active?.provider === updatedProvider.provider;
+    setProviderSettings((prev) => {
+      if (!prev) return prev;
+
       return {
         ...prev,
-        all: newSettingsArray,
-        active: isActive ? updatedProvider : prev.active,
+        all: prev.all.map((provider) => {
+          if (provider.providerId !== providerId) return provider;
+
+          let valueToSet = value;
+
+          if (field === "providerOptions") {
+            try {
+              valueToSet = JSON.parse(value as string);
+              setSaveStatus("idle");
+            } catch (e) {
+              setSaveStatus("json-error");
+            }
+          }
+
+          return {
+            ...provider,
+            [field]: valueToSet,
+          };
+        }),
       };
     });
   };
 
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setLoadedProviderSettings((prev) => {
-      const newSettingsArray = [...prev.all];
-      const updatedProvider = {
-        ...newSettingsArray[selectedProviderIndex],
-        [name]: checked,
-      };
-      newSettingsArray[selectedProviderIndex] = updatedProvider;
+  const handleModelChange = (
+    providerId: string,
+    modelIndex: number,
+    field: keyof Model,
+    value: string | boolean
+  ) => {
+    if (!providerSettings) return;
 
-      const isActive = prev.active?.provider === updatedProvider.provider;
+    setProviderSettings((prev) => {
+      if (!prev) return prev;
+
       return {
         ...prev,
-        all: newSettingsArray,
-        active: isActive ? updatedProvider : prev.active,
+        all: prev.all.map((provider) =>
+          provider.providerId === providerId
+            ? {
+                ...provider,
+                models: provider.models.map((model, index) => {
+                  if (index !== modelIndex) return model;
+
+                  let valueToSet = value;
+                  if (field === "providerOptions") {
+                    try {
+                      valueToSet = JSON.parse(value as string);
+                      setSaveStatus("idle");
+                    } catch (e) {
+                      setSaveStatus("json-error");
+                    }
+                  }
+
+                  // // Special handling for modelId changes to maintain active model reference
+                  // if (
+                  //   field === "modelId" &&
+                  //   prev.active?.modelId === model.modelId
+                  // ) {
+                  //   // Update the active model reference if we're changing its ID
+                  //   prev.active.modelId = valueToSet as string;
+                  // }
+
+                  return {
+                    ...model,
+                    [field]: valueToSet,
+                  };
+                }),
+              }
+            : provider
+        ),
       };
     });
   };
 
-  const handleActiveProviderChange = (checked: boolean) => {
-    setLoadedProviderSettings((prev) => ({
-      ...prev,
-      active: checked ? prev.all[selectedProviderIndex] : null,
-    }));
+  const handleDeleteModel = (providerId: string, modelId: string) => {
+    if (!providerSettings) return;
+
+    setProviderSettings((prev) => {
+      if (!prev) return prev;
+
+      // If the model being deleted is the active one, this might require special handling
+      const isActiveModel =
+        prev.active?.providerId === providerId &&
+        prev.active?.modelId === modelId;
+
+      return {
+        ...prev,
+        // If deleting the active model, remove the active reference
+        ...(isActiveModel && { active: null }),
+        all: prev.all.map((provider) =>
+          provider.providerId === providerId
+            ? {
+                ...provider,
+                models: provider.models.filter(
+                  (model) => model.modelId !== modelId
+                ),
+              }
+            : provider
+        ),
+      };
+    });
   };
 
-  const handleProviderOptionsChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    const { value } = e.target;
-    setProviderOptionsText(value);
+  const handleAddModel = (providerId: string) => {
+    if (!providerSettings) return;
+
+    setProviderSettings((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        all: prev.all.map((provider) =>
+          provider.providerId === providerId
+            ? {
+                ...provider,
+                models: [
+                  ...provider.models,
+                  {
+                    modelId: "model",
+                    name: "New",
+                    enableToolCalls: false,
+                    providerId: provider.providerId,
+                  },
+                ],
+              }
+            : provider
+        ),
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!providerSettings) return;
+
+    // Check for invalid JSON before submitting
+    let hasJsonError = false;
+
+    providerSettings.all.forEach((provider) => {
+      // Check provider options
+      const providerOptionsStr = document.getElementById(
+        `${provider.providerId}-providerOptions`
+      ) as HTMLTextAreaElement | null;
+
+      if (providerOptionsStr && providerOptionsStr.value) {
+        try {
+          JSON.parse(providerOptionsStr.value);
+        } catch (e) {
+          hasJsonError = true;
+        }
+      }
+
+      // Check model options
+      provider.models.forEach((model) => {
+        const modelOptionsStr = document.getElementById(
+          `${model.modelId}-providerOptions`
+        ) as HTMLTextAreaElement | null;
+
+        if (modelOptionsStr && modelOptionsStr.value) {
+          try {
+            JSON.parse(modelOptionsStr.value);
+          } catch (e) {
+            hasJsonError = true;
+          }
+        }
+      });
+    });
+
+    if (hasJsonError) {
+      setSaveStatus("json-error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      return;
+    }
+
     setIsLoading(true);
     setSaveStatus("idle");
 
-    // Validate and parse providerOptions
     try {
-      const providerOptions = providerOptionsText
-        ? JSON.parse(providerOptionsText)
-        : {};
-
-      // Update the provider settings with the parsed JSON before saving
-      const newSettingsArray = [...loadedProviderSettings.all];
-      const updatedProvider = {
-        ...newSettingsArray[selectedProviderIndex],
-        providerOptions,
-      };
-      newSettingsArray[selectedProviderIndex] = updatedProvider;
-
-      const updatedSettings = {
-        ...loadedProviderSettings,
-        all: newSettingsArray,
-        active:
-          loadedProviderSettings.active?.provider === updatedProvider.provider
-            ? updatedProvider
-            : loadedProviderSettings.active,
-      };
-
       // Save the updated settings
-      await SettingsStorage.saveProviderSettings(updatedSettings);
-      setLoadedProviderSettings(updatedSettings);
+      const savedSettings = await SettingsStorage.saveProviderSettings(
+        providerSettings
+      );
+      setProviderSettings(savedSettings);
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
-      if (providerOptionsText && err instanceof SyntaxError) {
-        setSaveStatus("json-error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-      } else {
-        setSaveStatus("error");
-      }
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
-  if (isLoading && loadedProviderSettings === defaultProviderSettings) {
+  if (isLoading || !providerSettings) {
     return <div className="p-4">Loading settings...</div>;
   }
 
   return (
     <div className="p-4">
+      <h2 className="text-lg font-medium mb-4">Provider & Model Settings</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="provider">Provider</Label>
-          <Select
-            value={selectedProviderIndex.toString()}
-            onValueChange={handleProviderSelectChange}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              {loadedProviderSettings.all.map((setting, index) => (
-                <SelectItem key={setting.provider} value={index.toString()}>
-                  {setting.provider}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-x-2">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="activeProvider"
-              checked={
-                loadedProviderSettings.active?.provider ===
-                loadedProviderSettings.all[selectedProviderIndex].provider
-              }
-              onCheckedChange={(checked) => handleActiveProviderChange(checked)}
-            />
-            <Label htmlFor="activeProvider">Active</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="enableToolCalls"
-              checked={
-                loadedProviderSettings.all[selectedProviderIndex]
-                  .enableToolCalls
-              }
-              onCheckedChange={(checked) =>
-                handleSwitchChange("enableToolCalls", checked)
-              }
-            />
-            <Label htmlFor="enableToolCalls">Enable Tool Calls</Label>
-          </div>
-        </div>
-
-        {"name" in loadedProviderSettings.all[selectedProviderIndex] && (
-          <div className="space-y-2">
-            <Label htmlFor="name">Custom provider name</Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={
-                loadedProviderSettings.all[selectedProviderIndex].name || ""
-              }
-              onChange={handleProviderFieldChange}
-              placeholder="Enter provider name"
-            />
-          </div>
-        )}
-
-        {"url" in loadedProviderSettings.all[selectedProviderIndex] && (
-          <div className="space-y-2">
-            <Label htmlFor="url">URL</Label>
-            <Input
-              type="text"
-              id="url"
-              name="url"
-              value={
-                loadedProviderSettings.all[selectedProviderIndex].url || ""
-              }
-              onChange={handleProviderFieldChange}
-              placeholder="Enter URL"
-            />
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="apiKey">API Key</Label>
-          <Input
-            type="password"
-            id="apiKey"
-            name="apiKey"
-            value={
-              loadedProviderSettings.all[selectedProviderIndex].apiKey || ""
-            }
-            onChange={handleProviderFieldChange}
-            placeholder="Enter your API key"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="model">Model</Label>
-          <Input
-            type="text"
-            id="model"
-            name="model"
-            value={
-              loadedProviderSettings.all[selectedProviderIndex].model || ""
-            }
-            onChange={handleProviderFieldChange}
-            placeholder="Enter model name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="providerOptions">Provider Options</Label>
-            <div
-              onClick={() =>
-                window.open(
-                  "https://sdk.vercel.ai/providers/ai-sdk-providers",
-                  "_blank"
-                )
-              }
+        <Accordion type="single" className="w-full">
+          {providerSettings.all.map((provider) => (
+            <AccordionItem
+              key={provider.providerId}
+              value={provider.providerId}
             >
-              <Tooltip className="cursor-pointer">
-                <p className="mb-1">
-                  Provider options are for Vercel's AI SDK.
-                </p>
-                <p className="mb-1">
-                  Clicking here will open a new tab to Vercel's documentation:
-                </p>
-                <p className="mb-1">
-                  https://sdk.vercel.ai/providers/ai-sdk-providers
-                </p>
-              </Tooltip>
-            </div>
-          </div>
-          <Textarea
-            id="providerOptions"
-            name="providerOptions"
-            value={providerOptionsText}
-            onChange={handleProviderOptionsChange}
-            placeholder="Enter provider options as JSON"
-            rows={2}
-            className="resize-y min-h-[80px] font-mono"
-          />
-        </div>
+              <AccordionTrigger>
+                {provider.name || provider.providerId}
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 px-2">
+                {/* Provider Name */}
+                <div className="space-y-2">
+                  <Label htmlFor={`${provider.providerId}-name`}>
+                    Provider Name
+                  </Label>
+                  <Input
+                    type="text"
+                    id={`${provider.providerId}-name`}
+                    value={provider.name || ""}
+                    onChange={(e) =>
+                      handleProviderChange(
+                        provider.providerId,
+                        "name",
+                        e.target.value
+                      )
+                    }
+                    placeholder="Enter provider name"
+                  />
+                </div>
+
+                {/* URL - only for openai-compatible and openrouter */}
+                {["openai-compatible", "openrouter"].includes(
+                  provider.providerId
+                ) && (
+                  <div className="space-y-2">
+                    <Label htmlFor={`${provider.providerId}-url`}>URL</Label>
+                    <Input
+                      type="text"
+                      id={`${provider.providerId}-url`}
+                      value={provider.url || ""}
+                      onChange={(e) =>
+                        handleProviderChange(
+                          provider.providerId,
+                          "url",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Enter URL"
+                    />
+                  </div>
+                )}
+
+                {/* API Key */}
+                <div className="space-y-2">
+                  <Label htmlFor={`${provider.providerId}-apiKey`}>
+                    API Key
+                  </Label>
+                  <Input
+                    type="password"
+                    id={`${provider.providerId}-apiKey`}
+                    value={provider.apiKey || ""}
+                    onChange={(e) =>
+                      handleProviderChange(
+                        provider.providerId,
+                        "apiKey",
+                        e.target.value
+                      )
+                    }
+                    placeholder="Enter your API key"
+                  />
+                </div>
+
+                {/* Provider Options */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`${provider.providerId}-providerOptions`}>
+                      Provider Options
+                    </Label>
+                    <div
+                      onClick={() =>
+                        window.open(
+                          "https://sdk.vercel.ai/providers/ai-sdk-providers",
+                          "_blank"
+                        )
+                      }
+                    >
+                      <Tooltip className="cursor-pointer">
+                        <p className="mb-1">
+                          Provider options are for Vercel's AI SDK.
+                        </p>
+                        <p className="mb-1">
+                          Clicking here will open a new tab to Vercel's
+                          documentation:
+                        </p>
+                        <p className="mb-1">
+                          https://sdk.vercel.ai/providers/ai-sdk-providers
+                        </p>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <Textarea
+                    id={`${provider.providerId}-providerOptions`}
+                    defaultValue={
+                      provider.providerOptions
+                        ? JSON.stringify(provider.providerOptions, null, 2)
+                        : ""
+                    }
+                    onChange={(e) =>
+                      handleProviderChange(
+                        provider.providerId,
+                        "providerOptions",
+                        e.target.value
+                      )
+                    }
+                    placeholder="Enter provider options as JSON"
+                    rows={4}
+                    className="resize-y min-h-[80px] font-mono"
+                  />
+                </div>
+
+                {/* Models Section */}
+                <div className="space-y-3 mt-4">
+                  <h3 className="text-md font-medium">Models</h3>
+                  {provider.models.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No models configured
+                    </p>
+                  ) : (
+                    <div className="grid gap-4">
+                      {provider.models.map((model, modelIndex) => (
+                        <Card
+                          key={`${provider.providerId}-model-${modelIndex}`}
+                          className="p-4 relative"
+                        >
+                          <button
+                            type="button"
+                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+                            onClick={() =>
+                              handleDeleteModel(
+                                provider.providerId,
+                                model.modelId
+                              )
+                            }
+                            aria-label="Delete model"
+                          >
+                            ✕
+                          </button>
+                          <CardContent className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label htmlFor={`${model.modelId}-modelId`}>
+                                  Model ID
+                                </Label>
+                                <Input
+                                  id={`${model.modelId}-modelId`}
+                                  value={model.modelId}
+                                  onChange={(e) =>
+                                    handleModelChange(
+                                      provider.providerId,
+                                      modelIndex,
+                                      "modelId",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Model ID"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <Label htmlFor={`${model.modelId}-name`}>
+                                  Name
+                                </Label>
+                                <Input
+                                  id={`${model.modelId}-name`}
+                                  value={model.name || ""}
+                                  onChange={(e) =>
+                                    handleModelChange(
+                                      provider.providerId,
+                                      modelIndex,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Model name"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Label htmlFor={`${model.modelId}-tools`}>
+                                Tools
+                              </Label>
+                              <Switch
+                                id={`${model.modelId}-tools`}
+                                checked={model.enableToolCalls}
+                                onCheckedChange={(checked) =>
+                                  handleModelChange(
+                                    provider.providerId,
+                                    modelIndex,
+                                    "enableToolCalls",
+                                    checked
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label
+                                htmlFor={`${model.modelId}-providerOptions`}
+                              >
+                                Provider Options
+                              </Label>
+                              <Textarea
+                                id={`${model.modelId}-providerOptions`}
+                                defaultValue={
+                                  model.providerOptions
+                                    ? JSON.stringify(
+                                        model.providerOptions,
+                                        null,
+                                        2
+                                      )
+                                    : ""
+                                }
+                                onChange={(e) =>
+                                  handleModelChange(
+                                    provider.providerId,
+                                    modelIndex,
+                                    "providerOptions",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Enter provider options as JSON"
+                                rows={3}
+                                className="resize-y min-h-[60px] font-mono text-sm"
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAddModel(provider.providerId)}
+                    className="mt-2"
+                  >
+                    Add Model
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
 
         <div className="flex items-center mt-6">
           <Button type="submit" disabled={isLoading}>
@@ -317,7 +521,7 @@ export const ProviderSettingsTab = () => {
           )}
           {saveStatus === "json-error" && (
             <span className="ml-2 text-red-400 flex items-center">
-              Invalid JSON in Provider Options
+              Invalid JSON in options
             </span>
           )}
         </div>

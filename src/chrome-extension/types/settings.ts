@@ -1,18 +1,47 @@
 import { ProviderOptions } from "./ai-sdk-missing";
 
+export type ProviderId =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "openrouter"
+  | "openai-compatible";
+
 export interface ProviderSettings {
   all: Provider[];
-  active: Provider | null;
+  active: ActiveModel | null;
+}
+
+export interface ActiveModel {
+  providerId: ProviderId;
+  modelId: string;
 }
 
 export interface Provider {
-  provider: string;
-  name?: string;
+  providerId: ProviderId;
+  name: string;
   url?: string;
-  enableToolCalls: boolean;
   apiKey: string;
   providerOptions?: ProviderOptions;
-  model: string;
+  models: Model[];
+}
+
+export interface Model {
+  modelId: string;
+  name: string;
+  enableToolCalls: boolean;
+  providerId: ProviderId;
+  providerOptions?: ProviderOptions;
+}
+
+export interface ModelWithActiveAndProviderName extends Model {
+  providerName: string;
+  active: boolean;
+}
+
+export interface FlatModelsList {
+  models: ModelWithActiveAndProviderName[];
+  active: ActiveModel | null;
 }
 
 export interface ExternalTool {

@@ -5,7 +5,6 @@ import {
 } from "ai";
 import { SettingsStorage } from "../storage/providerSettings";
 import { createOpenAI } from "@ai-sdk/openai";
-import { createOllama } from "ollama-ai-provider";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ProviderOptions } from "../types/ai-sdk-missing";
@@ -27,27 +26,32 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
   if (!providerSettings.active) {
     throw new Error("No active provider settings found");
   }
+  const activeProvider = await SettingsStorage.findProviderById(
+    providerSettings.active.providerId
+  );
+  if (!activeProvider) {
+    throw new Error("No active provider found");
+  }
+  const activeModel = await SettingsStorage.findModelByProviderIdAndModelId(
+    activeProvider.providerId,
+    providerSettings.active.modelId
+  );
+  if (!activeModel) {
+    throw new Error("No active model found");
+  }
+
   let provider;
   let options = {};
-  switch (providerSettings.active.provider) {
+  switch (activeProvider.providerId) {
     case "openai":
       provider = createOpenAI({
-        apiKey: providerSettings.active.apiKey,
+        apiKey: activeProvider.apiKey,
         compatibility: "strict",
       });
       break;
-    case "ollama":
-      provider = createOllama({
-        baseURL: providerSettings.active.url,
-      });
-      options = {
-        // Ollama does not support native streaming tool calls, so enable simulated streaming if tool calls are enabled
-        simulateStreaming: providerSettings.active.enableToolCalls,
-      };
-      break;
     case "anthropic":
       provider = createAnthropic({
-        apiKey: providerSettings.active.apiKey,
+        apiKey: activeProvider.apiKey,
         headers: {
           "anthropic-dangerous-direct-browser-access": "true",
         },
@@ -55,20 +59,27 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       break;
     case "google":
       provider = createGoogleGenerativeAI({
-        apiKey: providerSettings.active.apiKey,
+        apiKey: activeProvider.apiKey,
       });
       options = {
         // enabling google search (grounding) breaks other tool calls
         // it is enabled when tool calls are disabled
-        useSearchGrounding: !providerSettings.active.enableToolCalls,
+        useSearchGrounding: !activeModel.enableToolCalls,
         structuredOutputs: true,
       };
       break;
-    case "custom-provider-openai":
+    case "openrouter":
       provider = createOpenAI({
-        name: providerSettings.active.name,
-        baseURL: providerSettings.active.url,
-        apiKey: providerSettings.active.apiKey,
+        compatibility: "compatible",
+        apiKey: activeProvider.apiKey,
+        baseURL: activeProvider.url,
+      });
+      break;
+    case "openai-compatible":
+      provider = createOpenAI({
+        name: activeProvider.name,
+        baseURL: activeProvider.url,
+        apiKey: activeProvider.apiKey,
         compatibility: "compatible",
       });
       break;
@@ -76,12 +87,15 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       throw new Error("Invalid provider from userSettings");
   }
 
-  const model = provider.languageModel(providerSettings.active.model, options);
+  const model = provider.languageModel(
+    providerSettings.active.modelId,
+    options
+  );
   let wrappedModel = model;
 
   if (
-    ["ollama", "custom-provider-openai"].includes(
-      providerSettings.active.provider
+    ["openai-compatible", "openrouter"].includes(
+      providerSettings.active.providerId
     )
   ) {
     wrappedModel = wrapLanguageModel({
@@ -90,10 +104,15 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
     });
   }
 
+  const providerOptions = {
+    ...activeProvider.providerOptions,
+    ...activeModel.providerOptions,
+  };
+
   return {
     model: wrappedModel,
-    toolUse: providerSettings.active.enableToolCalls,
-    providerOptions: providerSettings.active.providerOptions,
+    toolUse: activeModel.enableToolCalls,
+    providerOptions: providerOptions,
     languageModelOptions: options,
   };
 };

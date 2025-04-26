@@ -35,12 +35,16 @@ export const searchTavily = async (query: string, options: SearchOptions) => {
     await ExternalToolsStorage.loadExternalToolSettings();
   if (externalToolSettings.search.active?.id === "tavily") {
     if (externalToolSettings.search.active.apiKey) {
+      let timeRange = undefined;
+      if ((options.timeRange as string) !== "all") {
+        timeRange = options.timeRange;
+      }
       const optionsWithDefaults = {
         topic: "general",
         includeAnswer: true,
         searchDepth: "advanced",
         resultCount: 8,
-        timeRange: options.timeRange ? options.timeRange : undefined,
+        timeRange: timeRange,
         include_domains: options.include_domains,
         exclude_domains: options.exclude_domains,
       } satisfies SearchOptions;

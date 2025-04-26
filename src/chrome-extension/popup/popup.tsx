@@ -28,16 +28,16 @@ export const Popup = () => {
             Chat
           </TabButton>
           <TabButton
-            isActive={activeTab === "memory"}
-            onClick={() => setActiveTab("memory")}
-          >
-            Memory
-          </TabButton>
-          <TabButton
             isActive={activeTab === "providerSettings"}
             onClick={() => setActiveTab("providerSettings")}
           >
             Providers
+          </TabButton>
+          <TabButton
+            isActive={activeTab === "memory"}
+            onClick={() => setActiveTab("memory")}
+          >
+            Memory
           </TabButton>
           <TabButton
             isActive={activeTab === "externalToolSettings"}
