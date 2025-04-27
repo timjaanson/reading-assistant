@@ -34,7 +34,7 @@ const ChatRoot = (props: ChatProps) => {
   if (props.isRootComponent) {
     return (
       <ThemeProvider>
-        <div className="h-full w-full">
+        <div className="h-full w-full bg-background text-foreground rounded-b-lg">
           <Chat {...props} isRootComponent={false} />
         </div>
       </ThemeProvider>
@@ -365,7 +365,7 @@ export const Chat = ({
   };
 
   return (
-    <div className="text-sm flex flex-col h-full w-full mx-auto relative">
+    <div className={"text-sm flex flex-col h-full w-full mx-auto relative"}>
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}

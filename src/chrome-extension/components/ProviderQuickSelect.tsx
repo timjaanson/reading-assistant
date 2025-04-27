@@ -3,6 +3,7 @@ import { Tooltip } from "./Tooltip";
 import { SettingsStorage } from "../storage/providerSettings";
 import { FlatModelsList, Model, ProviderId } from "../types/settings";
 import { SlidersHorizontal } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ProviderQuickSelectProps = {
   disabled?: boolean;
@@ -34,6 +35,9 @@ export const ProviderQuickSelect = ({
       await SettingsStorage.setActiveModel(providerId, modelId);
       const updatedModels = await SettingsStorage.loadFlatModelsList();
       setAvailableModels(updatedModels);
+
+      const updatedActiveModel = await SettingsStorage.getActiveModel();
+      setActiveModel(updatedActiveModel);
     } catch (error) {
       console.error("Failed to set active provider:", error);
     }
@@ -54,9 +58,7 @@ export const ProviderQuickSelect = ({
             disabled={disabled}
             onClick={() => setShowModelsDropdown(!showModelsDropdown)}
             className={`p-0.5 rounded cursor-pointer ${
-              availableModels.active
-                ? "text-gray-400 hover:text-gray-200"
-                : "text-red-500 hover:text-red-400"
+              availableModels.active ? null : "text-destructive"
             }`}
           >
             <SlidersHorizontal className="text-foreground p-1" />
@@ -68,31 +70,33 @@ export const ProviderQuickSelect = ({
       </Tooltip>
 
       {showModelsDropdown && (
-        <div
+        <Card
           ref={modelsDropdownRef}
-          className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto p-2 bg-black/95 text-xs text-gray-200 rounded-sm shadow-lg z-20"
+          className="absolute right-0 bottom-full mb-1 w-64 max-h-48 overflow-y-auto z-20 p-0"
         >
-          <ul>
-            {availableModels.models.map((model, index) => (
-              <li key={`${model.providerId}-${model.modelId}-${index}`}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleModelSelect(model.providerId, model.modelId)
-                  }
-                  className={`w-full text-left cursor-pointer px-2 py-1 text-xs rounded hover:bg-gray-400/20 ${
-                    availableModels.active?.providerId === model.providerId &&
-                    availableModels.active?.modelId === model.modelId
-                      ? "bg-gray-200/10 font-semibold"
-                      : ""
-                  }`}
-                >
-                  {model.name} ({model.providerName})
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <CardContent className="p-0">
+            <ul>
+              {availableModels.models.map((model, index) => (
+                <li key={`${model.providerId}-${model.modelId}-${index}`}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleModelSelect(model.providerId, model.modelId)
+                    }
+                    className={`w-full text-left cursor-pointer px-2 py-1 text-xs ${
+                      availableModels.active?.providerId === model.providerId &&
+                      availableModels.active?.modelId === model.modelId
+                        ? " bg-primary/80 hover:bg-primary text-background dark:text-foreground font-semibold"
+                        : "hover:bg-secondary text-foreground"
+                    }`}
+                  >
+                    {model.name} ({model.providerName})
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

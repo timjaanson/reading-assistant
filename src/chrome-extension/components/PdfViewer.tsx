@@ -5,6 +5,9 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 
 // Import the worker script directly
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 // Set worker URL using Chrome extension URL mechanism
 pdfjs.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(pdfjsWorker);
@@ -26,6 +29,11 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   const registerRef = (pageNum: number) => (el: HTMLDivElement | null) => {
     pageRefs.current.set(pageNum, el);
   };
+
+  //set title to url
+  useEffect(() => {
+    document.title = url.split("/").pop() || "Document";
+  }, [url]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,44 +104,33 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
-      <div className="flex items-center justify-between p-2 bg-[#f0f0f0] border-b border-[#ddd]">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-2 bg-background border-b">
+        <div className="flex flex-grow items-center gap-3">
           <div className="items-center">Pages: {numPages}</div>
-          <button
-            onClick={zoomOut}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
-          >
+          <Button size="sm" onClick={zoomOut}>
             Zoom -
-          </button>
-          <button
-            onClick={zoomIn}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
-          >
+          </Button>
+          <Button size="sm" onClick={zoomIn}>
             Zoom +
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">URL:</span>
-            <input
+          </Button>
+          <Separator orientation="vertical" />
+          <div className="flex flex-grow items-center gap-2">
+            <span className="text-sm">URL:</span>
+            <Input
               type="text"
               readOnly
               value={url}
-              className="text-xs text-gray-500 bg-gray-100 border border-gray-300 rounded-sm px-2 py-1"
+              className="w-full max-w-96"
             />
-            <button
-              onClick={copyUrl}
-              className="px-2 py-1 text-xs bg-white border border-gray-300 rounded-sm hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
-            >
+            <Button size="sm" onClick={copyUrl}>
               Copy
-            </button>
+            </Button>
           </div>
         </div>
 
-        <button
-          onClick={downloadPdf}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded-sm cursor-pointer hover:bg-[#f9f9f9] active:bg-[#e5e5e5] transition transform active:scale-95"
-        >
+        <Button size="sm" onClick={downloadPdf}>
           Download PDF
-        </button>
+        </Button>
       </div>
 
       <div
@@ -153,7 +150,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
             }
           }}
           options={pdfOptions}
-          className="bg-white shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
+          className="bg-background shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
         >
           {numPages &&
             Array.from({ length: numPages }, (_, index) => {

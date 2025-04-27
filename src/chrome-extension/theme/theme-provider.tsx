@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "dark" | "light" | "system";
+import { Theme } from "../types/theme";
+import { getStoredTheme, setStoredTheme } from "../storage/themeSettings";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -11,8 +11,6 @@ type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 };
-
-const THEME_STORAGE_KEY = "reading-assistant-theme";
 
 const initialState: ThemeProviderState = {
   theme: "system",
@@ -30,8 +28,7 @@ export function ThemeProvider({
   useEffect(() => {
     const loadTheme = async () => {
       try {
-        const result = await chrome.storage.local.get(THEME_STORAGE_KEY);
-        const storedTheme = result[THEME_STORAGE_KEY] as Theme | undefined;
+        const storedTheme = await getStoredTheme();
         if (storedTheme) {
           setTheme(storedTheme);
         }
@@ -68,7 +65,7 @@ export function ThemeProvider({
     setTheme: (newTheme: Theme) => {
       setTheme(newTheme);
       try {
-        chrome.storage.local.set({ [THEME_STORAGE_KEY]: newTheme });
+        setStoredTheme(newTheme);
       } catch (error) {
         console.error("Failed to save theme to storage:", error);
       }

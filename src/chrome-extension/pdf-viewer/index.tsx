@@ -4,6 +4,7 @@ import PdfViewer from "../components/PdfViewer";
 import "../global.css";
 import globalCssUrl from "../global.css?url";
 import { PdfSelectionTooltip } from "./PdfSelectionTooltip";
+import { ThemeProvider } from "../theme/theme-provider";
 
 function PdfViewerApp() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -30,7 +31,11 @@ function PdfViewerApp() {
     return <div className="pdf-error">No PDF URL provided</div>;
   }
 
-  return <PdfViewer url={pdfUrl} />;
+  return (
+    <ThemeProvider>
+      <PdfViewer url={pdfUrl} />
+    </ThemeProvider>
+  );
 }
 
 // Inject the global stylesheet using the hashed asset URL.
