@@ -9,31 +9,10 @@ import {
 } from "../storage/extensionSettings";
 import { FloatingFreePromptWindow } from "../common/floating/FloatingFreePromptWindow";
 
-(function injectReadingAssistantShadowDomRoot() {
-  const hostDiv = document.createElement("div");
-  hostDiv.id = "reading-assistant-shadow-dom-root";
-  hostDiv.style.all = "unset";
-  hostDiv.style.position = "absolute";
-  hostDiv.style.top = "0";
-  hostDiv.style.left = "0";
-  hostDiv.style.width = "100%";
-  hostDiv.style.height = "100%";
-  hostDiv.style.pointerEvents = "none";
-  hostDiv.style.zIndex = "10001";
-  document.body.appendChild(hostDiv);
-  const shadowRoot = hostDiv.attachShadow({ mode: "open" });
-
-  const link = document.createElement("link");
-  // chrome.runtime.getURL will prepend the extension URL to the hashed asset path.
-  link.href = chrome.runtime.getURL(globalCssUrl);
-  link.rel = "stylesheet";
-  link.type = "text/css";
-  shadowRoot.appendChild(link);
-})();
-
 export class ContentSelectionTooltip extends BaseSelectionTooltip {
   constructor() {
     super("reading-assistant-shadow-dom-root");
+    this.createShadowDomRoot();
     this.addAction("Summary", (selectedText: string) => {
       this.showFloatingWindow(FloatingSummaryWindow, selectedText);
     });
@@ -48,6 +27,28 @@ export class ContentSelectionTooltip extends BaseSelectionTooltip {
 
     // Set up message listener for context menu actions
     this.setupMessageListener();
+  }
+
+  private createShadowDomRoot(): void {
+    const hostDiv = document.createElement("div");
+    hostDiv.id = "reading-assistant-shadow-dom-root";
+    hostDiv.style.all = "unset";
+    hostDiv.style.position = "absolute";
+    hostDiv.style.top = "0";
+    hostDiv.style.left = "0";
+    hostDiv.style.width = "100%";
+    hostDiv.style.height = "100%";
+    hostDiv.style.pointerEvents = "none";
+    hostDiv.style.zIndex = "10001";
+    document.body.appendChild(hostDiv);
+    const shadowRoot = hostDiv.attachShadow({ mode: "open" });
+
+    const link = document.createElement("link");
+    // chrome.runtime.getURL will prepend the extension URL to the hashed asset path.
+    link.href = chrome.runtime.getURL(globalCssUrl);
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    shadowRoot.appendChild(link);
   }
 
   protected async setupEventListeners(): Promise<void> {

@@ -33,7 +33,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["*"]
+      "resources": ["content-main.js", "assets/*.js", "assets/*.css"]
     }
   ]
 }

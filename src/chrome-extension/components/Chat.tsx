@@ -426,6 +426,7 @@ export const Chat = ({
               <Textarea
                 ref={textareaRef}
                 disabled={isBusy}
+                autoFocus
                 value={input}
                 onChange={(e) => {
                   handleInputChange(e);

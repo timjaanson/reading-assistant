@@ -1,15 +1,16 @@
+// This function creates a fetch implementation that uses the background script to process requests
+
 import {
   EXPERIMENTAL_STREAM_PORT_NAME,
+  KEEPALIVE_PING,
   EXPERIMENT_STREAM_CHUNK,
   EXPERIMENT_STREAM_METADATA,
   EXPERIMENT_STREAM_COMPLETE,
   EXPERIMENT_STREAM_ERROR,
-  GET_EXPERIMENT_STREAM,
-  KEEPALIVE_PING,
   KEEPALIVE_PONG,
-} from "../background/experimental-stream-handler";
+  GET_EXPERIMENT_STREAM,
+} from "../types/streaming-connection";
 
-// This function creates a fetch implementation that uses the background script to process requests
 // It maintains compatibility with useChat by reconstructing a Response with a ReadableStream
 export const createCustomBackgroundFetch = () => {
   const abortControllers = new Map<
