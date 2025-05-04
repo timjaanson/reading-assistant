@@ -31,6 +31,14 @@ export interface Model {
   name: string;
   enableToolCalls: boolean;
   providerId: ProviderId;
+  options: ModelOptions;
+}
+
+export interface ModelOptions {
+  maxTokens?: number;
+  temperature?: number;
+  topK?: number;
+  topP?: number;
   providerOptions?: ProviderOptions;
 }
 

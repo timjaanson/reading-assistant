@@ -21,7 +21,7 @@ export const getTooling = async (
 
   const tools: Record<string, ToolDefinition | {}> = {};
 
-  if (!languageModel.languageModelOptions.useSearchGrounding) {
+  if (!languageModel.internalCompatibilityOptions.useSearchGrounding) {
     tools["webSearch"] = {
       description:
         "Perform a web search for the given query. Returns an optional answer and a list of search results. Make sure to include the source (url) of the information in your response.",

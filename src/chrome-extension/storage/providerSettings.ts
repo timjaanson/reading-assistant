@@ -22,6 +22,7 @@ export const defaultProviderSettings: ProviderSettings = {
           modelId: "gpt-4.1-mini",
           name: "GPT 4.1 Mini",
           enableToolCalls: true,
+          options: {},
         },
       ],
     },
@@ -135,13 +136,15 @@ export class SettingsStorage {
     return newSettings;
   }
 
-  static async findProviderById(
-    providerId: ProviderId
-  ): Promise<Provider | undefined> {
+  static async findProviderById(providerId: ProviderId): Promise<Provider> {
     const currentSettings = await this.loadProviderSettings();
-    return currentSettings.all.find(
+    const provider = currentSettings.all.find(
       (provider) => provider.providerId === providerId
     );
+    if (!provider) {
+      throw new Error(`Provider ${providerId} not found`);
+    }
+    return provider;
   }
 
   static async findModelByProviderIdAndModelId(
@@ -149,7 +152,7 @@ export class SettingsStorage {
     modelId: string
   ): Promise<Model | undefined> {
     const provider = await this.findProviderById(providerId);
-    return provider?.models.find((model) => model.modelId === modelId);
+    return provider.models.find((model) => model.modelId === modelId);
   }
 
   static async getActiveModel(): Promise<Model | null> {

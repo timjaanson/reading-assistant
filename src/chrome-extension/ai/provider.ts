@@ -7,13 +7,13 @@ import { SettingsStorage } from "../storage/providerSettings";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { ProviderOptions } from "../types/ai-sdk-missing";
+import { ModelOptions } from "../types/settings";
 
 export type LanguageModelWithOptions = {
   model: LanguageModelV1;
   toolUse: boolean;
-  providerOptions: ProviderOptions | undefined;
-  languageModelOptions: Record<string, unknown>;
+  modelOptions: ModelOptions;
+  internalCompatibilityOptions: Record<string, unknown>;
 };
 
 const getProviderSettings = async () => {
@@ -41,7 +41,7 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
   }
 
   let provider;
-  let options = {};
+  let compatibilityOptions = {};
   switch (activeProvider.providerId) {
     case "openai":
       provider = createOpenAI({
@@ -61,7 +61,7 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       provider = createGoogleGenerativeAI({
         apiKey: activeProvider.apiKey,
       });
-      options = {
+      compatibilityOptions = {
         // enabling google search (grounding) breaks other tool calls
         // it is enabled when tool calls are disabled
         useSearchGrounding: !activeModel.enableToolCalls,
@@ -89,7 +89,7 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
 
   const model = provider.languageModel(
     providerSettings.active.modelId,
-    options
+    compatibilityOptions
   );
   let wrappedModel = model;
 
@@ -106,13 +106,18 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
 
   const providerOptions = {
     ...activeProvider.providerOptions,
-    ...activeModel.providerOptions,
+    ...activeModel.options.providerOptions,
+  };
+
+  const modelOptions = {
+    ...activeModel.options,
+    providerOptions: providerOptions,
   };
 
   return {
     model: wrappedModel,
     toolUse: activeModel.enableToolCalls,
-    providerOptions: providerOptions,
-    languageModelOptions: options,
+    modelOptions: modelOptions,
+    internalCompatibilityOptions: compatibilityOptions,
   };
 };

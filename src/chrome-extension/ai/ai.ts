@@ -47,12 +47,17 @@ export const getCustomBackendResponse = async (
     const prompt = options.systemPrompt || (await defaultSystemMessage());
     response = streamText({
       model: languageModel.model,
+      temperature: languageModel.modelOptions.temperature,
+      topK: languageModel.modelOptions.topK,
+      topP: languageModel.modelOptions.topP,
+      maxTokens: languageModel.modelOptions.maxTokens,
+      providerOptions: languageModel.modelOptions.providerOptions,
+
       system: prompt,
       messages: messages,
       tools: allTools,
       toolChoice: tooling?.toolChoice,
       maxSteps: 20,
-      providerOptions: languageModel.providerOptions,
       abortSignal: options.abortSignal,
       onError: (error) => {
         console.error("Error getting streamed text response", error);

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { SettingsStorage } from "../storage/providerSettings";
-import { Provider, ProviderSettings, Model } from "../types/settings";
+import {
+  Provider,
+  ProviderSettings,
+  Model,
+  ModelOptions,
+} from "../types/settings";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "../components/Tooltip";
 import { Label } from "@/components/ui/label";
@@ -74,7 +79,7 @@ export const ProviderSettingsTab = () => {
   const handleModelChange = (
     providerId: string,
     modelIndex: number,
-    field: keyof Model,
+    field: keyof Model | "providerOptions",
     value: string | boolean
   ) => {
     if (!providerSettings) return;
@@ -91,28 +96,70 @@ export const ProviderSettingsTab = () => {
                 models: provider.models.map((model, index) => {
                   if (index !== modelIndex) return model;
 
-                  let valueToSet = value;
-                  if (field === "providerOptions") {
+                  // Handle special case for providerOptions which is now in the options object
+                  if (
+                    field === "providerOptions" &&
+                    typeof value === "string"
+                  ) {
                     try {
-                      valueToSet = JSON.parse(value as string);
+                      // Parse the JSON string for providerOptions
+                      const providerOptions = JSON.parse(value);
                       setSaveStatus("idle");
+
+                      // Update just the providerOptions in the options object
+                      return {
+                        ...model,
+                        options: {
+                          ...model.options,
+                          providerOptions,
+                        },
+                      };
                     } catch (e) {
                       setSaveStatus("json-error");
+                      return model;
                     }
                   }
 
-                  // // Special handling for modelId changes to maintain active model reference
-                  // if (
-                  //   field === "modelId" &&
-                  //   prev.active?.modelId === model.modelId
-                  // ) {
-                  //   // Update the active model reference if we're changing its ID
-                  //   prev.active.modelId = valueToSet as string;
-                  // }
+                  // For other fields, update normally
+                  return {
+                    ...model,
+                    [field]: value,
+                  };
+                }),
+              }
+            : provider
+        ),
+      };
+    });
+  };
+
+  // Add a function to handle model option changes specifically
+  const handleModelOptionChange = (
+    providerId: string,
+    modelIndex: number,
+    optionField: keyof ModelOptions,
+    value: number | undefined
+  ) => {
+    if (!providerSettings) return;
+
+    setProviderSettings((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        all: prev.all.map((provider) =>
+          provider.providerId === providerId
+            ? {
+                ...provider,
+                models: provider.models.map((model, index) => {
+                  if (index !== modelIndex) return model;
 
                   return {
                     ...model,
-                    [field]: valueToSet,
+                    options: {
+                      ...model.options,
+                      [optionField]: value,
+                    },
                   };
                 }),
               }
@@ -170,6 +217,13 @@ export const ProviderSettingsTab = () => {
                     name: "New",
                     enableToolCalls: false,
                     providerId: provider.providerId,
+                    options: {
+                      maxTokens: undefined,
+                      temperature: undefined,
+                      topK: undefined,
+                      topP: undefined,
+                      providerOptions: undefined,
+                    },
                   },
                 ],
               }
@@ -249,7 +303,7 @@ export const ProviderSettingsTab = () => {
     <div className="p-4">
       <h2 className="text-lg font-medium mb-4">Provider & Model Settings</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <Accordion type="single" className="w-full">
+        <Accordion collapsible type="single" className="w-full">
           {providerSettings.all.map((provider) => (
             <AccordionItem
               key={provider.providerId}
@@ -455,36 +509,155 @@ export const ProviderSettingsTab = () => {
                               />
                             </div>
 
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor={`${model.modelId}-providerOptions`}
-                              >
-                                Provider Options
-                              </Label>
-                              <Textarea
-                                id={`${model.modelId}-providerOptions`}
-                                defaultValue={
-                                  model.providerOptions
-                                    ? JSON.stringify(
-                                        model.providerOptions,
-                                        null,
-                                        2
-                                      )
-                                    : ""
-                                }
-                                onChange={(e) =>
-                                  handleModelChange(
-                                    provider.providerId,
-                                    modelIndex,
-                                    "providerOptions",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Enter provider options as JSON"
-                                rows={3}
-                                className="resize-y min-h-[60px] font-mono text-sm"
-                              />
-                            </div>
+                            <Accordion
+                              collapsible
+                              type="single"
+                              className="w-full"
+                            >
+                              <AccordionItem value="options">
+                                <AccordionTrigger>
+                                  Additional options
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="space-y-3">
+                                    <div className="grid grid-cols-12 gap-2">
+                                      <div className="col-span-6 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-maxTokens`}
+                                        >
+                                          Max Tokens
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-maxTokens`}
+                                          type="number"
+                                          value={model.options.maxTokens || ""}
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "maxTokens",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="Max tokens"
+                                        />
+                                      </div>
+                                      <div className="col-span-2 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-temperature`}
+                                        >
+                                          Temp
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-temperature`}
+                                          type="number"
+                                          value={
+                                            model.options.temperature || ""
+                                          }
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "temperature",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="0-1"
+                                        />
+                                      </div>
+                                      <div className="col-span-2 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-topP`}
+                                        >
+                                          Top P
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-topP`}
+                                          type="number"
+                                          value={model.options.topP || ""}
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "topP",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="0-1"
+                                        />
+                                      </div>
+                                      <div className="col-span-2 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-topK`}
+                                        >
+                                          Top K
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-topK`}
+                                          type="number"
+                                          value={model.options.topK || ""}
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "topK",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="0-1"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label
+                                        htmlFor={`${model.modelId}-providerOptions`}
+                                      >
+                                        Provider Options
+                                      </Label>
+                                      <Textarea
+                                        id={`${model.modelId}-providerOptions`}
+                                        defaultValue={
+                                          model.options.providerOptions
+                                            ? JSON.stringify(
+                                                model.options.providerOptions,
+                                                null,
+                                                2
+                                              )
+                                            : ""
+                                        }
+                                        onChange={(e) =>
+                                          handleModelChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "providerOptions",
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="Enter provider options as JSON"
+                                        rows={3}
+                                        className="resize-y min-h-[60px] font-mono text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
                           </CardContent>
                         </Card>
                       ))}
