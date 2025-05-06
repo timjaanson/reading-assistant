@@ -147,9 +147,12 @@ export const createCustomBackgroundFetch = () => {
 
           // Clean up the AbortController map
           abortControllers.delete(requestId);
-          console.log(
+          console.debug(
             "Custom background fetch received stream complete signal"
           );
+
+          port.disconnect();
+          clearKeepaliveInterval(keepaliveInterval);
         } else if (message.type === EXPERIMENT_STREAM_ERROR) {
           const error = new Error(
             message.payload?.message || "Unknown error from background"
@@ -164,15 +167,16 @@ export const createCustomBackgroundFetch = () => {
           }
           abortControllers.delete(requestId);
           port.disconnect();
+          clearKeepaliveInterval(keepaliveInterval);
         } else if (message.type === KEEPALIVE_PONG) {
-          // Received pong response, connection is alive
           console.debug("Keepalive pong received");
         }
       });
 
       port.onDisconnect.addListener(() => {
-        console.log("Custom background fetch port disconnected");
+        console.debug("Custom background fetch port disconnected");
         abortControllers.delete(requestId);
+        clearKeepaliveInterval(keepaliveInterval);
 
         if (chrome.runtime.lastError) {
           const error = new Error(
@@ -191,7 +195,7 @@ export const createCustomBackgroundFetch = () => {
             if (writerState === "active") {
               writerState = "closed";
               writer.close();
-              console.log("Writer closed due to clean disconnect.");
+              console.debug("Writer closed due to clean disconnect.");
             }
           } catch (e) {
             console.log(
@@ -235,12 +239,15 @@ export const createCustomBackgroundFetch = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
-    } finally {
-      if (keepaliveInterval) {
-        clearInterval(keepaliveInterval);
-      }
     }
   };
+};
+
+const clearKeepaliveInterval = (keepaliveInterval: NodeJS.Timeout | null) => {
+  if (keepaliveInterval) {
+    console.debug("Clearing keepalive interval");
+    clearInterval(keepaliveInterval);
+  }
 };
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {

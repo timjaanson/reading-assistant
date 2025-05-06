@@ -333,7 +333,6 @@ export const Chat = ({
       };
 
       setIsModified(false);
-      console.log(`Saved chat with ID: ${id}`);
     } catch (error) {
       console.error("Error saving chat:", error);
       setVisualError(

@@ -34,7 +34,7 @@ export async function callDbMethod<T>(
 ): Promise<T> {
   // If we're in the background context, call the DB directly instead of using messaging
   if (isBackgroundContext()) {
-    console.log(
+    console.debug(
       `[db-sender] Running in background context, calling ${dbTarget}.${methodName} directly`
     );
     try {
@@ -70,7 +70,7 @@ export async function callDbMethod<T>(
     requestId,
   };
 
-  console.log(
+  console.debug(
     `[db-sender] Sending ${dbTarget}.${methodName} request ${requestId}`,
     {
       extensionId: chrome.runtime.id,

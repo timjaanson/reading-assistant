@@ -41,7 +41,7 @@ const activeStreams = new Map<
  */
 export function setupExperimentStreamHandler() {
   chrome.runtime.onConnect.addListener((port) => {
-    console.log("Connection received:", port.name);
+    console.debug("Connection received:", port.name);
 
     // Only handle connections for our experimental stream
     if (port.name !== EXPERIMENTAL_STREAM_PORT_NAME) {
@@ -50,6 +50,7 @@ export function setupExperimentStreamHandler() {
 
     port.onMessage.addListener(async (message) => {
       if (message.type === KEEPALIVE_PING) {
+        console.debug("Keepalive ping received");
         port.postMessage({ type: KEEPALIVE_PONG });
         return;
       }
@@ -90,7 +91,7 @@ export function setupExperimentStreamHandler() {
       }
 
       const { messages, systemPrompt, requestId } = message.payload;
-      console.log(
+      console.debug(
         "Background received stream request with messages:",
         messages.length,
         "requestId:",
@@ -181,7 +182,7 @@ export function setupExperimentStreamHandler() {
     });
 
     port.onDisconnect.addListener(() => {
-      console.log("Experiment stream port disconnected");
+      console.debug("Experiment stream port disconnected");
       if (chrome.runtime.lastError) {
         console.error("Disconnection error:", chrome.runtime.lastError.message);
       }
