@@ -3,7 +3,7 @@
   "name": "Reading assistant",
   "version": "1.0.0",
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Click to open Reading Assistant"
   },
   "options_page": "options.html",
   "description": "Extension to provide summaries, explanations, and other actions for text on the web, including PDFs",
@@ -18,7 +18,8 @@
     "tabs",
     "webNavigation",
     "downloads",
-    "contextMenus"
+    "contextMenus",
+    "sidePanel"
   ],
   "content_scripts": [
     {
@@ -33,7 +34,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["content-main.js", "assets/*.js", "assets/*.css"]
+      "resources": ["*"]
     }
   ]
 }
