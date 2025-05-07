@@ -3,7 +3,7 @@
   "name": "Reading assistant",
   "version": "1.0.0",
   "action": {
-    "default_title": "Click to open Reading Assistant"
+    "default_title": "Click to open side panel"
   },
   "options_page": "options.html",
   "description": "Extension to provide summaries, explanations, and other actions for text on the web, including PDFs",
