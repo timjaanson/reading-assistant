@@ -9,9 +9,8 @@ setupExperimentStreamHandler();
 setupDatabaseHandler();
 
 chrome.sidePanel
-  .setOptions({
-    enabled: true,
-    path: "sidebar.html",
+  .setPanelBehavior({
+    openPanelOnActionClick: true,
   })
   .catch((error) => console.error(error));
 
