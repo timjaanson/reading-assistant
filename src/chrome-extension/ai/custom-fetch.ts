@@ -1,25 +1,8 @@
-// This function creates a fetch implementation that uses the background script to process requests
-
-import {
-  EXPERIMENTAL_STREAM_PORT_NAME,
-  KEEPALIVE_PING,
-  EXPERIMENT_STREAM_CHUNK,
-  EXPERIMENT_STREAM_METADATA,
-  EXPERIMENT_STREAM_COMPLETE,
-  EXPERIMENT_STREAM_ERROR,
-  KEEPALIVE_PONG,
-  GET_EXPERIMENT_STREAM,
-} from "../types/streaming-connection";
+import { getCustomBackendResponse } from "./ai";
 
 // It maintains compatibility with useChat by reconstructing a Response with a ReadableStream
 export const createCustomBackgroundFetch = () => {
-  const abortControllers = new Map<
-    string,
-    { port: chrome.runtime.Port; controller: AbortController }
-  >();
-
   return async (_input: RequestInfo | URL, init?: RequestInit) => {
-    let keepaliveInterval: NodeJS.Timeout | null = null;
     try {
       if (!init?.body) {
         throw new Error("No request body provided");
@@ -31,207 +14,63 @@ export const createCustomBackgroundFetch = () => {
         throw new Error("No messages found in request body");
       }
 
-      const requestId = crypto.randomUUID();
-
       const controller = new AbortController();
-      const { signal } = controller;
 
-      const port = chrome.runtime.connect({
-        name: EXPERIMENTAL_STREAM_PORT_NAME,
-      });
-
-      // Set up keepalive mechanism
-      keepaliveInterval = setInterval(() => {
-        if (port) {
-          // manifest v3 workers time out connections after 30s if no messages are sent
-          port.postMessage({
-            type: KEEPALIVE_PING,
-          });
-        }
-      }, 25000); // Send keepalive ping every 25 seconds
-
-      abortControllers.set(requestId, { port, controller });
-
-      const { readable, writable } = new TransformStream<Uint8Array>();
-      const writer = writable.getWriter();
-
-      let writerState = "active"; // Can be: active, aborted, closed
-
-      let responseResolve: (response: Response) => void;
-      const responsePromise = new Promise<Response>((resolve) => {
-        responseResolve = resolve;
-      });
-
+      // Link the controller to the original request signal if provided
       if (init.signal) {
         init.signal.addEventListener("abort", () => {
-          console.log(
-            `[custom-fetch] Abort signal received for request ${requestId}`
-          );
-          // When the original request is aborted, forward abort to background
-          port.postMessage({
-            type: "ABORT_STREAM",
-            payload: { requestId },
-          });
-
           controller.abort();
-          writerState = "aborted";
-
-          writer.abort(
-            new DOMException("The user aborted a request.", "AbortError")
-          );
         });
       }
 
-      // Handle local abort events
-      signal.addEventListener("abort", () => {
-        if (writerState === "active") {
-          writerState = "aborted";
-          writer.abort(
-            new DOMException("The user aborted a request.", "AbortError")
-          );
-        }
+      // Create a TransformStream to pipe the reader data through
+      const { readable, writable } = new TransformStream<Uint8Array>();
+      const writer = writable.getWriter();
+
+      const response = await getCustomBackendResponse(body.messages, {
+        systemPrompt: body.systemPrompt,
+        abortSignal: controller.signal,
       });
 
-      let responseCreated = false;
-      let responseMetadata: {
-        status: number;
-        statusText: string;
-        headers: Record<string, string>;
-      } = {
-        status: 200,
-        statusText: "OK",
-        headers: { "Content-Type": "text/plain" },
-      };
+      const headers = new Headers(response.headers);
 
-      port.onMessage.addListener((message) => {
-        if (message.type === EXPERIMENT_STREAM_CHUNK) {
+      const streamResponse = new Response(readable, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+
+      if (response.body) {
+        const reader = response.body.getReader();
+
+        (async () => {
           try {
-            if (writerState === "active") {
-              const binaryChunk = base64ToArrayBuffer(message.payload);
-              writer.write(new Uint8Array(binaryChunk));
+            while (true) {
+              const { done, value } = await reader.read();
+
+              if (done) {
+                await writer.close();
+                break;
+              }
+
+              await writer.write(value);
             }
           } catch (error) {
-            console.error("Error processing chunk:", error);
-            if (writerState === "active") {
-              writerState = "aborted";
-              writer.abort(
-                error instanceof Error
-                  ? error
-                  : new Error("Chunk processing failed")
-              );
-            }
-            port.disconnect();
-          }
-        } else if (message.type === EXPERIMENT_STREAM_METADATA) {
-          if (message.payload) {
-            responseMetadata = message.payload;
-          }
-
-          if (!responseCreated) {
-            responseCreated = true;
-            const headers = new Headers(responseMetadata.headers);
-            responseResolve(
-              new Response(readable, {
-                status: responseMetadata.status,
-                statusText: responseMetadata.statusText,
-                headers,
-              })
+            console.error("Error processing stream:", error);
+            await writer.abort(
+              error instanceof Error
+                ? error
+                : new Error("Stream processing failed")
             );
           }
-        } else if (message.type === EXPERIMENT_STREAM_COMPLETE) {
-          // Only close if the writer is still active
-          if (writerState === "active") {
-            writerState = "closed";
-            writer.close();
-          }
+        })();
+      } else {
+        writer.close();
+      }
 
-          // Clean up the AbortController map
-          abortControllers.delete(requestId);
-          console.debug(
-            "Custom background fetch received stream complete signal"
-          );
-
-          port.disconnect();
-          clearKeepaliveInterval(keepaliveInterval);
-        } else if (message.type === EXPERIMENT_STREAM_ERROR) {
-          const error = new Error(
-            message.payload?.message || "Unknown error from background"
-          );
-          console.error(
-            "Custom background fetch received error signal:",
-            error
-          );
-          if (writerState === "active") {
-            writerState = "aborted";
-            writer.abort(error);
-          }
-          abortControllers.delete(requestId);
-          port.disconnect();
-          clearKeepaliveInterval(keepaliveInterval);
-        } else if (message.type === KEEPALIVE_PONG) {
-          console.debug("Keepalive pong received");
-        }
-      });
-
-      port.onDisconnect.addListener(() => {
-        console.debug("Custom background fetch port disconnected");
-        abortControllers.delete(requestId);
-        clearKeepaliveInterval(keepaliveInterval);
-
-        if (chrome.runtime.lastError) {
-          const error = new Error(
-            chrome.runtime.lastError.message || "Unknown disconnect error"
-          );
-          console.error("Port disconnected with error:", error);
-          if (writerState === "active") {
-            writerState = "aborted";
-            writer.abort(error);
-          }
-        } else {
-          // If the port disconnected cleanly *without* an error,
-          // and we haven't already closed the writer (via COMPLETE or ERROR),
-          // This handles cases where the background script might terminate unexpectedly.
-          try {
-            if (writerState === "active") {
-              writerState = "closed";
-              writer.close();
-              console.debug("Writer closed due to clean disconnect.");
-            }
-          } catch (e) {
-            console.log(
-              "Writer likely already closed/aborted on disconnect:",
-              e
-            );
-          }
-        }
-
-        // Ensure the response promise is resolved if it hasn't been already
-        // (e.g., if METADATA message was never received before disconnect)
-        if (!responseCreated) {
-          responseCreated = true;
-          const headers = new Headers(responseMetadata.headers);
-          responseResolve(
-            new Response(readable, {
-              status: responseMetadata.status,
-              statusText: responseMetadata.statusText,
-              headers,
-            })
-          );
-        }
-      });
-
-      port.postMessage({
-        type: GET_EXPERIMENT_STREAM,
-        payload: {
-          messages: body.messages,
-          systemPrompt: body.systemPrompt,
-          requestId,
-        },
-      });
-
-      return responsePromise;
+      return streamResponse;
     } catch (error) {
-      console.error("Error in secure fetch:", error);
+      console.error("Error in custom fetch:", error);
       return new Response(
         JSON.stringify({ error: "Error processing request" }),
         {
@@ -242,19 +81,3 @@ export const createCustomBackgroundFetch = () => {
     }
   };
 };
-
-const clearKeepaliveInterval = (keepaliveInterval: NodeJS.Timeout | null) => {
-  if (keepaliveInterval) {
-    console.debug("Clearing keepalive interval");
-    clearInterval(keepaliveInterval);
-  }
-};
-
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}

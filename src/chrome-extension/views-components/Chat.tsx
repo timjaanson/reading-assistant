@@ -7,13 +7,13 @@ import { StopIndicator } from "../common/icons/StopIndicator";
 import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
 import { SendIcon } from "../common/icons/Send";
-import { chatDbProxy } from "../storage/wrappers";
 import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { ThemeProvider } from "../theme/theme-provider";
 import { Textarea } from "@/components/ui/textarea";
 import { Paperclip } from "lucide-react";
 import { File as FileIcon } from "lucide-react";
+import { chatDb } from "../storage/chatDatabase";
 
 export type SaveableChatValues = {
   id: string;
@@ -84,19 +84,8 @@ export const Chat = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textAreaRowsRef = useRef(1);
 
-  // This ensures useChat is reset when initialChatId changes (including undefined for new chat)
   const chatId = useMemo(() => initialChatId, [initialChatId]);
-
-  const adjustTextareaHeight = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    //set textarea rows to the number of rows in the textarea based on new lines but not more than 3
-    textAreaRowsRef.current = Math.min(textarea.value.split("\n").length, 3);
-    textarea.rows = textAreaRowsRef.current;
-  }, []);
 
   const {
     id,
@@ -293,11 +282,6 @@ export const Chat = ({
     }
   };
 
-  // Adjust textarea height when input changes
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [input, adjustTextareaHeight]);
-
   const submitMessageHandler = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       setVisualError(null);
@@ -319,7 +303,7 @@ export const Chat = ({
     if (!id || messages.length === 0) return;
 
     try {
-      await chatDbProxy.saveChat({
+      await chatDb.saveChat({
         id,
         name: internalChatName,
         url: pageUrl ? pageUrl.toString() : undefined,
@@ -429,22 +413,18 @@ export const Chat = ({
                 value={input}
                 onChange={(e) => {
                   handleInputChange(e);
-                  adjustTextareaHeight();
                 }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     submitMessageHandler(e as any);
-                  } else if (e.key === "Enter" && e.shiftKey) {
-                    adjustTextareaHeight();
                   }
                 }}
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
                 placeholder={isBusy ? "" : "Type your message"}
                 className="flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-6"
-                rows={textAreaRowsRef.current}
               />
               {isBusy && (
                 <div className="absolute top-1/2 left-4 -translate-y-1/2 pointer-events-none">

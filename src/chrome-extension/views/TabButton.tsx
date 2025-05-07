@@ -11,7 +11,7 @@ export const TabButton = ({ isActive, onClick, children }: TabButtonProps) => {
     <button
       onClick={onClick}
       className={`px-3 py-2 font-medium text-sm ${
-        isActive ? "border-b-2 border-primary text-primary" : ""
+        isActive ? "border-b-2 border-primary" : ""
       }`}
     >
       {children}

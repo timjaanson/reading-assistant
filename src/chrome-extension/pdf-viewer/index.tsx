@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import PdfViewer from "../components/PdfViewer";
+import PdfViewer from "./PdfViewer";
 import "../global.css";
-import globalCssUrl from "../global.css?url";
-import { PdfSelectionTooltip } from "./PdfSelectionTooltip";
 import { ThemeProvider } from "../theme/theme-provider";
 
 function PdfViewerApp() {
@@ -37,19 +35,6 @@ function PdfViewerApp() {
     </ThemeProvider>
   );
 }
-
-// Inject the global stylesheet using the hashed asset URL.
-(function injectTailwindStyles() {
-  const link = document.createElement("link");
-  // chrome.runtime.getURL will prepend the extension URL to the hashed asset path.
-  link.href = chrome.runtime.getURL(globalCssUrl);
-  link.rel = "stylesheet";
-  link.type = "text/css";
-  document.head.appendChild(link);
-})();
-
-// Initialize the PDF selection tooltip
-new PdfSelectionTooltip();
 
 // Render the component
 const rootElement = document.getElementById("root");

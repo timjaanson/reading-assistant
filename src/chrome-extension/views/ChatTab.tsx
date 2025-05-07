@@ -2,10 +2,9 @@ import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useState } from "react";
 import { ChatBehaviorProps, ChatPreview } from "../types/chat";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Chat } from "../components/Chat";
+import { Chat } from "../views-components/Chat";
 import { Spinner } from "../common/icons/Spinner";
 import { UIMessage } from "ai";
-import { chatDbProxy } from "../storage/wrappers";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Menu, MessageSquarePlus } from "lucide-react";
+import { chatDb } from "../storage/chatDatabase";
 
 type ChatTabProps = ChatBehaviorProps & {
   initialChatName?: string;
@@ -84,7 +84,7 @@ export const ChatTab = ({
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
     try {
-      const allChats = await chatDbProxy.getAllChatPreviews();
+      const allChats = await chatDb.getAllChatPreviews();
 
       setChats(groupChats(allChats));
     } catch (error) {
@@ -108,7 +108,7 @@ export const ChatTab = ({
 
   // Refresh chat list
   const refreshChatList = useCallback(async () => {
-    const allChats = await chatDbProxy.getAllChatPreviews();
+    const allChats = await chatDb.getAllChatPreviews();
 
     setChats(groupChats(allChats));
   }, [groupChats]);
@@ -116,7 +116,7 @@ export const ChatTab = ({
   // Load specific chat when selected
   const loadChat = useCallback(async (id: string) => {
     try {
-      const chat = await chatDbProxy.getChat(id);
+      const chat = await chatDb.getChat(id);
       if (chat) {
         console.log(
           "Loading chat:",
@@ -160,7 +160,7 @@ export const ChatTab = ({
   const deleteChat = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      await chatDbProxy.deleteChat(id);
+      await chatDb.deleteChat(id);
 
       // If current chat was deleted, create a new chat
       if (id === currentChatSelection.id) {
@@ -182,9 +182,9 @@ export const ChatTab = ({
       // If this is an existing chat (has an ID), update the name in the database
       if (currentChatSelection.id) {
         try {
-          const chat = await chatDbProxy.getChat(currentChatSelection.id);
+          const chat = await chatDb.getChat(currentChatSelection.id);
           if (chat) {
-            await chatDbProxy.saveChat({
+            await chatDb.saveChat({
               ...chat,
               name: trimmedName,
             });

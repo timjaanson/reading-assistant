@@ -7,7 +7,7 @@ import ExtensionSettingsTab from "./ExtensionSettingsTab";
 import MemoryTab from "./MemoryTab";
 import { ChatTab } from "./ChatTab";
 
-export const Popup = () => {
+export const MainView = () => {
   const [activeTab, setActiveTab] = useState<
     | "chat"
     | "providerSettings"

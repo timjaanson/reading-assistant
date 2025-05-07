@@ -30,18 +30,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 10000,
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, "popup.html"),
-        sidepanel: resolve(__dirname, "sidepanel.html"),
-        options: resolve(__dirname, "options.html"),
+        main: resolve(__dirname, "main.html"),
         "pdf-viewer": resolve(__dirname, "pdf-viewer.html"),
         background: resolve(
           __dirname,
           "src/chrome-extension/background/index.ts"
-        ),
-        content: resolve(__dirname, "src/chrome-extension/content/index.ts"),
-        "content-main": resolve(
-          __dirname,
-          "src/chrome-extension/content/content.tsx"
         ),
       },
       output: {

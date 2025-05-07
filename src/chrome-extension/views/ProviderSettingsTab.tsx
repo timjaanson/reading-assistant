@@ -7,7 +7,7 @@ import {
   ModelOptions,
 } from "../types/settings";
 import { Input } from "@/components/ui/input";
-import { Tooltip } from "../components/Tooltip";
+import { Tooltip } from "../views-components/Tooltip";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";

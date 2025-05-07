@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AiTools, ToolDefinition } from "../types/ai-tools";
+import { AiTools } from "../types/ai-tools";
 import { searchBrave } from "../search/brave-api";
 import { tryCatch } from "../util/try-catch";
 import { ExternalToolsStorage } from "../storage/externalToolSettings";
@@ -8,6 +8,7 @@ import { SearchOptions } from "../types/search";
 import { memoryDb } from "../storage/memoryDatabase";
 import { NewMemoryData } from "../types/memory";
 import { LanguageModelWithOptions } from "./provider";
+import { Tool } from "ai";
 
 export const getTooling = async (
   languageModel: LanguageModelWithOptions
@@ -19,7 +20,7 @@ export const getTooling = async (
   const externalToolSettings =
     await ExternalToolsStorage.loadExternalToolSettings();
 
-  const tools: Record<string, ToolDefinition | {}> = {};
+  const tools: Record<string, Tool | {}> = {};
 
   if (!languageModel.internalCompatibilityOptions.useSearchGrounding) {
     tools["webSearch"] = {
@@ -108,8 +109,8 @@ export const getTooling = async (
   return;
 };
 
-const createMemoryTools = (): Record<string, ToolDefinition> => {
-  const tools: Record<string, ToolDefinition> = {};
+const createMemoryTools = (): Record<string, Tool> => {
+  const tools: Record<string, Tool> = {};
 
   tools["addMemory"] = {
     description:

@@ -1,4 +1,4 @@
-import { memoryDbProxy } from "../storage/wrappers";
+import { memoryDb } from "../storage/memoryDatabase";
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
 export const defaultSystemMessage = async (url?: URL) => `## Your role
@@ -127,7 +127,7 @@ Macro-economics in the 21st century
 
 const getMemories = async () => {
   try {
-    const memories = await memoryDbProxy.getActiveMemories();
+    const memories = await memoryDb.getActiveMemories();
     console.log("[prompts] Retrieved memories:", memories.length);
 
     return memories

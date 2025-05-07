@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MemoryItem } from "../types/memory";
 import { memoryDb } from "../storage/memoryDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Tooltip } from "../components/Tooltip";
+import { Tooltip } from "../views-components/Tooltip";
 import {
   Card,
   CardContent,
