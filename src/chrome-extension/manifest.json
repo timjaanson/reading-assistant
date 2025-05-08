@@ -13,15 +13,22 @@
     "48": "public/ra-48.png",
     "192": "public/ra-192.png"
   },
-  "permissions": [
-    "storage",
-    "tabs",
-    "webNavigation",
-    "downloads",
-    "contextMenus",
-    "sidePanel"
+  "permissions": ["storage", "downloads", "sidePanel", "declarativeNetRequest"],
+  "host_permissions": [
+    "https://arxiv.org/pdf/*",
+    "http://*/*.pdf*",
+    "https://*/*.pdf*",
+    "file://*/*.pdf"
   ],
-  "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ra-pdf-redirect",
+        "enabled": true,
+        "path": "pdf-redirect-rule.json"
+      }
+    ]
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -31,8 +38,8 @@
   },
   "web_accessible_resources": [
     {
-      "matches": ["<all_urls>"],
-      "resources": ["*"]
+      "matches": ["http://*/*", "https://*/*"],
+      "resources": ["pdf-viewer.html"]
     }
   ]
 }

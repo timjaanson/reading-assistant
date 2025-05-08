@@ -17,6 +17,7 @@ export default defineConfig({
         { src: "src/chrome-extension/public/ra-48.png", dest: "./public" },
         { src: "src/chrome-extension/public/ra-192.png", dest: "./public" },
         { src: "public/cmaps", dest: "." },
+        { src: "src/chrome-extension/pdf-redirect-rule.json", dest: "." },
       ],
     }),
   ],

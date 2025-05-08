@@ -1,10 +1,9 @@
-import { setupPdfHandler } from "./pdf-handler";
-
-setupPdfHandler();
-
 chrome.sidePanel
   .setPanelBehavior({
     openPanelOnActionClick: true,
+  })
+  .then(() => {
+    console.log("Side panel on 'action click => open' behavior set");
   })
   .catch((error) => console.error(error));
 

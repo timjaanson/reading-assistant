@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "chrome-extension://analpobdkphdfpdffakgocdjokpemlih/pdf-viewer.html?url=\\0"
+      }
+    },
+    "condition": {
+      "regexFilter": "(https?://[^?#]+.(?:pdf|PDF)(?:[?#].*)?)|(^https://arxiv.org/pdf/.*)|(^file://.+?\\.(?:pdf|PDF)(?:[?#].*)?)",
+      "resourceTypes": ["main_frame"]
+    }
+  }
+]
