@@ -13,7 +13,14 @@
     "48": "public/ra-48.png",
     "192": "public/ra-192.png"
   },
-  "permissions": ["storage", "downloads", "sidePanel", "declarativeNetRequest"],
+  "permissions": [
+    "storage",
+    "downloads",
+    "sidePanel",
+    "declarativeNetRequest",
+    "activeTab",
+    "scripting"
+  ],
   "host_permissions": [
     "https://arxiv.org/pdf/*",
     "http://*/*.pdf*",

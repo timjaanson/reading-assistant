@@ -1,3 +1,5 @@
+import "./html-extraction";
+
 chrome.sidePanel
   .setPanelBehavior({
     openPanelOnActionClick: true,
