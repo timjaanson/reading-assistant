@@ -18,7 +18,5 @@ export interface ChatPreview {
 
 export type ChatBehaviorProps = {
   systemPrompt?: string;
-  initialUserMessage?: string;
-  collapseInitialMessage?: boolean;
   sendInitialMessage?: boolean;
 };

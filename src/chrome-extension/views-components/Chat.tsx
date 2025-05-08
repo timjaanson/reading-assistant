@@ -50,8 +50,6 @@ export const Chat = ({
   initialChatName,
   initialMessages,
   systemPrompt,
-  initialUserMessage,
-  collapseInitialMessage = false,
   sendInitialMessage = false,
   isRootComponent = false,
 }: ChatProps) => {
@@ -65,8 +63,6 @@ export const Chat = ({
           initialChatName,
           initialMessages,
           systemPrompt,
-          initialUserMessage,
-          collapseInitialMessage,
           sendInitialMessage,
           isRootComponent,
         }}
@@ -89,13 +85,11 @@ export const Chat = ({
   const {
     id,
     messages,
-    setMessages,
     input,
     handleInputChange,
     handleSubmit,
     stop,
     status,
-    reload,
     error,
     addToolResult,
   } = useChat({
@@ -168,12 +162,6 @@ export const Chat = ({
     }
   }, []);
 
-  useEffect(() => {
-    if (initialUserMessage) {
-      setMessages([{ id: "1", role: "user", content: initialUserMessage }]);
-    }
-  }, []);
-
   // Initialize or update the saved chat values reference
   useEffect(() => {
     if (id) {
@@ -207,17 +195,6 @@ export const Chat = ({
       setIsModified(nameChanged || messagesChanged || lastMessageChanged);
     }
   }, [id, internalChatName, messages]);
-
-  useEffect(() => {
-    if (
-      sendInitialMessage &&
-      status === "ready" &&
-      initialUserMessage &&
-      messages.length === 1
-    ) {
-      reload();
-    }
-  }, [sendInitialMessage, status, initialUserMessage, messages, reload]);
 
   useEffect(() => {
     if (!isBusy && status === "ready" && messages.length > 0 && isModified) {
@@ -353,17 +330,14 @@ export const Chat = ({
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-2 space-y-2 bg-transparent"
       >
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${
               message.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
-            <MessageRenderer
-              message={message}
-              collapsableMessage={index === 0 ? collapseInitialMessage : false}
-            />
+            <MessageRenderer message={message} />
           </div>
         ))}
       </div>

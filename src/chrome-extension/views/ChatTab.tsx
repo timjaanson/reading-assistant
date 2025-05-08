@@ -33,17 +33,11 @@ type ChatGroup = {
   chats: ChatPreview[];
 };
 
-export const ChatTab = ({
-  initialChatName,
-  systemPrompt,
-  initialUserMessage,
-  collapseInitialMessage,
-  sendInitialMessage,
-}: ChatTabProps) => {
+export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
   const [currentChatSelection, setCurrentChatSelection] =
     useState<CurrentChatSelection>({
       id: undefined,
-      name: initialChatName || "New Chat",
+      name: "New Chat",
       messages: [],
       url: undefined,
     });
@@ -317,8 +311,6 @@ export const ChatTab = ({
           initialChatName={currentChatSelection.name}
           initialMessages={currentChatSelection.messages}
           systemPrompt={systemPrompt}
-          initialUserMessage={initialUserMessage}
-          collapseInitialMessage={collapseInitialMessage}
           sendInitialMessage={sendInitialMessage}
         />
       </div>

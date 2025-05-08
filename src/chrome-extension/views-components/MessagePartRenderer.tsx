@@ -5,6 +5,8 @@ import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
 import { CodeBlock } from "./CodeBlock";
 
+const TEXT_COLLAPSE_THRESHOLD = 700;
+
 type CollapsibleSectionProps = {
   children: React.ReactNode;
   textColor: string;
@@ -47,10 +49,20 @@ export const CollapsableSection = ({
 export const TextPartRenderer = ({
   content,
   textColor,
+  collapsable = false,
 }: {
   content: string;
   textColor: string;
+  collapsable?: boolean;
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(
+    collapsable && content?.length > TEXT_COLLAPSE_THRESHOLD
+  );
+  const displayContent =
+    isCollapsed && content?.length > TEXT_COLLAPSE_THRESHOLD
+      ? content.substring(0, TEXT_COLLAPSE_THRESHOLD) + "..."
+      : content;
+
   return (
     <div className={`${textColor}`}>
       <ReactMarkdown
@@ -120,8 +132,18 @@ export const TextPartRenderer = ({
           ),
         }}
       >
-        {content}
+        {displayContent}
       </ReactMarkdown>
+
+      {collapsable && content?.length > TEXT_COLLAPSE_THRESHOLD && (
+        <div
+          className={`flex items-center cursor-pointer mt-1 font-bold ${textColor}`}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          <span className="mr-1">{isCollapsed ? "▶︎" : "▲︎"}</span>
+          <span>{isCollapsed ? "Show full content" : "Hide long content"}</span>
+        </div>
+      )}
     </div>
   );
 };

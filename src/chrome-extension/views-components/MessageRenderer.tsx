@@ -1,7 +1,6 @@
 import { UIMessage } from "@ai-sdk/ui-utils";
 import { useCallback } from "react";
 import {
-  CollapsableSection,
   ReasoningPartRenderer,
   TextPartRenderer,
   ToolPartRenderer,
@@ -19,16 +18,24 @@ interface MessageRendererProps {
 const PartRenderer = ({
   part,
   textColor,
+  isUserMessage = false,
 }: {
   part: MessagePart;
   textColor: string;
+  isUserMessage: boolean;
 }) => {
   switch (part.type) {
     case "step-start":
       // we render every message separately, so we don't need logic to identify the start of a step
       return null;
     case "text":
-      return <TextPartRenderer content={part.text} textColor={textColor} />;
+      return (
+        <TextPartRenderer
+          content={part.text}
+          textColor={textColor}
+          collapsable={isUserMessage}
+        />
+      );
 
     case "reasoning":
       return (
@@ -139,10 +146,7 @@ const AttachmentsRenderer = ({
   );
 };
 
-export const MessageRenderer = ({
-  message,
-  collapsableMessage = false,
-}: MessageRendererProps) => {
+export const MessageRenderer = ({ message }: MessageRendererProps) => {
   const { role, parts } = message;
   const isUserMessage = role === "user";
 
@@ -164,7 +168,12 @@ export const MessageRenderer = ({
       {validParts
         .filter((part) => part.type !== "source")
         .map((part, index) => (
-          <PartRenderer key={index} part={part} textColor={textColor()} />
+          <PartRenderer
+            key={index}
+            part={part}
+            textColor={textColor()}
+            isUserMessage={isUserMessage}
+          />
         ))}
 
       {validParts.length === 0 && message.content && (
@@ -177,6 +186,7 @@ export const MessageRenderer = ({
             .filter((part) => part.type === "source")
             .map((part, index) => (
               <PartRenderer
+                isUserMessage={isUserMessage}
                 key={`source-${index}`}
                 part={part}
                 textColor={textColor()}
@@ -192,13 +202,7 @@ export const MessageRenderer = ({
       <div
         className={`flex flex-col gap-1 p-1.5 pl-3 rounded-lg ${bubbleColor()} border dark:border-none max-w-7xl w-fit overflow-hidden`}
       >
-        {collapsableMessage ? (
-          <CollapsableSection textColor={textColor()}>
-            {messageContent}
-          </CollapsableSection>
-        ) : (
-          messageContent
-        )}
+        {messageContent}
       </div>
 
       <AttachmentsRenderer
