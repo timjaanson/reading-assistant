@@ -81,7 +81,6 @@ export const Chat = ({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [visualError, setVisualError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -405,9 +404,8 @@ export const Chat = ({
       <div className="shrink-0 bg-transparent p-1 border-t">
         <form onSubmit={submitMessageHandler}>
           <div className="flex items-center space-x-1">
-            <div className="relative w-full flex text-sm max-h-24">
+            <div className="relative w-full flex text-sm max-h-32">
               <Textarea
-                ref={textareaRef}
                 disabled={isBusy}
                 autoFocus
                 value={input}
@@ -424,7 +422,7 @@ export const Chat = ({
                 onKeyUp={(e) => e.stopPropagation()}
                 onKeyPress={(e) => e.stopPropagation()}
                 placeholder={isBusy ? "" : "Type your message"}
-                className="flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-6"
+                className="min-h-16 flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-7"
               />
               {isBusy && (
                 <div className="absolute top-1/2 left-4 -translate-y-1/2 pointer-events-none">
