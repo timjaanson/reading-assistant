@@ -6,7 +6,6 @@ import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
 import ExtensionSettingsTab from "./ExtensionSettingsTab";
 import MemoryTab from "./MemoryTab";
 import { ChatTab } from "./ChatTab";
-import { HtmlViewer } from "../components/HtmlViewer";
 
 export const MainView = () => {
   const [activeTab, setActiveTab] = useState<
@@ -15,7 +14,6 @@ export const MainView = () => {
     | "externalToolSettings"
     | "extensionSettings"
     | "memory"
-    | "htmlViewer"
   >("chat");
 
   return (
@@ -53,12 +51,6 @@ export const MainView = () => {
           >
             Settings
           </TabButton>
-          <TabButton
-            isActive={activeTab === "htmlViewer"}
-            onClick={() => setActiveTab("htmlViewer")}
-          >
-            HTML Viewer
-          </TabButton>
         </div>
       </nav>
 
@@ -74,8 +66,6 @@ export const MainView = () => {
           <ExtensionSettingsTab />
         ) : activeTab === "memory" ? (
           <MemoryTab />
-        ) : activeTab === "htmlViewer" ? (
-          <HtmlViewer />
         ) : null}
       </div>
     </div>

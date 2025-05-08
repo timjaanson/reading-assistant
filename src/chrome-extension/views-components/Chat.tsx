@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { ThemeProvider } from "../theme/theme-provider";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip } from "lucide-react";
+import { Paperclip, FileText, Plus } from "lucide-react";
 import { File as FileIcon } from "lucide-react";
 import { chatDb } from "../storage/chatDatabase";
+import { getActiveTabContent } from "../util/pageContent";
+import { Card, CardContent } from "@/components/ui/card";
 
 export type SaveableChatValues = {
   id: string;
@@ -79,12 +81,15 @@ export const Chat = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [providerSelectClosed, setProviderSelectClosed] = useState(true);
 
   const chatId = useMemo(() => initialChatId, [initialChatId]);
 
   const {
     id,
     messages,
+    setMessages,
     input,
     handleInputChange,
     handleSubmit,
@@ -302,9 +307,12 @@ export const Chat = ({
   }, [id, internalChatName, messages, pageUrl]);
 
   const handleFileButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    setShowAddMenu(false);
+    setTimeout(() => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }, 50);
   };
 
   const handleRemoveFile = (fileToRemove: File) => {
@@ -321,6 +329,59 @@ export const Chat = ({
     if (fileInputRef.current) {
       fileInputRef.current.files = dataTransfer.files;
     }
+  };
+
+  const handleExtractPageContent = async () => {
+    setShowAddMenu(false);
+
+    try {
+      const result = await getActiveTabContent();
+
+      setMessages([
+        ...messages,
+        {
+          id: `user-${Date.now()}`,
+          role: "user",
+          content: `Text from ${result.url}${
+            result.error ? " " + result.error : ""
+          }\n${result.text}`,
+        },
+      ]);
+    } catch (error) {
+      console.error("Error extracting page content:", error);
+      setVisualError(
+        error instanceof Error
+          ? error.message
+          : "Failed to extract page content"
+      );
+    }
+  };
+
+  const toggleAddMenu = () => {
+    setShowAddMenu(!showAddMenu);
+    if (!showAddMenu) {
+      setProviderSelectClosed(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleBodyClick = () => {
+      if (showAddMenu) {
+        setShowAddMenu(false);
+      }
+    };
+    document.body.addEventListener("click", handleBodyClick);
+
+    return () => {
+      document.body.removeEventListener("click", handleBodyClick);
+    };
+  }, [showAddMenu]);
+
+  const plusButtonClicked = (e: React.MouseEvent) => {
+    // Stop propagation to prevent the click from reaching the body
+    e.stopPropagation();
+    // Toggle the dropdown
+    toggleAddMenu();
   };
 
   return (
@@ -403,15 +464,18 @@ export const Chat = ({
                   <LoadingDots size={3} />
                 </div>
               )}
-              <button
-                type="button"
-                onClick={handleFileButtonClick}
-                disabled={isBusy}
-                title="Attach file"
-                className="absolute text-md cursor-pointer right-2 top-1/2 -translate-y-1/2 transition-colors"
-              >
-                <Paperclip className="text-foreground p-1" />
-              </button>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <button
+                  type="button"
+                  onClick={plusButtonClicked}
+                  disabled={isBusy}
+                  title="Add content"
+                  className="text-md cursor-pointer transition-colors"
+                >
+                  <Plus className="text-foreground p-1" />
+                </button>
+              </div>
+
               <input
                 type="file"
                 ref={fileInputRef}
@@ -425,7 +489,11 @@ export const Chat = ({
               />
             </div>
 
-            <ProviderQuickSelect disabled={isBusy} />
+            <ProviderQuickSelect
+              disabled={isBusy}
+              closed={providerSelectClosed}
+              onToggle={(isOpen) => setProviderSelectClosed(!isOpen)}
+            />
 
             <Button
               type={isBusy ? "button" : "submit"}
@@ -445,6 +513,37 @@ export const Chat = ({
           </div>
         )}
       </div>
+
+      {/* Dropdown menu positioned at fixed location in DOM */}
+      {showAddMenu && (
+        <div
+          className="absolute bottom-14 right-[50px] z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Card className="w-44 py-1">
+            <CardContent className="p-0">
+              <div className="flex flex-col text-sm">
+                <button
+                  type="button"
+                  onClick={handleFileButtonClick}
+                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
+                >
+                  <Paperclip size={14} />
+                  <span>Attach file</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExtractPageContent}
+                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
+                >
+                  <FileText size={14} />
+                  <span>Extract page text</span>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
