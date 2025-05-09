@@ -149,7 +149,7 @@ export const TextPartRenderer = ({
             );
           },
           table: ({ node, ...props }) => (
-            <div className="max-w-full overflow-x-auto p-2">
+            <div className="max-w-full overflow-x-auto p-2 scrollbar scrollbar-thumb-muted scrollbar-track-background">
               <table
                 className={`border-collapse ${textColor} w-max`}
                 {...props}

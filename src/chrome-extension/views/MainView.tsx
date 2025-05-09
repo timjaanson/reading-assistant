@@ -20,7 +20,7 @@ export const MainView = () => {
     <div className="w-full h-full flex flex-col">
       {/* Navigation */}
       <nav className="border-b">
-        <div className="flex space-x-4 px-4 overflow-y-auto">
+        <div className="flex space-x-4 px-4 overflow-x-auto scrollbar scrollbar-thumb-muted scrollbar-track-background">
           <TabButton
             isActive={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
