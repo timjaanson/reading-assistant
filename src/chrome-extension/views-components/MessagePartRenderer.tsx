@@ -1,16 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Spinner } from "../common/icons/Spinner";
-import { ToolInvocation } from "@ai-sdk/ui-utils";
-import { CodeSection } from "./CodeSection";
-import SyntaxHighlighter from "react-syntax-highlighter";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useTheme } from "../theme/theme-provider";
+import { Spinner } from "../common/icons/Spinner";
+import { ToolInvocation } from "@ai-sdk/ui-utils";
 
+import { useTheme } from "../theme/theme-provider";
 const TEXT_COLLAPSE_THRESHOLD = 700;
 
 type CollapsibleSectionProps = {
@@ -69,7 +68,7 @@ export const TextPartRenderer = ({
       ? content.substring(0, TEXT_COLLAPSE_THRESHOLD) + "..."
       : content;
 
-  const { theme } = useMemo(useTheme, []);
+  const { theme } = useTheme();
 
   return (
     <div className={`${textColor}`}>
@@ -179,7 +178,7 @@ export const TextPartRenderer = ({
           ),
           p: ({ node, ...props }) => (
             <p
-              className={`whitespace-pre-wrap break-words ${textColor}`}
+              className={`whitespace-pre-line break-words ${textColor}`}
               {...props}
             />
           ),
@@ -229,6 +228,8 @@ export const ToolPartRenderer = ({
   const { state, toolName, toolCallId, args } = toolInvocation;
   const isLoading = state === "partial-call" || state === "call";
 
+  const { theme } = useTheme();
+
   const openText = (
     <div className="flex items-center gap-2">
       <span>{`Show tool (${toolName})`}</span>
@@ -258,9 +259,14 @@ export const ToolPartRenderer = ({
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
               <div className="max-h-40 max-w-full overflow-auto">
-                <CodeSection language="json">
+                <SyntaxHighlighter
+                  language="json"
+                  showLineNumbers
+                  wrapLongLines
+                  style={theme === "dark" ? oneDark : oneLight}
+                >
                   {JSON.stringify(args, null, 2)}
-                </CodeSection>
+                </SyntaxHighlighter>
               </div>
             </div>
           </>
@@ -270,9 +276,14 @@ export const ToolPartRenderer = ({
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
             <div className="max-h-56 max-w-full overflow-auto">
-              <CodeSection language="json">
+              <SyntaxHighlighter
+                language="json"
+                showLineNumbers
+                wrapLongLines
+                style={theme === "dark" ? oneDark : oneLight}
+              >
                 {JSON.stringify((toolInvocation as any).result, null, 2)}
-              </CodeSection>
+              </SyntaxHighlighter>
             </div>
           </div>
         )}

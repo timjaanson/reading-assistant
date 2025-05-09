@@ -426,7 +426,7 @@ export const Chat = ({
       {showScrollButton && (
         <div
           onClick={scrollToBottom}
-          className="absolute left-1/2 bottom-[50px] -translate-x-1/2 text-foreground bg-card/50 hover:bg-card rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
+          className="absolute left-1/2 bottom-[75px] -translate-x-1/2 text-foreground bg-card/70 hover:bg-card rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
         >
           ↓
         </div>
