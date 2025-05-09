@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
-import { CodeBlock } from "./CodeBlock";
+import { CodeSection } from "./CodeSection";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import {
+  oneDark,
+  oneLight,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useTheme } from "../theme/theme-provider";
 
 const TEXT_COLLAPSE_THRESHOLD = 700;
 
@@ -63,6 +69,8 @@ export const TextPartRenderer = ({
       ? content.substring(0, TEXT_COLLAPSE_THRESHOLD) + "..."
       : content;
 
+  const { theme } = useMemo(useTheme, []);
+
   return (
     <div className={`${textColor}`}>
       <ReactMarkdown
@@ -98,7 +106,49 @@ export const TextPartRenderer = ({
               {children}
             </li>
           ),
-          code: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+          code: ({ node, className, children, ...props }: any) => {
+            const match = /language-(\w+)/.exec(className || "");
+            const language = match ? match[1] : "";
+            const isInline = !className;
+
+            if (isInline) {
+              return (
+                <code
+                  className={`px-1 py-0.5 bg-black/10 dark:bg-black/30 rounded ${textColor}`}
+                  {...props}
+                >
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <div className="max-w-full relative">
+                <div className="overflow-x-auto max-w-full">
+                  <SyntaxHighlighter
+                    language={language}
+                    style={theme === "dark" ? oneDark : oneLight}
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: "0.375rem",
+                      fontSize: "0.9em",
+                    }}
+                    codeTagProps={{
+                      style: {
+                        whiteSpace: "pre",
+                        wordBreak: "normal",
+                        overflowWrap: "normal",
+                      },
+                    }}
+                    wrapLongLines={false}
+                    showLineNumbers={language !== "text" && language !== ""}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                </div>
+              </div>
+            );
+          },
           table: ({ node, ...props }) => (
             <div className="max-w-full overflow-x-auto p-2">
               <table
@@ -128,7 +178,10 @@ export const TextPartRenderer = ({
             <td className={`p-3 max-w-48 ${textColor}`} {...props} />
           ),
           p: ({ node, ...props }) => (
-            <p className={`whitespace-pre-line ${textColor}`} {...props} />
+            <p
+              className={`whitespace-pre-wrap break-words ${textColor}`}
+              {...props}
+            />
           ),
         }}
       >
@@ -205,7 +258,9 @@ export const ToolPartRenderer = ({
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
               <div className="max-h-40 max-w-full overflow-auto">
-                <CodeBlock>{JSON.stringify(args, null, 2)}</CodeBlock>
+                <CodeSection language="json">
+                  {JSON.stringify(args, null, 2)}
+                </CodeSection>
               </div>
             </div>
           </>
@@ -215,9 +270,9 @@ export const ToolPartRenderer = ({
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
             <div className="max-h-56 max-w-full overflow-auto">
-              <CodeBlock>
+              <CodeSection language="json">
                 {JSON.stringify((toolInvocation as any).result, null, 2)}
-              </CodeBlock>
+              </CodeSection>
             </div>
           </div>
         )}

@@ -79,7 +79,7 @@ const htmlToTextOptions = {
       selector: "table",
       format: "dataTable",
       options: {
-        maxColumnWidth: 40,
+        maxColumnWidth: 500,
         colSpacing: 2,
         rowSpacing: 1,
         uppercaseHeaderCells: false,

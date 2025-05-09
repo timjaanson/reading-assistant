@@ -74,6 +74,7 @@ export const Chat = ({
 
   const [internalChatName, setInternalChatName] =
     useState<string>(initialChatName);
+  const [latestPageUrl, setLatestPageUrl] = useState<URL | undefined>(pageUrl);
   const [isModified, setIsModified] = useState(false);
   const chatSaveValues = useRef<SaveableChatValues | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -212,22 +213,18 @@ export const Chat = ({
     setInternalChatName(initialChatName);
   }, [initialChatName]);
 
-  // Set up observers to detect content changes
   useEffect(() => {
     const messagesContainer = messagesContainerRef.current;
     if (!messagesContainer) return;
 
-    // Handle scroll events
     const handleScroll = () => updateScrollButtonVisibility();
     messagesContainer.addEventListener("scroll", handleScroll);
 
-    // Create a resize observer to detect content size changes
     const resizeObserver = new ResizeObserver(() => {
       updateScrollButtonVisibility();
     });
     resizeObserver.observe(messagesContainer);
 
-    // Create a mutation observer to detect DOM changes (like collapsing sections)
     const mutationObserver = new MutationObserver(() => {
       updateScrollButtonVisibility();
     });
@@ -239,7 +236,6 @@ export const Chat = ({
       characterData: true,
     });
 
-    // Initial check
     updateScrollButtonVisibility();
 
     return () => {
@@ -249,9 +245,7 @@ export const Chat = ({
     };
   }, [updateScrollButtonVisibility]);
 
-  // Update button visibility when messages change
   useEffect(() => {
-    // Small delay to let the DOM update
     const timeoutId = setTimeout(updateScrollButtonVisibility, 0);
     return () => clearTimeout(timeoutId);
   }, [messages, updateScrollButtonVisibility]);
@@ -271,7 +265,6 @@ export const Chat = ({
         experimental_attachments: files,
       });
 
-      // Reset files after submission
       setFiles(undefined);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -287,7 +280,7 @@ export const Chat = ({
       await chatDb.saveChat({
         id,
         name: internalChatName,
-        url: pageUrl ? pageUrl.toString() : undefined,
+        url: latestPageUrl ? latestPageUrl.toString() : undefined,
         messages,
       });
 
@@ -304,7 +297,7 @@ export const Chat = ({
         error instanceof Error ? error.message : "Failed to save chat"
       );
     }
-  }, [id, internalChatName, messages, pageUrl]);
+  }, [id, internalChatName, messages, latestPageUrl]);
 
   const handleFileButtonClick = () => {
     setShowAddMenu(false);
@@ -336,6 +329,10 @@ export const Chat = ({
 
     try {
       const result = await getActiveTabContent();
+
+      if (result.success && result.url) {
+        setLatestPageUrl(new URL(result.url));
+      }
 
       setMessages([
         ...messages,
@@ -389,7 +386,7 @@ export const Chat = ({
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-2 space-y-2 bg-transparent"
+        className="max-w-full flex-1 overflow-y-auto p-2 space-y-2 bg-transparent"
       >
         {messages.map((message) => (
           <div
