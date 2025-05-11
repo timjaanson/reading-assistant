@@ -9,6 +9,7 @@ import { memoryDb } from "../storage/memoryDatabase";
 import { NewMemoryData } from "../types/memory";
 import { LanguageModelWithOptions } from "./provider";
 import { Tool } from "ai";
+import { getActiveTabContent } from "../util/pageContent";
 
 export const getTooling = async (
   languageModel: LanguageModelWithOptions
@@ -47,7 +48,7 @@ export const getTooling = async (
         }),
       }),
       execute: async (parameters: unknown) => {
-        console.log("webSearch", parameters);
+        console.debug("webSearch", parameters);
         const options = (parameters as { options: SearchOptions }).options;
         const query = (parameters as { query: string }).query;
         let result;
@@ -63,7 +64,11 @@ export const getTooling = async (
               "No search provider available, select one in tool settings"
             );
         }
-
+        console.debug(
+          "webSearch result success",
+          result.data ? "success" : "error",
+          result.error
+        );
         if (result.error) {
           return {
             error: result.error.message,
@@ -82,9 +87,14 @@ export const getTooling = async (
         urls: z.array(z.string()).describe("The URLs to extract content from"),
       }),
       execute: async (parameters: unknown) => {
+        console.debug("urlExtractor", parameters);
         const urls = (parameters as { urls: string[] }).urls;
         const result = await tryCatch(extractContentFromUrls(urls));
-
+        console.debug(
+          "urlExtractor result success",
+          result.data ? "success" : "error",
+          result.error
+        );
         if (result.error) {
           return {
             error: result.error.message,
@@ -95,6 +105,28 @@ export const getTooling = async (
       },
     };
   }
+
+  tools["extractActiveBrowserTabContent"] = {
+    description:
+      "Extract the content of the user's currently active browser tab. Returns the text content of the tab.",
+    parameters: z.object({}),
+    execute: async () => {
+      console.debug("extractActiveBrowserTabContent");
+      const result = await tryCatch(getActiveTabContent());
+      console.debug(
+        "extractActiveBrowserTabContent result success, url, error:",
+        result?.data?.success,
+        result?.data?.url,
+        result?.error
+      );
+      if (result.error) {
+        return {
+          error: result.error.message,
+        };
+      }
+      return result.data;
+    },
+  };
 
   const memoryTools = createMemoryTools();
   Object.assign(tools, memoryTools);

@@ -1,15 +1,12 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-
-// Import the worker script directly
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-// Set worker URL using Chrome extension URL mechanism
 pdfjs.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(pdfjsWorker);
 
 interface PdfViewerProps {
@@ -19,50 +16,10 @@ interface PdfViewerProps {
 const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [scale, setScale] = useState<number>(1.2);
-  const [visiblePage, setVisiblePage] = useState<number>(1);
-  const visiblePageRef = useRef(1);
-  useEffect(() => {
-    visiblePageRef.current = visiblePage;
-  }, [visiblePage]);
 
-  const pageRefs = useRef(new Map<number, HTMLDivElement | null>());
-  const registerRef = (pageNum: number) => (el: HTMLDivElement | null) => {
-    pageRefs.current.set(pageNum, el);
-  };
-
-  //set title to url
   useEffect(() => {
     document.title = url.split("/").pop() || "Document";
   }, [url]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let maxRatio = 0;
-        let mostVisible = visiblePageRef.current;
-        entries.forEach((entry) => {
-          const page = parseInt(
-            entry.target.getAttribute("data-page-number") || "0",
-            10
-          );
-          if (entry.intersectionRatio > maxRatio) {
-            maxRatio = entry.intersectionRatio;
-            mostVisible = page;
-          }
-        });
-        if (mostVisible !== visiblePageRef.current) {
-          setVisiblePage(mostVisible);
-        }
-      },
-      { threshold: [0.25, 0.75] }
-    );
-
-    pageRefs.current.forEach((node) => {
-      if (node) observer.observe(node);
-    });
-
-    return () => observer.disconnect();
-  }, [numPages]);
 
   const pdfOptions = useMemo(
     () => ({
@@ -160,12 +117,6 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
                   key={`page_container_${pageNumberValue}`}
                   className="relative"
                   data-page-number={pageNumberValue}
-                  ref={registerRef(pageNumberValue)}
-                  id={
-                    pageNumberValue === visiblePage
-                      ? "ar-pdf-viewer-most-visible-page"
-                      : undefined
-                  }
                 >
                   <Page
                     pageNumber={pageNumberValue}

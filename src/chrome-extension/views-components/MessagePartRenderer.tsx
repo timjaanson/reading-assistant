@@ -10,7 +10,7 @@ import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
 
 import { useTheme } from "../theme/theme-provider";
-const TEXT_COLLAPSE_THRESHOLD = 700;
+const TEXT_COLLAPSE_THRESHOLD = 500;
 
 type CollapsibleSectionProps = {
   children: React.ReactNode;

@@ -1,14 +1,8 @@
 import { compile, HtmlToTextOptions } from "html-to-text";
-
-/**
- * Response from extracting tab content
- */
-export interface TabContentResponse {
-  html: string;
-  url: string;
-  success: boolean;
-  error?: string;
-}
+import {
+  BackgroundCommunicationMessageType,
+  TabContentResponse,
+} from "../types/background-communication";
 
 /**
  * Result type for tab content with processed text
@@ -97,94 +91,34 @@ const htmlToTextOptions = {
 const compiledConvert = compile(htmlToTextOptions);
 
 /**
- * Extracts the HTML content and URL of the currently active tab
- * @returns Object containing HTML content, URL, success status, and any error message
- */
-export async function extractActiveTabContent(): Promise<TabContentResponse> {
-  try {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-
-    if (!tab || !tab.id) {
-      console.error("No active tab found");
-      return {
-        html: "",
-        url: "",
-        success: false,
-        error: "No active tab found",
-      };
-    }
-
-    // Store whether URL is available
-    const hasUrl = !!tab.url;
-    const url = tab.url || "";
-
-    if (!hasUrl) {
-      console.warn(
-        "Active tab URL not available, will try to extract content anyway"
-      );
-    }
-
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        return document.documentElement.outerHTML as string;
-      },
-    });
-
-    if (!results || results.length === 0) {
-      console.error("Script execution failed");
-      return {
-        html: "",
-        url,
-        success: false,
-        error:
-          "Script execution failed" + (!hasUrl ? " and URL not available" : ""),
-      };
-    }
-
-    const html = results[0].result as string;
-
-    // If we have HTML but no URL, it's a partial success
-    if (!hasUrl) {
-      return {
-        html,
-        url: "Active tab URL not available",
-        success: true,
-        error: "Active tab URL not available, but HTML was retrieved",
-      };
-    }
-
-    return { html, url, success: true };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("Error getting page content:", error);
-    return {
-      html: "",
-      url: "",
-      success: false,
-      error: errorMessage,
-    };
-  }
-}
-
-/**
  * Gets the HTML and URL from the active tab and converts HTML to text
  * @returns Object with processed text, URL, success status, and any error
  */
 export async function getActiveTabContent(): Promise<TabContentResult> {
   try {
-    const response = await extractActiveTabContent();
+    const response = await chrome.runtime.sendMessage<
+      { type: BackgroundCommunicationMessageType.EXTRACT_ACTIVE_TAB_CONTENT },
+      TabContentResponse
+    >({ type: BackgroundCommunicationMessageType.EXTRACT_ACTIVE_TAB_CONTENT });
 
-    if (!response || !response.success) {
-      const errorMsg = response?.error || "Unknown error getting page content";
+    if (!response) {
+      const errorMsg = "Unknown error getting page content from background";
       console.error(errorMsg);
       return {
         text: "",
-        url: response?.url || "",
+        url: "",
+        success: false,
+        error: errorMsg,
+      };
+    }
+
+    if (!response.success) {
+      const errorMsg =
+        response.error || "Unknown error getting page content from background";
+      console.error(errorMsg);
+      return {
+        text: "",
+        url: response.url || "",
         success: false,
         error: errorMsg,
       };

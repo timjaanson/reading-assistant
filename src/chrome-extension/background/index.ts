@@ -1,3 +1,5 @@
+import "./extract-active-tab";
+
 chrome.sidePanel
   .setPanelBehavior({
     openPanelOnActionClick: true,

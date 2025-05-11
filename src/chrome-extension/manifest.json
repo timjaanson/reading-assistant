@@ -19,7 +19,8 @@
     "sidePanel",
     "declarativeNetRequest",
     "activeTab",
-    "scripting"
+    "scripting",
+    "microphone"
   ],
   "host_permissions": [
     "https://arxiv.org/pdf/*",

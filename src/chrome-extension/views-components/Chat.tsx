@@ -339,7 +339,7 @@ export const Chat = ({
         {
           id: `user-${Date.now()}`,
           role: "user",
-          content: `Text from ${result.url}${
+          content: `[URL](${result.url}) ${
             result.error ? " " + result.error : ""
           }\n${result.text}`,
         },

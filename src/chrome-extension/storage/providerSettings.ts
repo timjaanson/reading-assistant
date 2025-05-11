@@ -108,6 +108,15 @@ export class SettingsStorage {
     }
   }
 
+  static async loadProviderSettingsByProviderId(
+    providerId: ProviderId
+  ): Promise<Provider | undefined> {
+    const providerSettings = await this.loadProviderSettings();
+    return providerSettings.all.find(
+      (provider) => provider.providerId === providerId
+    );
+  }
+
   static async loadFlatModelsList(): Promise<FlatModelsList> {
     const providerSettings = await this.loadProviderSettings();
     const activeModel = providerSettings.active;
