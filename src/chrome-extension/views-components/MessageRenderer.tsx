@@ -199,7 +199,9 @@ export const MessageRenderer = ({ message }: MessageRendererProps) => {
 
   return (
     <div
-      className={`max-w-full flex flex-col ${isUserMessage ? "items-end" : ""}`}
+      className={`max-w-full flex flex-col ${
+        isUserMessage ? "pl-1 items-end" : "pr-1"
+      }`}
     >
       <div
         className={`flex flex-col gap-1 overflow-auto p-1.5 pl-3 rounded-lg ${bubbleColor()} border dark:border-none max-w-7xl`}

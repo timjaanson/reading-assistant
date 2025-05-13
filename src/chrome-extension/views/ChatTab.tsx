@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useState } from "react";
-import { ChatBehaviorProps, ChatPreview } from "../types/chat";
+import { ChatPreview } from "../types/chat";
 import { getCompactLocaleDateTime } from "../util/datetime";
 import { Chat } from "../views-components/Chat";
 import { Spinner } from "../common/icons/Spinner";
@@ -16,10 +16,8 @@ import {
 import { Menu, MessageSquarePlus } from "lucide-react";
 import { chatDb } from "../storage/chatDatabase";
 import { Realtime } from "../views-components/Realtime";
-
-type ChatTabProps = ChatBehaviorProps & {
-  initialChatName?: string;
-};
+import { ChatInput } from "../views-components/ChatInput";
+import { defaultSystemMessage } from "../ai/prompts";
 
 type CurrentChatSelection = {
   id: string;
@@ -34,7 +32,7 @@ type ChatGroup = {
   chats: ChatPreview[];
 };
 
-export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
+export const ChatTab = () => {
   const [currentChatSelection, setCurrentChatSelection] =
     useState<CurrentChatSelection>({
       id: crypto.randomUUID(),
@@ -49,6 +47,16 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
   const [chats, setChats] = useState<ChatGroup[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSystemPrompt = async () => {
+      const prompt = await defaultSystemMessage();
+      setSystemPrompt(prompt);
+    };
+
+    getSystemPrompt();
+  }, []);
 
   useEffect(() => {
     setEditingChatName(currentChatSelection.name);
@@ -89,24 +97,12 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
     }
   }, [groupChats]);
 
-  // Load chat list on component mount
-  useEffect(() => {
-    loadChats();
-  }, [loadChats]);
-
   // Load chats when sidebar opens
   useEffect(() => {
     if (isSidebarOpen) {
       loadChats();
     }
   }, [isSidebarOpen, loadChats]);
-
-  // Refresh chat list
-  const refreshChatList = useCallback(async () => {
-    const allChats = await chatDb.getAllChatPreviews();
-
-    setChats(groupChats(allChats));
-  }, [groupChats]);
 
   // Load specific chat when selected
   const loadChat = useCallback(async (id: string) => {
@@ -128,6 +124,7 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
             Array.isArray(chat.messages) && chat.messages.length > 0
               ? chat.messages
               : [],
+          url: chat.url ? new URL(chat.url) : undefined,
         });
 
         setChatInstanceKey(chat.id);
@@ -161,10 +158,8 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
       if (id === currentChatSelection.id) {
         createNewChat();
       }
-
-      await refreshChatList();
     },
-    [currentChatSelection.id, createNewChat, refreshChatList]
+    [currentChatSelection.id, createNewChat]
   );
 
   // Update chat name when input loses focus
@@ -184,8 +179,6 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
               name: trimmedName,
             });
             console.log(`Updated name for chat ${currentChatSelection.id}`);
-            // Refresh the chat list to show the updated name
-            refreshChatList();
           }
         } catch (error) {
           console.error("Error updating chat name:", error);
@@ -304,18 +297,34 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <Chat
-          key={chatInstanceKey}
-          pageUrl={currentChatSelection.url}
-          initialChatId={currentChatSelection.id}
-          initialChatName={currentChatSelection.name}
-          initialMessages={currentChatSelection.messages}
-          systemPrompt={systemPrompt}
-          sendInitialMessage={sendInitialMessage}
-        />
-      </div>
-      <Realtime chatId={currentChatSelection.id} />
+      {systemPrompt && (
+        <>
+          <div className="flex-1 overflow-y-auto">
+            <Chat
+              key={`display-${chatInstanceKey}`}
+              initialChatId={currentChatSelection.id}
+              initialMessages={currentChatSelection.messages}
+              systemPrompt={systemPrompt}
+            />
+          </div>
+
+          <div className="shrink-0">
+            <ChatInput
+              key={`input-${chatInstanceKey}`}
+              chatId={currentChatSelection.id}
+              initialMessages={currentChatSelection.messages}
+              initialChatName={currentChatSelection.name}
+              pageUrl={currentChatSelection.url}
+              systemPrompt={systemPrompt}
+            />
+          </div>
+        </>
+      )}
+
+      <Realtime
+        key={`realtime-${chatInstanceKey}`}
+        chatId={currentChatSelection.id}
+      />
     </div>
   );
 };

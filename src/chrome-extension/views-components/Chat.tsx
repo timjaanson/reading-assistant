@@ -1,162 +1,24 @@
-import { useChat } from "@ai-sdk/react";
-import { createCustomBackgroundFetch } from "../ai/custom-fetch";
-import { ToolInvocation, UIMessage } from "ai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { UIMessage } from "ai";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageRenderer } from "./MessageRenderer";
-import { StopIndicator } from "../common/icons/StopIndicator";
-import { LoadingDots } from "../common/icons/LoadingDots";
 import { ChatBehaviorProps } from "../types/chat";
-import { SendIcon } from "../common/icons/Send";
-import { Button } from "@/components/ui/button";
-import { ProviderQuickSelect } from "./ProviderQuickSelect";
-import { ThemeProvider } from "../theme/theme-provider";
-import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, FileText, Plus } from "lucide-react";
-import { File as FileIcon } from "lucide-react";
-import { chatDb } from "../storage/chatDatabase";
-import { getActiveTabContent } from "../util/pageContent";
-import { Card, CardContent } from "@/components/ui/card";
-
-export type SaveableChatValues = {
-  id: string;
-  chatName: string;
-  messages: UIMessage[];
-};
+import { useChat } from "@ai-sdk/react";
 
 type ChatProps = ChatBehaviorProps & {
   initialChatId?: string;
-  pageUrl?: URL;
-  initialChatName: string;
   initialMessages: UIMessage[];
-  isRootComponent?: boolean;
+  systemPrompt?: string;
 };
 
-// Wrapper component for when Chat is used as a root
-const ChatRoot = (props: ChatProps) => {
-  if (props.isRootComponent) {
-    return (
-      <ThemeProvider>
-        <div className="h-full w-full bg-background text-foreground rounded-b-lg">
-          <Chat {...props} isRootComponent={false} />
-        </div>
-      </ThemeProvider>
-    );
-  }
-
-  return <Chat {...props} />;
-};
-
-export const Chat = ({
-  initialChatId,
-  pageUrl,
-  initialChatName,
-  initialMessages,
-  systemPrompt,
-  sendInitialMessage = false,
-  isRootComponent = false,
-}: ChatProps) => {
-  // If this is a root component, use the wrapper
-  if (isRootComponent) {
-    return (
-      <ChatRoot
-        {...{
-          initialChatId,
-          pageUrl,
-          initialChatName,
-          initialMessages,
-          systemPrompt,
-          sendInitialMessage,
-          isRootComponent,
-        }}
-      />
-    );
-  }
-
-  const [internalChatName, setInternalChatName] =
-    useState<string>(initialChatName);
-  const [latestPageUrl, setLatestPageUrl] = useState<URL | undefined>(pageUrl);
-  const [isModified, setIsModified] = useState(false);
-  const chatSaveValues = useRef<SaveableChatValues | null>(null);
+export const Chat = ({ initialChatId, initialMessages }: ChatProps) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [visualError, setVisualError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [files, setFiles] = useState<FileList | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  const [providerSelectClosed, setProviderSelectClosed] = useState(true);
 
-  const chatId = useMemo(() => initialChatId, [initialChatId]);
-
-  const {
-    id,
-    messages,
-    setMessages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    stop,
-    status,
-    error,
-    addToolResult,
-  } = useChat({
-    id: chatId,
-    initialMessages: initialMessages,
-    fetch: createCustomBackgroundFetch(),
-    body: {
-      systemPrompt: systemPrompt,
-    },
+  const { messages } = useChat({
+    id: initialChatId,
+    initialMessages,
   });
 
-  const isBusy = useMemo(
-    () => status === "submitted" || status === "streaming",
-    [status]
-  );
-
-  useEffect(() => {
-    if (error) {
-      console.error("Error in useChat hook", error);
-      setVisualError(error.message);
-
-      if (status === "error" && messages.length > 0) {
-        const pendingToolInvocationsFromMessages = messages
-          .filter((message) =>
-            message.parts.some(
-              (part) =>
-                part.type === "tool-invocation" &&
-                part.toolInvocation.state === "call"
-            )
-          )
-          .flatMap((message) =>
-            message.parts
-              .filter(
-                (part) =>
-                  part.type === "tool-invocation" &&
-                  part.toolInvocation.state === "call"
-              )
-              .map(
-                (part) =>
-                  (part as { toolInvocation: ToolInvocation }).toolInvocation
-              )
-          );
-        if (pendingToolInvocationsFromMessages.length > 0) {
-          console.warn(
-            "Attempting to fix invalid messages state. Adding errors as results for tool calls without results.",
-            pendingToolInvocationsFromMessages
-          );
-          pendingToolInvocationsFromMessages.forEach((toolInvocation) => {
-            addToolResult({
-              toolCallId: toolInvocation.toolCallId,
-              result:
-                error.message +
-                " Most likely caused by invalid arguments for tool-call or invalid tool-call in general.",
-            });
-          });
-        }
-      }
-    }
-  }, [error, status, messages, addToolResult]);
-
-  // Check if scroll button should be shown
   const updateScrollButtonVisibility = useCallback(() => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } =
@@ -167,51 +29,6 @@ export const Chat = ({
       setShowScrollButton(hasScrollableContent && isScrolledAway);
     }
   }, []);
-
-  // Initialize or update the saved chat values reference
-  useEffect(() => {
-    if (id) {
-      chatSaveValues.current = {
-        id,
-        chatName: initialChatName,
-        messages: initialMessages,
-      };
-    }
-  }, [id, initialChatName, initialMessages]);
-
-  // Check for modifications
-  useEffect(() => {
-    if (chatSaveValues.current && id) {
-      const nameChanged = internalChatName !== chatSaveValues.current.chatName;
-      const messagesChanged =
-        messages.length !== chatSaveValues.current.messages.length;
-
-      // Check the last message content if there are messages
-      let lastMessageChanged = false;
-      if (messages.length > 0 && chatSaveValues.current.messages.length > 0) {
-        const lastCurrent = messages[messages.length - 1];
-        const lastSaved =
-          chatSaveValues.current.messages[
-            chatSaveValues.current.messages.length - 1
-          ];
-        lastMessageChanged =
-          lastCurrent.parts.length !== lastSaved.parts.length;
-      }
-
-      setIsModified(nameChanged || messagesChanged || lastMessageChanged);
-    }
-  }, [id, internalChatName, messages]);
-
-  useEffect(() => {
-    if (!isBusy && status === "ready" && messages.length > 0 && isModified) {
-      saveChat();
-    }
-  }, [isBusy, status, messages, isModified]);
-
-  // Update internal chat name when initialChatName changes
-  useEffect(() => {
-    setInternalChatName(initialChatName);
-  }, [initialChatName]);
 
   useEffect(() => {
     const messagesContainer = messagesContainerRef.current;
@@ -257,130 +74,6 @@ export const Chat = ({
     }
   };
 
-  const submitMessageHandler = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      setVisualError(null);
-      e.preventDefault();
-      handleSubmit(e as any, {
-        experimental_attachments: files,
-      });
-
-      setFiles(undefined);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    },
-    [handleSubmit, files]
-  );
-
-  const saveChat = useCallback(async () => {
-    if (!id || messages.length === 0) return;
-
-    try {
-      await chatDb.saveChat({
-        id,
-        name: internalChatName,
-        url: latestPageUrl ? latestPageUrl.toString() : undefined,
-        messages,
-      });
-
-      chatSaveValues.current = {
-        id,
-        chatName: internalChatName,
-        messages: [...messages],
-      };
-
-      setIsModified(false);
-    } catch (error) {
-      console.error("Error saving chat:", error);
-      setVisualError(
-        error instanceof Error ? error.message : "Failed to save chat"
-      );
-    }
-  }, [id, internalChatName, messages, latestPageUrl]);
-
-  const handleFileButtonClick = () => {
-    setShowAddMenu(false);
-    setTimeout(() => {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    }, 50);
-  };
-
-  const handleRemoveFile = (fileToRemove: File) => {
-    if (!files) return;
-
-    const dataTransfer = new DataTransfer();
-    Array.from(files).forEach((file) => {
-      if (file !== fileToRemove) {
-        dataTransfer.items.add(file);
-      }
-    });
-
-    setFiles(dataTransfer.files);
-    if (fileInputRef.current) {
-      fileInputRef.current.files = dataTransfer.files;
-    }
-  };
-
-  const handleExtractPageContent = async () => {
-    setShowAddMenu(false);
-
-    try {
-      const result = await getActiveTabContent();
-
-      if (result.success && result.url) {
-        setLatestPageUrl(new URL(result.url));
-      }
-
-      setMessages([
-        ...messages,
-        {
-          id: `user-${Date.now()}`,
-          role: "user",
-          content: `[URL](${result.url}) ${
-            result.error ? " " + result.error : ""
-          }\n${result.text}`,
-        },
-      ]);
-    } catch (error) {
-      console.error("Error extracting page content:", error);
-      setVisualError(
-        error instanceof Error
-          ? error.message
-          : "Failed to extract page content"
-      );
-    }
-  };
-
-  const toggleAddMenu = () => {
-    setShowAddMenu(!showAddMenu);
-    if (!showAddMenu) {
-      setProviderSelectClosed(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleBodyClick = () => {
-      if (showAddMenu) {
-        setShowAddMenu(false);
-      }
-    };
-    document.body.addEventListener("click", handleBodyClick);
-
-    return () => {
-      document.body.removeEventListener("click", handleBodyClick);
-    };
-  }, [showAddMenu]);
-
-  const plusButtonClicked = (e: React.MouseEvent) => {
-    // Stop propagation to prevent the click from reaching the body
-    e.stopPropagation();
-    // Toggle the dropdown
-    toggleAddMenu();
-  };
-
   return (
     <div className={"text-sm flex flex-col h-full w-full mx-auto relative"}>
       {/* Messages Container */}
@@ -400,145 +93,12 @@ export const Chat = ({
         ))}
       </div>
 
-      {/* Selected Files Indicator */}
-      {files && files.length > 0 && (
-        <div className="flex flex-wrap gap-2 py-1 px-2">
-          {Array.from(files).map((file, index) => (
-            <div
-              key={`${file.name}-${index}`}
-              className="inline-flex gap-1 items-center bg-card/80 rounded-md px-2 py-1 text-xs"
-            >
-              <FileIcon size={8} className="text-foreground" />
-              <span className="truncate max-w-[150px]">{file.name}</span>
-              <button
-                type="button"
-                onClick={() => handleRemoveFile(file)}
-                className="ml-2"
-                aria-label="Remove file"
-              >
-                <span className="text-foreground cursor-pointer">×</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {showScrollButton && (
         <div
           onClick={scrollToBottom}
-          className="absolute left-1/2 bottom-[75px] -translate-x-1/2 text-foreground bg-card/70 hover:bg-card rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
+          className="absolute left-1/2 bottom-[20px] -translate-x-1/2 text-foreground bg-card/70 hover:bg-card rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors z-10"
         >
           ↓
-        </div>
-      )}
-
-      {/* Input Container */}
-      <div className="shrink-0 bg-transparent p-1 border-t">
-        <form onSubmit={submitMessageHandler}>
-          <div className="flex items-center space-x-1">
-            <div className="relative w-full flex text-sm max-h-32">
-              <Textarea
-                disabled={isBusy}
-                autoFocus
-                value={input}
-                onChange={(e) => {
-                  handleInputChange(e);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submitMessageHandler(e as any);
-                  }
-                }}
-                onKeyUp={(e) => e.stopPropagation()}
-                onKeyPress={(e) => e.stopPropagation()}
-                placeholder={isBusy ? "" : "Type your message"}
-                className="min-h-16 flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-7"
-              />
-              {isBusy && (
-                <div className="absolute top-1/2 left-4 -translate-y-1/2 pointer-events-none">
-                  <LoadingDots size={3} />
-                </div>
-              )}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <button
-                  type="button"
-                  onClick={plusButtonClicked}
-                  disabled={isBusy}
-                  title="Add content"
-                  className="text-md cursor-pointer transition-colors"
-                >
-                  <Plus className="text-foreground p-1" />
-                </button>
-              </div>
-
-              <input
-                type="file"
-                ref={fileInputRef}
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    setFiles(e.target.files);
-                  }
-                }}
-              />
-            </div>
-
-            <ProviderQuickSelect
-              disabled={isBusy}
-              closed={providerSelectClosed}
-              onToggle={(isOpen) => setProviderSelectClosed(!isOpen)}
-            />
-
-            <Button
-              type={isBusy ? "button" : "submit"}
-              onClick={isBusy ? () => stop() : undefined}
-            >
-              <span className="px-2 py-1 flex items-center justify-center">
-                {isBusy ? <StopIndicator /> : <SendIcon />}
-              </span>
-            </Button>
-          </div>
-        </form>
-      </div>
-      <div>
-        {visualError && (
-          <div className="text-destructive overflow-y-auto break-all">
-            {visualError}
-          </div>
-        )}
-      </div>
-
-      {/* Dropdown menu positioned at fixed location in DOM */}
-      {showAddMenu && (
-        <div
-          className="absolute bottom-14 right-[50px] z-50"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Card className="w-44 py-1">
-            <CardContent className="p-0">
-              <div className="flex flex-col text-sm">
-                <button
-                  type="button"
-                  onClick={handleFileButtonClick}
-                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
-                >
-                  <Paperclip size={14} />
-                  <span>Attach file</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleExtractPageContent}
-                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
-                >
-                  <FileText size={14} />
-                  <span>Extract page text</span>
-                </button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>
