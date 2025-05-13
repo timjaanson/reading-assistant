@@ -1,8 +1,9 @@
 import { getOpenAIRealtimeSession } from "./sessionStart";
-import { AGENT_SYSTEM_PROMPT, BASE_URL, MODEL } from "./constants";
+import { BASE_URL, MODEL } from "./constants";
 import { RealtimeTools, TOOLS } from "./tools";
-import { getTextResponse } from "../ai/ai";
-import { CoreMessage } from "ai";
+import { Message } from "ai";
+import { UseChatHelpers } from "@ai-sdk/react";
+import { realtimeVoiceSystemMessage } from "../ai/prompts";
 
 export interface RealtimeConnectionState {
   isConnected: boolean;
@@ -23,24 +24,23 @@ interface ServerFunctionCall {
   call_id: string;
 }
 
-interface AgentState {
-  [key: string]: {
-    messages: CoreMessage[];
-  };
-}
-
 export class RealtimeConnection {
   private pc: RTCPeerConnection | null = null;
   private dc: RTCDataChannel | null = null;
   private audioElement: HTMLAudioElement | null = null;
   private mediaStream: MediaStream | null = null;
   private audioTrack: MediaStreamTrack | null = null;
-  private sessionId: string | null = null;
-  private agentState: AgentState = {};
+  private agentChat: UseChatHelpers;
+  public lastResponse: string | null = null;
+
   private onStateChange: (state: RealtimeConnectionState) => void;
 
-  constructor(onStateChange: (state: RealtimeConnectionState) => void) {
+  constructor(
+    onStateChange: (state: RealtimeConnectionState) => void,
+    chat: UseChatHelpers
+  ) {
     this.onStateChange = onStateChange;
+    this.agentChat = chat;
   }
 
   getState(): RealtimeConnectionState {
@@ -55,16 +55,6 @@ export class RealtimeConnection {
     };
   }
 
-  addMessageToAgentState(sessionId: string, message: CoreMessage) {
-    if (!this.agentState[sessionId]) {
-      this.agentState[sessionId] = {
-        messages: [],
-      };
-    }
-
-    this.agentState[sessionId].messages.push(message);
-  }
-
   async startSession() {
     try {
       // Get session from OpenAI
@@ -77,14 +67,6 @@ export class RealtimeConnection {
         });
         return;
       }
-
-      this.sessionId = sessionResponse.id;
-
-      this.agentState = {
-        [this.sessionId]: {
-          messages: [],
-        },
-      };
 
       // Create peer connection
       this.pc = new RTCPeerConnection();
@@ -146,13 +128,15 @@ export class RealtimeConnection {
       this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", this.handleServerMessage);
 
+      const systemPrompt = await realtimeVoiceSystemMessage();
+
       this.dc.onopen = () => {
         console.log("Data channel opened. Sending tool configuration.");
         const sessionConfig = {
           type: "session.update",
           session: {
             tools: TOOLS,
-            instructions: "", // Initialize with empty instructions or a default
+            instructions: systemPrompt,
           },
         };
         this.sendDataChannelMessage(sessionConfig);
@@ -262,22 +246,23 @@ export class RealtimeConnection {
       try {
         const args = JSON.parse(func_arguments) as { agentTask: string };
         const realtimeMessage = {
+          id: crypto.randomUUID(),
           role: "user",
           content: args.agentTask,
-        } satisfies CoreMessage;
+        } satisfies Message;
 
-        if (!this.sessionId) {
-          throw new Error("Session ID not found");
+        this.lastResponse = null;
+        await this.agentChat.append(realtimeMessage);
+
+        //TODO: timeout if nothing received
+        while (this.lastResponse === null) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
 
-        this.addMessageToAgentState(this.sessionId, realtimeMessage);
-        const agentResponse = await getTextResponse(
-          this.agentState[this.sessionId].messages,
-          { systemPrompt: AGENT_SYSTEM_PROMPT }
-        );
+        console.log("Agent response:", this.lastResponse);
 
         toolCallOutputResult = {
-          response: agentResponse,
+          response: this.lastResponse || "No response from agent",
         };
       } catch (error) {
         console.error("Error when calling agent:", error);

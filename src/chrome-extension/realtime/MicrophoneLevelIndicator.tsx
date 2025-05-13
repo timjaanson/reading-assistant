@@ -100,8 +100,8 @@ export const MicrophoneLevelIndicator = ({
     animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
   };
 
-  // Don't render if not in a session or muted
-  if (!isSessionActive || isMuted) {
+  // Don't render if not in a session
+  if (!isSessionActive) {
     return null;
   }
 
@@ -123,8 +123,18 @@ export const MicrophoneLevelIndicator = ({
   });
 
   return (
-    <div className="flex items-end justify-center mt-4 h-6">
-      <div className="flex items-end gap-0.5">{barElements}</div>
+    <div className="flex items-center justify-center h-6">
+      <div className="relative flex items-end gap-0.5">
+        {barElements}
+        {isMuted && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-5 h-5">
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-destructive rounded-full transform -rotate-45"></div>
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-destructive rounded-full transform rotate-45"></div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

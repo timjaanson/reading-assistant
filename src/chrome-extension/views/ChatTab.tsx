@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/sheet";
 import { Menu, MessageSquarePlus } from "lucide-react";
 import { chatDb } from "../storage/chatDatabase";
+import { Realtime } from "../views-components/Realtime";
 
 type ChatTabProps = ChatBehaviorProps & {
   initialChatName?: string;
 };
 
 type CurrentChatSelection = {
-  id: string | undefined;
+  id: string;
   name: string;
   messages: UIMessage[];
   url?: URL;
@@ -36,7 +37,7 @@ type ChatGroup = {
 export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
   const [currentChatSelection, setCurrentChatSelection] =
     useState<CurrentChatSelection>({
-      id: undefined,
+      id: crypto.randomUUID(),
       name: "New Chat",
       messages: [],
       url: undefined,
@@ -139,7 +140,7 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
 
   const createNewChat = useCallback(() => {
     setCurrentChatSelection({
-      id: undefined,
+      id: crypto.randomUUID(),
       name: "New Chat",
       messages: [],
     });
@@ -314,6 +315,7 @@ export const ChatTab = ({ systemPrompt, sendInitialMessage }: ChatTabProps) => {
           sendInitialMessage={sendInitialMessage}
         />
       </div>
+      <Realtime chatId={currentChatSelection.id} />
     </div>
   );
 };

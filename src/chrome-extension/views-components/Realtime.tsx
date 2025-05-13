@@ -1,17 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   RealtimeConnection,
   RealtimeConnectionState,
 } from "../realtime/realtimeConnection";
 import { RealtimeControls } from "../realtime/RealtimeControls";
-import { ConnectionStatus } from "../realtime/ConnectionStatus";
-import { MicrophoneLevelIndicator } from "../realtime/MicrophoneLevelIndicator";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Button } from "@/components/ui/button";
+import { useChat } from "@ai-sdk/react";
+import { createCustomBackgroundFetch } from "../ai/custom-fetch";
+import { REALTIME_AGENT_SYSTEM_PROMPT } from "../ai/prompts";
 
-export const Realtime = () => {
-  const [realtimeConnection, setRealtimeConnection] =
-    useState<RealtimeConnection | null>(null);
+type RealtimeProps = {
+  chatId: string;
+};
+
+export const Realtime = ({ chatId }: RealtimeProps) => {
+  const realtimeConnection = useRef<RealtimeConnection | null>(null);
   const [connectionState, setConnectionState] =
     useState<RealtimeConnectionState>({
       isConnected: false,
@@ -20,8 +24,30 @@ export const Realtime = () => {
     });
   const [micPermissionGranted, setMicPermissionGranted] =
     useState<boolean>(false);
-
   const [realtimeAvailable, setRealtimeAvailable] = useState<boolean>(false);
+
+  const agentChat = useChat({
+    id: chatId,
+    fetch: createCustomBackgroundFetch(),
+    body: {
+      systemPrompt: REALTIME_AGENT_SYSTEM_PROMPT,
+      useSync: true,
+    },
+    onFinish: (message) => {
+      if (realtimeConnection.current && message.parts) {
+        realtimeConnection.current.lastResponse = message.parts
+          .filter((p) => p.type === "text")
+          .map((p) => p.text)
+          .join("\n");
+      } else {
+        console.error(
+          "No realtime connection or message parts",
+          realtimeConnection.current,
+          message
+        );
+      }
+    },
+  });
 
   useEffect(() => {
     const checkRealtimeAvailability = async () => {
@@ -34,8 +60,8 @@ export const Realtime = () => {
 
     checkRealtimeAvailability();
 
-    const connection = new RealtimeConnection(setConnectionState);
-    setRealtimeConnection(connection);
+    const connection = new RealtimeConnection(setConnectionState, agentChat);
+    realtimeConnection.current = connection;
 
     navigator.permissions
       .query({ name: "microphone" as PermissionName })
@@ -74,53 +100,30 @@ export const Realtime = () => {
   };
 
   const handleStartSession = async () => {
-    if (realtimeConnection) {
-      await realtimeConnection.startSession();
+    if (realtimeConnection.current) {
+      await realtimeConnection.current.startSession();
     }
   };
 
   const handleToggleMute = () => {
-    if (realtimeConnection) {
-      realtimeConnection.toggleMute();
+    if (realtimeConnection.current) {
+      realtimeConnection.current.toggleMute();
     }
   };
 
   const handleEndSession = () => {
-    if (realtimeConnection) {
-      realtimeConnection.endSession();
+    if (realtimeConnection.current) {
+      realtimeConnection.current.endSession();
     }
-  };
-
-  const getStatusMessage = () => {
-    if (!micPermissionGranted) {
-      return "Microphone permission required";
-    }
-    if (connectionState.error) {
-      return "Error connecting to voice chat";
-    }
-    if (!connectionState.isSessionActive) {
-      return "Ready to start voice chat";
-    }
-    if (!connectionState.isConnected) {
-      return "Connecting...";
-    }
-    if (connectionState.isMuted) {
-      return "Microphone is muted";
-    }
-    return "Voice chat is active";
   };
 
   return (
-    <div className="flex flex-col items-center p-3">
-      <div className="mb-2 p-3 rounded-lg w-full max-w-md text-center">
-        <ConnectionStatus state={connectionState} />
-        {realtimeAvailable ? (
-          <div className="text-base">{getStatusMessage()}</div>
-        ) : (
-          <div>Realtime is not available (OpenAI API key not set)</div>
-        )}
-        <MicrophoneLevelIndicator state={connectionState} />
-      </div>
+    <div className="flex flex-col items-center p-2">
+      {!realtimeAvailable && (
+        <div className="text-destructive mb-1 p-3 rounded-lg w-full max-w-md text-center">
+          Realtime voice chat not available - OpenAI API key not set
+        </div>
+      )}
 
       {!micPermissionGranted ? (
         <Button onClick={requestMicrophonePermission}>

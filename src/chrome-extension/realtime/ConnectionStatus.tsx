@@ -2,9 +2,13 @@ import { RealtimeConnectionState } from "./realtimeConnection";
 
 interface ConnectionStatusProps {
   state: RealtimeConnectionState;
+  hideText?: boolean;
 }
 
-export const ConnectionStatus = ({ state }: ConnectionStatusProps) => {
+export const ConnectionStatus = ({
+  state,
+  hideText = false,
+}: ConnectionStatusProps) => {
   const { isConnected, isSessionActive, error } = state;
 
   // Determine the status color class based on connection state
@@ -18,19 +22,27 @@ export const ConnectionStatus = ({ state }: ConnectionStatusProps) => {
   }
 
   return (
-    <div className="flex items-center justify-center mb-2 text-sm font-medium">
+    <div
+      className={`flex items-center justify-center ${
+        !hideText && "mb-2"
+      } text-sm font-medium`}
+    >
       <div
-        className={`w-3 h-3 rounded-full inline-block mr-2 ${statusColorClass}`}
+        className={`w-3 h-3 rounded-full inline-block ${
+          !hideText && "mr-2"
+        } ${statusColorClass}`}
       />
-      <span>
-        {error
-          ? "Error"
-          : isConnected
-          ? "Connected"
-          : isSessionActive
-          ? "Connecting..."
-          : "Disconnected"}
-      </span>
+      {!hideText && (
+        <span>
+          {error
+            ? "Error"
+            : isConnected
+            ? "Connected"
+            : isSessionActive
+            ? "Connecting..."
+            : "Disconnected"}
+        </span>
+      )}
     </div>
   );
 };
