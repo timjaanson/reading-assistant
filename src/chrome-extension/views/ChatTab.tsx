@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/sheet";
 import { Menu, MessageSquarePlus } from "lucide-react";
 import { chatDb } from "../storage/chatDatabase";
-import { Realtime } from "../views-components/Realtime";
 import { ChatInput } from "../views-components/ChatInput";
 import { defaultSystemMessage } from "../ai/prompts";
 
@@ -320,11 +319,6 @@ export const ChatTab = () => {
           </div>
         </>
       )}
-
-      <Realtime
-        key={`realtime-${chatInstanceKey}`}
-        chatId={currentChatSelection.id}
-      />
     </div>
   );
 };

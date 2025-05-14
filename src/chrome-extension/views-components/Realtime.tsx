@@ -6,15 +6,14 @@ import {
 import { RealtimeControls } from "../realtime/RealtimeControls";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Button } from "@/components/ui/button";
-import { useChat } from "@ai-sdk/react";
-import { createCustomBackgroundFetch } from "../ai/custom-fetch";
-import { REALTIME_AGENT_SYSTEM_PROMPT } from "../ai/prompts";
+import { Message, UseChatHelpers } from "@ai-sdk/react";
 
 type RealtimeProps = {
-  chatId: string;
+  lastMessage: Message | null;
+  append: UseChatHelpers["append"];
 };
 
-export const Realtime = ({ chatId }: RealtimeProps) => {
+export const Realtime = ({ lastMessage, append }: RealtimeProps) => {
   const realtimeConnection = useRef<RealtimeConnection | null>(null);
   const [connectionState, setConnectionState] =
     useState<RealtimeConnectionState>({
@@ -26,28 +25,20 @@ export const Realtime = ({ chatId }: RealtimeProps) => {
     useState<boolean>(false);
   const [realtimeAvailable, setRealtimeAvailable] = useState<boolean>(false);
 
-  const agentChat = useChat({
-    id: chatId,
-    fetch: createCustomBackgroundFetch(),
-    body: {
-      systemPrompt: REALTIME_AGENT_SYSTEM_PROMPT,
-      useSync: true,
-    },
-    onFinish: (message) => {
-      if (realtimeConnection.current && message.parts) {
-        realtimeConnection.current.lastResponse = message.parts
-          .filter((p) => p.type === "text")
-          .map((p) => p.text)
-          .join("\n");
-      } else {
-        console.error(
-          "No realtime connection or message parts",
-          realtimeConnection.current,
-          message
-        );
-      }
-    },
-  });
+  useEffect(() => {
+    if (lastMessage && lastMessage.parts && realtimeConnection.current) {
+      realtimeConnection.current.lastResponse = lastMessage.parts
+        .filter((p) => p.type === "text")
+        .map((p) => p.text)
+        .join("\n");
+    } else {
+      console.debug(
+        "No realtime connection or message parts",
+        realtimeConnection.current,
+        lastMessage
+      );
+    }
+  }, [lastMessage]);
 
   useEffect(() => {
     const checkRealtimeAvailability = async () => {
@@ -60,7 +51,7 @@ export const Realtime = ({ chatId }: RealtimeProps) => {
 
     checkRealtimeAvailability();
 
-    const connection = new RealtimeConnection(setConnectionState, agentChat);
+    const connection = new RealtimeConnection(setConnectionState, append);
     realtimeConnection.current = connection;
 
     navigator.permissions
@@ -73,6 +64,8 @@ export const Realtime = ({ chatId }: RealtimeProps) => {
       .catch((err) =>
         console.error("Error checking microphone permission:", err)
       );
+
+    handleStartSession();
 
     return () => {
       if (connection) {

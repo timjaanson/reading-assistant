@@ -30,17 +30,17 @@ export class RealtimeConnection {
   private audioElement: HTMLAudioElement | null = null;
   private mediaStream: MediaStream | null = null;
   private audioTrack: MediaStreamTrack | null = null;
-  private agentChat: UseChatHelpers;
+  private sendMessageToAgent: UseChatHelpers["append"];
   public lastResponse: string | null = null;
 
   private onStateChange: (state: RealtimeConnectionState) => void;
 
   constructor(
     onStateChange: (state: RealtimeConnectionState) => void,
-    chat: UseChatHelpers
+    append: UseChatHelpers["append"]
   ) {
     this.onStateChange = onStateChange;
-    this.agentChat = chat;
+    this.sendMessageToAgent = append;
   }
 
   getState(): RealtimeConnectionState {
@@ -70,6 +70,8 @@ export class RealtimeConnection {
 
       // Create peer connection
       this.pc = new RTCPeerConnection();
+
+      this.onStateChange(this.getState());
 
       // Add connection state change listener
       this.pc.onconnectionstatechange = () => {
@@ -252,7 +254,7 @@ export class RealtimeConnection {
         } satisfies Message;
 
         this.lastResponse = null;
-        await this.agentChat.append(realtimeMessage);
+        await this.sendMessageToAgent(realtimeMessage);
 
         //TODO: timeout if nothing received
         while (this.lastResponse === null) {

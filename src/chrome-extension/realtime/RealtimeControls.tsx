@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Spinner } from "../common/icons/Spinner";
 
 interface RealtimeControlsProps {
   state: RealtimeConnectionState;
@@ -25,6 +26,8 @@ export const RealtimeControls = ({
 }: RealtimeControlsProps) => {
   const { isSessionActive, isMuted, isConnected, error } = state;
 
+  const connecting = isSessionActive && !isConnected;
+
   const getStatusMessage = () => {
     if (error) {
       return "Error connecting to voice chat";
@@ -32,7 +35,7 @@ export const RealtimeControls = ({
     if (isConnected) {
       return "Connected";
     }
-    if (isSessionActive) {
+    if (connecting) {
       return "Connecting...";
     }
     return "Disconnected";
@@ -56,7 +59,7 @@ export const RealtimeControls = ({
           <TooltipContent>{getStatusMessage()}</TooltipContent>
         </Tooltip>
 
-        {!isSessionActive ? (
+        {!isSessionActive && !connecting ? (
           <Button
             onClick={onStartSession}
             size="sm"
@@ -64,6 +67,10 @@ export const RealtimeControls = ({
           >
             <Play />
           </Button>
+        ) : connecting ? (
+          <div className="flex items-center justify-center h-12 w-12">
+            <Spinner size={8} />
+          </div>
         ) : (
           <>
             <Toggle

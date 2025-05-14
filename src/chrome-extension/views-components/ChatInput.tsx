@@ -7,13 +7,18 @@ import { SendIcon } from "../common/icons/Send";
 import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, FileText, Plus } from "lucide-react";
+import { Paperclip, FileText, Plus, Mic } from "lucide-react";
 import { File as FileIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getActiveTabContent } from "../util/pageContent";
 import { Message, UIMessage } from "ai";
 import { chatDb } from "../storage/chatDatabase";
-import { prepareAttachmentsForRequest } from "@ai-sdk/ui-utils";
+import {
+  fillMessageParts,
+  prepareAttachmentsForRequest,
+} from "@ai-sdk/ui-utils";
+import { Realtime } from "./Realtime";
+import { Toggle } from "@/components/ui/toggle";
 
 type ChatInputProps = {
   chatId: string;
@@ -35,13 +40,15 @@ export const ChatInput = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [providerSelectClosed, setProviderSelectClosed] = useState(true);
-  const currentUserMessage = useRef<Message | null>(null);
+  const currentUserMessage = useRef<UIMessage[] | null>(null);
+  const lastAssistantMessage = useRef<Message | null>(null);
+  const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
 
   const {
     id,
     messages,
     input,
-    setInput,
+    handleSubmit,
     append,
     handleInputChange,
     setMessages,
@@ -57,6 +64,7 @@ export const ChatInput = ({
     },
     onFinish(message) {
       saveChat(message);
+      lastAssistantMessage.current = message;
     },
   });
 
@@ -78,8 +86,10 @@ export const ChatInput = ({
       try {
         const currentChat = await chatDb.getChat(id);
 
+        console.warn("currentUserMessage.current", currentUserMessage.current);
+
         const currentChatMessages = messages;
-        currentChatMessages.push(currentUserMessage.current as UIMessage);
+        currentChatMessages.push(...(currentUserMessage.current || []));
         currentUserMessage.current = null;
         currentChatMessages.push(message as UIMessage);
 
@@ -104,19 +114,23 @@ export const ChatInput = ({
   }, [error]);
 
   const submitMessageHandler = async (e: React.FormEvent<HTMLFormElement>) => {
-    setVisualError(null);
     e.preventDefault();
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: input,
-      experimental_attachments: await prepareAttachmentsForRequest(files),
-    } satisfies Message;
+    setVisualError(null);
+    const attachments = await prepareAttachmentsForRequest(files);
+    const userMessage = fillMessageParts([
+      {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: input,
+        experimental_attachments: attachments,
+      } satisfies Message,
+    ]);
 
     currentUserMessage.current = userMessage;
-    setInput("");
 
-    await append(userMessage);
+    handleSubmit(e, {
+      experimental_attachments: files,
+    });
 
     setFiles(undefined);
     if (fileInputRef.current) {
@@ -255,15 +269,25 @@ export const ChatInput = ({
                 </div>
               )}
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <button
-                  type="button"
-                  onClick={plusButtonClicked}
-                  disabled={isBusy}
-                  title="Add content"
-                  className="text-md cursor-pointer transition-colors"
-                >
-                  <Plus className="text-foreground p-1" />
-                </button>
+                <div className="flex flex-col items-center space-y-1">
+                  <button
+                    type="button"
+                    onClick={plusButtonClicked}
+                    disabled={isBusy}
+                    title="Add content"
+                    className="text-md cursor-pointer transition-colors"
+                  >
+                    <Plus className="text-foreground p-1" />
+                  </button>
+                  <Toggle
+                    pressed={isVoiceChatActive}
+                    onPressedChange={setIsVoiceChatActive}
+                    disabled={isBusy}
+                    size="sm"
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Toggle>
+                </div>
               </div>
 
               <input
@@ -333,6 +357,10 @@ export const ChatInput = ({
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {isVoiceChatActive && (
+        <Realtime lastMessage={lastAssistantMessage.current} append={append} />
       )}
     </div>
   );
