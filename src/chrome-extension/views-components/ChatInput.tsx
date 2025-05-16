@@ -19,6 +19,11 @@ import {
 } from "@ai-sdk/ui-utils";
 import { Realtime } from "./Realtime";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ChatInputProps = {
   chatId: string;
@@ -279,14 +284,21 @@ export const ChatInput = ({
                   >
                     <Plus className="text-foreground p-1" />
                   </button>
-                  <Toggle
-                    pressed={isVoiceChatActive}
-                    onPressedChange={setIsVoiceChatActive}
-                    disabled={isBusy}
-                    size="sm"
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Toggle>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Toggle
+                        pressed={isVoiceChatActive}
+                        onPressedChange={setIsVoiceChatActive}
+                        disabled={isBusy}
+                        size="sm"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Toggle>
+                    </TooltipTrigger>
+                    <TooltipContent avoidCollisions>
+                      <p>Activate realtime voicechat proxy</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
 
