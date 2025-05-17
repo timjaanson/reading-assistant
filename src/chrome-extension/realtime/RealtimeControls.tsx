@@ -1,7 +1,7 @@
 import { Mic, MicOff, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
-import { RealtimeConnectionState } from "./realtimeConnection";
+import { RealtimeConnectionState } from "./realtimeHandler";
 import { MicrophoneLevelIndicator } from "./MicrophoneLevelIndicator";
 import { ConnectionStatus } from "./ConnectionStatus";
 import {

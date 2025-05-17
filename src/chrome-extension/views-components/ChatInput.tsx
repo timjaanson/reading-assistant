@@ -1,6 +1,6 @@
 import { useChat } from "@ai-sdk/react";
 import { createCustomBackgroundFetch } from "../ai/custom-fetch";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StopIndicator } from "../common/icons/StopIndicator";
 import { LoadingDots } from "../common/icons/LoadingDots";
 import { SendIcon } from "../common/icons/Send";
@@ -12,10 +12,10 @@ import { File as FileIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getActiveTabContent } from "../util/pageContent";
 import { Message, UIMessage } from "ai";
-import { chatDb } from "../storage/chatDatabase";
 import {
   fillMessageParts,
   prepareAttachmentsForRequest,
+  ToolInvocation,
 } from "@ai-sdk/ui-utils";
 import { Realtime } from "./Realtime";
 import { Toggle } from "@/components/ui/toggle";
@@ -24,6 +24,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { messagesHasUnresolvedToolCalls } from "../ai/utils";
+import { ToolName } from "../ai/toolType";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 type ChatInputProps = {
   chatId: string;
@@ -37,8 +46,6 @@ export const ChatInput = ({
   chatId,
   initialMessages,
   systemPrompt,
-  initialChatName,
-  pageUrl,
 }: ChatInputProps) => {
   const [visualError, setVisualError] = useState<string | null>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
@@ -49,10 +56,14 @@ export const ChatInput = ({
   const lastAssistantMessage = useRef<Message | null>(null);
   const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentToolInvocation, setCurrentToolInvocation] =
+    useState<ToolInvocation | null>(null);
+
   const {
-    id,
-    messages,
     input,
+    messages,
+    addToolResult,
     handleSubmit,
     append,
     handleInputChange,
@@ -68,48 +79,14 @@ export const ChatInput = ({
       systemPrompt: systemPrompt,
     },
     onFinish(message) {
-      saveChat(message);
-      lastAssistantMessage.current = message;
+      //TODO: this doesn't cover user added tool responses like extract content
+      if (!messagesHasUnresolvedToolCalls([message])) {
+        lastAssistantMessage.current = message;
+      }
     },
   });
 
   const isBusy = status === "submitted" || status === "streaming";
-
-  const saveChat = useCallback(
-    async (message: Message) => {
-      if (!id || message.role === "user") return;
-
-      if (
-        !message.parts ||
-        !Array.isArray(message.parts) ||
-        message.parts.length === 0
-      ) {
-        console.error("Non-user message has no parts:", message);
-        return;
-      }
-
-      try {
-        const currentChat = await chatDb.getChat(id);
-
-        console.warn("currentUserMessage.current", currentUserMessage.current);
-
-        const currentChatMessages = messages;
-        currentChatMessages.push(...(currentUserMessage.current || []));
-        currentUserMessage.current = null;
-        currentChatMessages.push(message as UIMessage);
-
-        await chatDb.saveChat({
-          id,
-          name: currentChat?.name || initialChatName,
-          url: currentChat?.url || pageUrl?.toString(),
-          messages: currentChatMessages,
-        });
-      } catch (error) {
-        console.error("Error saving chat:", error);
-      }
-    },
-    [id, messages]
-  );
 
   useEffect(() => {
     if (error) {
@@ -117,6 +94,77 @@ export const ChatInput = ({
       setVisualError(error.message);
     }
   }, [error]);
+
+  useEffect(() => {
+    const extractActiveTabCallWithoutResult = messages.find(
+      (message) =>
+        message.role === "assistant" &&
+        message.parts.find(
+          (p) =>
+            p.type === "tool-invocation" &&
+            p.toolInvocation.state === "call" &&
+            p.toolInvocation.toolName === ToolName.EXTRACT_ACTIVE_TAB_CONTENT
+        )
+    );
+
+    if (extractActiveTabCallWithoutResult) {
+      console.log(
+        "extractActiveTabCallWithoutResult",
+        extractActiveTabCallWithoutResult
+      );
+
+      const toolInvocationPart = extractActiveTabCallWithoutResult.parts.find(
+        (p) =>
+          p.type === "tool-invocation" &&
+          p.toolInvocation.state === "call" &&
+          p.toolInvocation.toolName === ToolName.EXTRACT_ACTIVE_TAB_CONTENT
+      );
+
+      if (toolInvocationPart && toolInvocationPart.type === "tool-invocation") {
+        setCurrentToolInvocation(toolInvocationPart.toolInvocation);
+      }
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (currentToolInvocation) {
+      setDialogOpen(true);
+    }
+  }, [currentToolInvocation]);
+
+  const handleExtractRequest = (approved: boolean) => {
+    if (!currentToolInvocation) {
+      return;
+    }
+    if (!approved) {
+      addToolResult({
+        toolCallId: currentToolInvocation.toolCallId,
+        result: {
+          error: "User denied access to the active tab",
+        },
+      });
+      setDialogOpen(false);
+      return;
+    }
+
+    getActiveTabContent()
+      .then((r) => {
+        addToolResult({
+          toolCallId: currentToolInvocation.toolCallId,
+          result: r,
+        });
+      })
+      .catch((e) => {
+        console.error("Error getting active tab content", e);
+        addToolResult({
+          toolCallId: currentToolInvocation.toolCallId,
+          result: {
+            error: JSON.stringify(e),
+          },
+        });
+      })
+      .finally(() => setDialogOpen(false));
+  };
 
   const submitMessageHandler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -372,8 +420,33 @@ export const ChatInput = ({
       )}
 
       {isVoiceChatActive && (
-        <Realtime lastMessage={lastAssistantMessage.current} append={append} />
+        <Realtime lastMessage={lastAssistantMessage} append={append} />
       )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogTitle>User action required</DialogTitle>
+          <DialogDescription>
+            The assistant is requesting to extract content from your active tab.
+            Would you like to approve this request?
+          </DialogDescription>
+          <DialogFooter>
+            <Button
+              className="mr-4 max-w-32"
+              onClick={() => handleExtractRequest(true)}
+            >
+              Approve
+            </Button>
+            <Button
+              className="max-w-32"
+              variant="destructive"
+              onClick={() => handleExtractRequest(false)}
+            >
+              Deny
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

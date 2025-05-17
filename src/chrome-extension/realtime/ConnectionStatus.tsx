@@ -1,4 +1,4 @@
-import { RealtimeConnectionState } from "./realtimeConnection";
+import { RealtimeConnectionState } from "./realtimeHandler";
 
 interface ConnectionStatusProps {
   state: RealtimeConnectionState;

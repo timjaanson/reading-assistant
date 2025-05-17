@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import {
   RealtimeConnection,
   RealtimeConnectionState,
-} from "../realtime/realtimeConnection";
+} from "../realtime/realtimeHandler";
 import { RealtimeControls } from "../realtime/RealtimeControls";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Button } from "@/components/ui/button";
 import { Message, UseChatHelpers } from "@ai-sdk/react";
 
 type RealtimeProps = {
-  lastMessage: Message | null;
+  lastMessage: React.RefObject<Message | null>;
   append: UseChatHelpers["append"];
 };
 
@@ -26,8 +26,12 @@ export const Realtime = ({ lastMessage, append }: RealtimeProps) => {
   const [realtimeAvailable, setRealtimeAvailable] = useState<boolean>(false);
 
   useEffect(() => {
-    if (lastMessage && lastMessage.parts && realtimeConnection.current) {
-      realtimeConnection.current.lastResponse = lastMessage.parts
+    if (
+      lastMessage.current &&
+      lastMessage.current.parts &&
+      realtimeConnection.current
+    ) {
+      realtimeConnection.current.lastResponse = lastMessage.current.parts
         .filter((p) => p.type === "text")
         .map((p) => p.text)
         .join("\n");
@@ -35,10 +39,10 @@ export const Realtime = ({ lastMessage, append }: RealtimeProps) => {
       console.debug(
         "No realtime connection or message parts",
         realtimeConnection.current,
-        lastMessage
+        lastMessage.current
       );
     }
-  }, [lastMessage]);
+  }, [lastMessage.current]);
 
   useEffect(() => {
     const checkRealtimeAvailability = async () => {

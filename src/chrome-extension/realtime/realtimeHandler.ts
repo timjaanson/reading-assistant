@@ -5,6 +5,9 @@ import { Message } from "ai";
 import { UseChatHelpers } from "@ai-sdk/react";
 import { realtimeVoiceSystemMessage } from "../ai/prompts";
 
+// Constants
+const AGENT_RESPONSE_TIMEOUT_MS = 60000; // 60 second timeout in case there are user confirmed actions
+
 export interface RealtimeConnectionState {
   isConnected: boolean;
   isMuted: boolean;
@@ -254,17 +257,25 @@ export class RealtimeConnection {
         } satisfies Message;
 
         this.lastResponse = null;
+        // This awaits until message is sent and received, but doesn't return actual response
         await this.sendMessageToAgent(realtimeMessage);
 
-        //TODO: timeout if nothing received
+        // Wait for response with timeout
+        const startTime = Date.now();
         while (this.lastResponse === null) {
           await new Promise((resolve) => setTimeout(resolve, 100));
+
+          if (Date.now() - startTime > AGENT_RESPONSE_TIMEOUT_MS) {
+            console.warn("Timeout waiting for agent response");
+            break;
+          }
         }
 
         console.log("Agent response:", this.lastResponse);
 
         toolCallOutputResult = {
-          response: this.lastResponse || "No response from agent",
+          response:
+            this.lastResponse || "No response from agent (timeout reached)",
         };
       } catch (error) {
         console.error("Error when calling agent:", error);

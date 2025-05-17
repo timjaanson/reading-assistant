@@ -9,7 +9,7 @@ import { memoryDb } from "../storage/memoryDatabase";
 import { NewMemoryData } from "../types/memory";
 import { LanguageModelWithOptions } from "./provider";
 import { Tool } from "ai";
-import { getActiveTabContent } from "../util/pageContent";
+import { ToolName } from "./toolType";
 
 export const getTooling = async (
   languageModel: LanguageModelWithOptions
@@ -109,26 +109,10 @@ export const getTooling = async (
   }
 
   if (toolSettings.extractActiveTab.active) {
-    tools["extractActiveBrowserTabContent"] = {
+    tools[ToolName.EXTRACT_ACTIVE_TAB_CONTENT] = {
       description:
         "Extract the content of the user's currently active browser tab. Returns the text content of the tab.",
       parameters: z.object({}),
-      execute: async () => {
-        console.debug("extractActiveBrowserTabContent");
-        const result = await tryCatch(getActiveTabContent());
-        console.debug(
-          "extractActiveBrowserTabContent result success, url, error:",
-          result?.data?.success,
-          result?.data?.url,
-          result?.error
-        );
-        if (result.error) {
-          return {
-            error: result.error.message,
-          };
-        }
-        return result.data;
-      },
     };
   }
 

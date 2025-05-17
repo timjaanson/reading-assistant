@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { RealtimeConnectionState } from "./realtimeConnection";
+import { RealtimeConnectionState } from "./realtimeHandler";
 
 interface MicrophoneLevelIndicatorProps {
   state: RealtimeConnectionState;
