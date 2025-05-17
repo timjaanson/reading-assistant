@@ -52,7 +52,7 @@ export interface FlatModelsList {
   active: ActiveModel | null;
 }
 
-export interface ExternalTool {
+export interface ExtensionTool {
   id: string;
   name: string;
   apiKey: string;
@@ -65,10 +65,16 @@ export interface MCPServer {
   headers: Record<string, string>;
 }
 
-export interface ExternalToolSettings {
+export interface ToolSettings {
   search: {
-    options: ExternalTool[];
-    active: ExternalTool | null;
+    options: ExtensionTool[];
+    active: ExtensionTool | null;
+  };
+  extractActiveTab: {
+    active: boolean;
+  };
+  memoryManagement: {
+    active: boolean;
   };
   mcp: {
     servers: MCPServer[];

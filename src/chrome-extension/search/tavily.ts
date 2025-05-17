@@ -1,16 +1,15 @@
-import { ExternalToolsStorage } from "../storage/externalToolSettings";
+import { ToolsSettingsStorage } from "../storage/toolSettings";
 import {
   tavily,
   TavilyExtractOptions,
   TavilySearchOptions,
 } from "@tavily/core";
-import { ExternalToolSettings } from "../types/settings";
+import { ToolSettings } from "../types/settings";
 import { SearchOptions } from "../types/search";
 
 const doSearch = async (query: string, options: SearchOptions) => {
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
-  const apiKey = externalToolSettings.search.active?.apiKey;
+  const toolSettings = await ToolsSettingsStorage.loadToolSettings();
+  const apiKey = toolSettings.search.active?.apiKey;
 
   if (!apiKey) {
     throw new Error("Tavily enabled but API key not set");
@@ -31,8 +30,7 @@ const doSearch = async (query: string, options: SearchOptions) => {
 };
 
 export const searchTavily = async (query: string, options: SearchOptions) => {
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
+  const externalToolSettings = await ToolsSettingsStorage.loadToolSettings();
   if (externalToolSettings.search.active?.id === "tavily") {
     if (externalToolSettings.search.active.apiKey) {
       let timeRange = undefined;
@@ -62,11 +60,10 @@ export const extractContentFromUrls = async (urls: string[]) => {
     throw new Error("Cannot extract content from more than 10 URLs");
   }
 
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
-  await validateActiveAndApiKey(externalToolSettings);
+  const toolSettings = await ToolsSettingsStorage.loadToolSettings();
+  await validateActiveAndApiKey(toolSettings);
 
-  const apiKey = externalToolSettings.search.active?.apiKey;
+  const apiKey = toolSettings.search.active?.apiKey;
   const tvly = tavily({ apiKey: apiKey });
   const options = {
     extractDepth: "advanced",
@@ -76,7 +73,7 @@ export const extractContentFromUrls = async (urls: string[]) => {
   return response;
 };
 
-const validateActiveAndApiKey = async (settings: ExternalToolSettings) => {
+const validateActiveAndApiKey = async (settings: ToolSettings) => {
   if (settings.search.active?.id !== "tavily") {
     throw new Error("Tavily is not enabled");
   }

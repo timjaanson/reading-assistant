@@ -2,7 +2,7 @@ import "../global.css";
 import { useState } from "react";
 import { TabButton } from "./TabButton";
 import { ProviderSettingsTab } from "./ProviderSettingsTab";
-import { ExternalToolSettingsTab } from "./ExternalToolSettingsTab";
+import { ExternalToolSettingsTab } from "./ToolSettingsTab";
 import ExtensionSettingsTab from "./ExtensionSettingsTab";
 import MemoryTab from "./MemoryTab";
 import { ChatTab } from "./ChatTab";

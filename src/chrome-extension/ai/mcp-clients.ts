@@ -1,5 +1,5 @@
 import { experimental_createMCPClient as createMCPClient } from "ai";
-import { ExternalToolsStorage } from "../storage/externalToolSettings";
+import { ToolsSettingsStorage } from "../storage/toolSettings";
 import { LanguageModelWithOptions } from "./provider";
 
 export const getActiveMCPClients = async (
@@ -10,9 +10,8 @@ export const getActiveMCPClients = async (
   }
 
   const clients = [];
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
-  const mcpServers = externalToolSettings.mcp.servers;
+  const toolSettings = await ToolsSettingsStorage.loadToolSettings();
+  const mcpServers = toolSettings.mcp.servers;
   for (const server of mcpServers) {
     if (server.active) {
       try {

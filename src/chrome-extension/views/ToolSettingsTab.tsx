@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { ExternalToolSettings, MCPServer } from "../types/settings";
+import { ToolSettings, MCPServer } from "../types/settings";
 import {
-  ExternalToolsStorage,
+  ToolsSettingsStorage,
   defaultExternalToolSettings,
-} from "../storage/externalToolSettings";
+} from "../storage/toolSettings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -20,25 +20,25 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircleX } from "lucide-react";
 
 export const ExternalToolSettingsTab = () => {
-  const [settings, setSettings] = useState<ExternalToolSettings>(
+  const [settings, setSettings] = useState<ToolSettings>(
     defaultExternalToolSettings
   );
-  const [selectedToolIndex, setSelectedToolIndex] = useState<number>(0);
+  const [selectedSearchToolIndex, setSelectedSearchToolIndex] =
+    useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
-  const [headersInputs, setHeadersInputs] = useState<string[]>([]);
-  const [headersErrors, setHeadersErrors] = useState<string[]>([]);
+  const [mcpHeadersInputs, setMcpHeadersInputs] = useState<string[]>([]);
+  const [mcpHeadersErrors, setMcpHeadersErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const loadedSettings =
-          await ExternalToolsStorage.loadExternalToolSettings();
+        const loadedSettings = await ToolsSettingsStorage.loadToolSettings();
 
         setSettings(loadedSettings);
-        setSelectedToolIndex(
+        setSelectedSearchToolIndex(
           loadedSettings.search.active
             ? loadedSettings.search.options.findIndex(
                 (tool) => tool.id === loadedSettings.search.active!.id
@@ -50,18 +50,20 @@ export const ExternalToolSettingsTab = () => {
         const formattedHeaders = loadedSettings.mcp.servers.map((server) =>
           JSON.stringify(server.headers, null, 2)
         );
-        setHeadersInputs(formattedHeaders);
-        setHeadersErrors(loadedSettings.mcp.servers.map(() => ""));
+        setMcpHeadersInputs(formattedHeaders);
+        setMcpHeadersErrors(loadedSettings.mcp.servers.map(() => ""));
       } catch (error) {
         console.error("Failed to load external tool settings", error);
         // On error, fall back to defaults
         setSettings(defaultExternalToolSettings);
-        setHeadersInputs(
+        setMcpHeadersInputs(
           defaultExternalToolSettings.mcp.servers.map(() =>
             JSON.stringify({}, null, 2)
           )
         );
-        setHeadersErrors(defaultExternalToolSettings.mcp.servers.map(() => ""));
+        setMcpHeadersErrors(
+          defaultExternalToolSettings.mcp.servers.map(() => "")
+        );
       }
     };
 
@@ -71,11 +73,11 @@ export const ExternalToolSettingsTab = () => {
   const handleSaveSettings = async () => {
     // First validate all JSON inputs
     let isValid = true;
-    const newErrors = [...headersErrors];
+    const newErrors = [...mcpHeadersErrors];
 
-    for (let i = 0; i < headersInputs.length; i++) {
+    for (let i = 0; i < mcpHeadersInputs.length; i++) {
       try {
-        JSON.parse(headersInputs[i]);
+        JSON.parse(mcpHeadersInputs[i]);
         newErrors[i] = "";
       } catch (e) {
         newErrors[i] = "Invalid JSON format";
@@ -83,18 +85,19 @@ export const ExternalToolSettingsTab = () => {
       }
     }
 
-    setHeadersErrors(newErrors);
+    setMcpHeadersErrors(newErrors);
 
     if (!isValid) {
       setSaveStatus("error");
       return;
     }
 
-    // Parse headers and update settings before saving
     const updatedSettings = { ...settings };
     for (let i = 0; i < updatedSettings.mcp.servers.length; i++) {
       try {
-        updatedSettings.mcp.servers[i].headers = JSON.parse(headersInputs[i]);
+        updatedSettings.mcp.servers[i].headers = JSON.parse(
+          mcpHeadersInputs[i]
+        );
       } catch (e) {
         // This shouldn't happen as we've already validated
         console.error("Error parsing JSON headers", e);
@@ -104,7 +107,7 @@ export const ExternalToolSettingsTab = () => {
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      await ExternalToolsStorage.saveExternalToolSettings(updatedSettings);
+      await ToolsSettingsStorage.saveToolSettings(updatedSettings);
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (error) {
@@ -116,15 +119,15 @@ export const ExternalToolSettingsTab = () => {
   };
 
   const handleToolSelectChange = (value: string) => {
-    setSelectedToolIndex(Number(value));
+    setSelectedSearchToolIndex(Number(value));
   };
 
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setSettings((prev) => {
       const newOptions = [...prev.search.options];
-      newOptions[selectedToolIndex] = {
-        ...newOptions[selectedToolIndex],
+      newOptions[selectedSearchToolIndex] = {
+        ...newOptions[selectedSearchToolIndex],
         apiKey: value,
       };
 
@@ -155,7 +158,7 @@ export const ExternalToolSettingsTab = () => {
         ...prev,
         search: {
           ...prev.search,
-          active: prev.search.options[selectedToolIndex],
+          active: prev.search.options[selectedSearchToolIndex],
         },
       };
     });
@@ -180,8 +183,8 @@ export const ExternalToolSettingsTab = () => {
     }));
 
     // Add empty headers input for the new server
-    setHeadersInputs((prev) => [...prev, JSON.stringify({}, null, 2)]);
-    setHeadersErrors((prev) => [...prev, ""]);
+    setMcpHeadersInputs((prev) => [...prev, JSON.stringify({}, null, 2)]);
+    setMcpHeadersErrors((prev) => [...prev, ""]);
   };
 
   const handleDeleteMCPServer = (index: number) => {
@@ -199,13 +202,13 @@ export const ExternalToolSettingsTab = () => {
       });
 
       // Remove the corresponding headers input
-      setHeadersInputs((prev) => {
+      setMcpHeadersInputs((prev) => {
         const newInputs = [...prev];
         newInputs.splice(index, 1);
         return newInputs;
       });
 
-      setHeadersErrors((prev) => {
+      setMcpHeadersErrors((prev) => {
         const newErrors = [...prev];
         newErrors.splice(index, 1);
         return newErrors;
@@ -235,7 +238,7 @@ export const ExternalToolSettingsTab = () => {
   };
 
   const handleHeadersChange = (serverIndex: number, value: string) => {
-    setHeadersInputs((prev) => {
+    setMcpHeadersInputs((prev) => {
       const newInputs = [...prev];
       newInputs[serverIndex] = value;
       return newInputs;
@@ -244,13 +247,13 @@ export const ExternalToolSettingsTab = () => {
     // Validate JSON as user types
     try {
       JSON.parse(value);
-      setHeadersErrors((prev) => {
+      setMcpHeadersErrors((prev) => {
         const newErrors = [...prev];
         newErrors[serverIndex] = "";
         return newErrors;
       });
     } catch (e) {
-      setHeadersErrors((prev) => {
+      setMcpHeadersErrors((prev) => {
         const newErrors = [...prev];
         newErrors[serverIndex] = "Invalid JSON format";
         return newErrors;
@@ -259,13 +262,52 @@ export const ExternalToolSettingsTab = () => {
   };
 
   // Get the currently selected tool
-  const selectedTool = settings.search.options[selectedToolIndex] || null;
+  const selectedTool = settings.search.options[selectedSearchToolIndex] || null;
 
   // Check if the selected tool is active
   const isSelectedToolActive = settings.search.active?.id === selectedTool?.id;
 
   return (
     <div className="p-4 h-full overflow-y-auto">
+      <h2 className="text-lg font-semibold mb-4">Tool Settings</h2>
+
+      {/* Internal Tools Section */}
+      <div className="mb-6">
+        <h3 className="text-md font-medium mb-3">Internal Tools</h3>
+
+        <Card>
+          <CardContent>
+            <div className="flex items-center mb-3">
+              <Switch
+                checked={settings.extractActiveTab.active}
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    extractActiveTab: { active: checked },
+                  }))
+                }
+              />
+              <Label className="font-medium ml-2">
+                Extract Active Tab Content
+              </Label>
+            </div>
+
+            <div className="flex items-center">
+              <Switch
+                checked={settings.memoryManagement.active}
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    memoryManagement: { active: checked },
+                  }))
+                }
+              />
+              <Label className="font-medium ml-2">Memory Management</Label>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <h2 className="text-lg font-semibold mb-4">External Tool Settings</h2>
 
       <div className="mb-6">
@@ -276,7 +318,7 @@ export const ExternalToolSettingsTab = () => {
             Select Search Tool
           </Label>
           <Select
-            value={selectedToolIndex.toString()}
+            value={selectedSearchToolIndex.toString()}
             onValueChange={handleToolSelectChange}
           >
             <SelectTrigger className="w-full">
@@ -299,7 +341,7 @@ export const ExternalToolSettingsTab = () => {
               checked={isSelectedToolActive}
               onCheckedChange={handleActiveChange}
             />
-            <Label htmlFor="activeTool">Active Tool</Label>
+            <Label htmlFor="activeTool">Active</Label>
           </div>
         </div>
 
@@ -397,7 +439,7 @@ export const ExternalToolSettingsTab = () => {
                     </Label>
                     <div className="relative">
                       <Textarea
-                        value={headersInputs[serverIndex] || "{}"}
+                        value={mcpHeadersInputs[serverIndex] || "{}"}
                         rows={3}
                         onChange={(e) =>
                           handleHeadersChange(serverIndex, e.target.value)
@@ -405,9 +447,9 @@ export const ExternalToolSettingsTab = () => {
                         className="w-full resize-y font-mono text-sm"
                         placeholder='{ "X-API-Key": "your-api-key" }'
                       />
-                      {headersErrors[serverIndex] && (
+                      {mcpHeadersErrors[serverIndex] && (
                         <div className="text-red-400 text-xs mt-1">
-                          {headersErrors[serverIndex]}
+                          {mcpHeadersErrors[serverIndex]}
                         </div>
                       )}
                     </div>

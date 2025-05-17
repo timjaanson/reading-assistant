@@ -1,4 +1,4 @@
-import { ExternalToolsStorage } from "../storage/externalToolSettings";
+import { ToolsSettingsStorage } from "../storage/toolSettings";
 import {
   BraveSearchResponse,
   MinifiedSearchResult,
@@ -82,9 +82,8 @@ class RequestQueue {
       units: "metric",
     });
 
-    const externalToolSettings =
-      await ExternalToolsStorage.loadExternalToolSettings();
-    const apiKey = externalToolSettings.search.active?.apiKey;
+    const toolSettings = await ToolsSettingsStorage.loadToolSettings();
+    const apiKey = toolSettings.search.active?.apiKey;
 
     if (!apiKey) {
       throw new Error("Brave Search API key not found");
@@ -168,10 +167,9 @@ export const searchBrave = async (
   query: string,
   count: number = 8
 ): Promise<MinifiedSearchResult[]> => {
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
-  if (externalToolSettings.search.active?.id === "braveSearch") {
-    if (externalToolSettings.search.active.apiKey) {
+  const toolSettings = await ToolsSettingsStorage.loadToolSettings();
+  if (toolSettings.search.active?.id === "braveSearch") {
+    if (toolSettings.search.active.apiKey) {
       return requestQueue.enqueue(query, count);
     }
     throw new Error("Brave Search enabled but API key not set");

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AiTools } from "../types/ai-tools";
 import { searchBrave } from "../search/brave-api";
 import { tryCatch } from "../util/try-catch";
-import { ExternalToolsStorage } from "../storage/externalToolSettings";
+import { ToolsSettingsStorage } from "../storage/toolSettings";
 import { extractContentFromUrls, searchTavily } from "../search/tavily";
 import { SearchOptions } from "../types/search";
 import { memoryDb } from "../storage/memoryDatabase";
@@ -18,12 +18,14 @@ export const getTooling = async (
     return;
   }
 
-  const externalToolSettings =
-    await ExternalToolsStorage.loadExternalToolSettings();
+  const toolSettings = await ToolsSettingsStorage.loadToolSettings();
 
   const tools: Record<string, Tool | {}> = {};
 
-  if (!languageModel.internalCompatibilityOptions.useSearchGrounding) {
+  if (
+    !languageModel.internalCompatibilityOptions.useSearchGrounding &&
+    toolSettings.search.active
+  ) {
     tools["webSearch"] = {
       description:
         "Perform a web search for the given query. Returns an optional answer and a list of search results. Make sure to include the source (url) of the information in your response.",
@@ -52,7 +54,7 @@ export const getTooling = async (
         const options = (parameters as { options: SearchOptions }).options;
         const query = (parameters as { query: string }).query;
         let result;
-        switch (externalToolSettings.search.active?.id) {
+        switch (toolSettings.search.active?.id) {
           case "braveSearch":
             result = await tryCatch(searchBrave(query));
             break;
@@ -79,7 +81,7 @@ export const getTooling = async (
     };
   }
 
-  if (externalToolSettings.search.active?.id === "tavily") {
+  if (toolSettings.search.active?.id === "tavily") {
     tools["urlExtractor"] = {
       description:
         "Extract the content from up to 10 URLs at a time. Returns the text and image content for each URL without html tags.",
@@ -106,30 +108,34 @@ export const getTooling = async (
     };
   }
 
-  tools["extractActiveBrowserTabContent"] = {
-    description:
-      "Extract the content of the user's currently active browser tab. Returns the text content of the tab.",
-    parameters: z.object({}),
-    execute: async () => {
-      console.debug("extractActiveBrowserTabContent");
-      const result = await tryCatch(getActiveTabContent());
-      console.debug(
-        "extractActiveBrowserTabContent result success, url, error:",
-        result?.data?.success,
-        result?.data?.url,
-        result?.error
-      );
-      if (result.error) {
-        return {
-          error: result.error.message,
-        };
-      }
-      return result.data;
-    },
-  };
+  if (toolSettings.extractActiveTab.active) {
+    tools["extractActiveBrowserTabContent"] = {
+      description:
+        "Extract the content of the user's currently active browser tab. Returns the text content of the tab.",
+      parameters: z.object({}),
+      execute: async () => {
+        console.debug("extractActiveBrowserTabContent");
+        const result = await tryCatch(getActiveTabContent());
+        console.debug(
+          "extractActiveBrowserTabContent result success, url, error:",
+          result?.data?.success,
+          result?.data?.url,
+          result?.error
+        );
+        if (result.error) {
+          return {
+            error: result.error.message,
+          };
+        }
+        return result.data;
+      },
+    };
+  }
 
-  const memoryTools = createMemoryTools();
-  Object.assign(tools, memoryTools);
+  if (toolSettings.memoryManagement.active) {
+    const memoryTools = createMemoryTools();
+    Object.assign(tools, memoryTools);
+  }
 
   if (Object.keys(tools).length > 0) {
     return {
