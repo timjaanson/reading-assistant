@@ -1,14 +1,13 @@
 import { ThemeToggle } from "../views-components/ThemeToggle";
 import { useTheme } from "../theme/theme-provider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SettingsTabHeaderFooter } from "../views-components/SettingsTabHeaderFooter";
 
 const ExtensionSettingsTab = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="p-4 overflow-x-hidden">
-      <h2 className="text-lg font-semibold mb-4">Extension Settings</h2>
-
+    <SettingsTabHeaderFooter headerText="Extension Settings" noFooter={true}>
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Theme</CardTitle>
@@ -22,7 +21,7 @@ const ExtensionSettingsTab = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </SettingsTabHeaderFooter>
   );
 };
 

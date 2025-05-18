@@ -19,14 +19,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  SettingsTabHeaderFooter,
+  SaveStatus,
+} from "../views-components/SettingsTabHeaderFooter";
 
 export const ProviderSettingsTab = () => {
   const [providerSettings, setProviderSettings] =
     useState<ProviderSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<
-    "idle" | "success" | "error" | "json-error"
-  >("idle");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
   useEffect(() => {
     setIsLoading(true);
@@ -300,465 +302,435 @@ export const ProviderSettingsTab = () => {
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-medium mb-4">Provider & Model Settings</h2>
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <Accordion collapsible type="single" className="w-full">
-          {providerSettings.all.map((provider) => (
-            <AccordionItem
-              key={provider.providerId}
-              value={provider.providerId}
-            >
-              <AccordionTrigger>
-                {provider.name || provider.providerId}
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 px-2">
-                {/* Provider Name */}
+    <SettingsTabHeaderFooter
+      headerText="Provider & Model Settings"
+      onSave={handleSubmit}
+      saveStatus={saveStatus}
+      isDisabled={isLoading}
+      isLoading={isLoading}
+      wrapInForm={true}
+    >
+      <Accordion collapsible type="single" className="w-full">
+        {providerSettings.all.map((provider) => (
+          <AccordionItem key={provider.providerId} value={provider.providerId}>
+            <AccordionTrigger>
+              {provider.name || provider.providerId}
+            </AccordionTrigger>
+            <AccordionContent className="space-y-4 px-2">
+              {/* Provider Name */}
+              <div className="space-y-2">
+                <Label htmlFor={`${provider.providerId}-name`}>
+                  Provider Name
+                </Label>
+                <Input
+                  type="text"
+                  id={`${provider.providerId}-name`}
+                  value={provider.name || ""}
+                  onChange={(e) =>
+                    handleProviderChange(
+                      provider.providerId,
+                      "name",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Enter provider name"
+                />
+              </div>
+
+              {/* URL - only for openai-compatible and openrouter */}
+              {["openai-compatible", "openrouter"].includes(
+                provider.providerId
+              ) && (
                 <div className="space-y-2">
-                  <Label htmlFor={`${provider.providerId}-name`}>
-                    Provider Name
-                  </Label>
+                  <Label htmlFor={`${provider.providerId}-url`}>URL</Label>
                   <Input
                     type="text"
-                    id={`${provider.providerId}-name`}
-                    value={provider.name || ""}
+                    id={`${provider.providerId}-url`}
+                    value={provider.url || ""}
                     onChange={(e) =>
                       handleProviderChange(
                         provider.providerId,
-                        "name",
+                        "url",
                         e.target.value
                       )
                     }
-                    placeholder="Enter provider name"
+                    placeholder="Enter URL"
                   />
                 </div>
+              )}
 
-                {/* URL - only for openai-compatible and openrouter */}
-                {["openai-compatible", "openrouter"].includes(
-                  provider.providerId
-                ) && (
-                  <div className="space-y-2">
-                    <Label htmlFor={`${provider.providerId}-url`}>URL</Label>
-                    <Input
-                      type="text"
-                      id={`${provider.providerId}-url`}
-                      value={provider.url || ""}
-                      onChange={(e) =>
-                        handleProviderChange(
-                          provider.providerId,
-                          "url",
-                          e.target.value
-                        )
-                      }
-                      placeholder="Enter URL"
-                    />
-                  </div>
-                )}
+              {/* API Key */}
+              <div className="space-y-2">
+                <Label htmlFor={`${provider.providerId}-apiKey`}>API Key</Label>
+                <Input
+                  type="password"
+                  id={`${provider.providerId}-apiKey`}
+                  value={provider.apiKey || ""}
+                  onChange={(e) =>
+                    handleProviderChange(
+                      provider.providerId,
+                      "apiKey",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Enter your API key"
+                />
+              </div>
 
-                {/* API Key */}
-                <div className="space-y-2">
-                  <Label htmlFor={`${provider.providerId}-apiKey`}>
-                    API Key
+              {/* Provider Options */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`${provider.providerId}-providerOptions`}>
+                    Provider Options
                   </Label>
-                  <Input
-                    type="password"
-                    id={`${provider.providerId}-apiKey`}
-                    value={provider.apiKey || ""}
-                    onChange={(e) =>
-                      handleProviderChange(
-                        provider.providerId,
-                        "apiKey",
-                        e.target.value
+                  <div
+                    onClick={() =>
+                      window.open(
+                        "https://sdk.vercel.ai/providers/ai-sdk-providers",
+                        "_blank"
                       )
                     }
-                    placeholder="Enter your API key"
-                  />
-                </div>
-
-                {/* Provider Options */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor={`${provider.providerId}-providerOptions`}>
-                      Provider Options
-                    </Label>
-                    <div
-                      onClick={() =>
-                        window.open(
-                          "https://sdk.vercel.ai/providers/ai-sdk-providers",
-                          "_blank"
-                        )
-                      }
-                    >
-                      <Tooltip className="cursor-pointer">
-                        <p className="mb-1">
-                          Provider options are for Vercel's AI SDK.
-                        </p>
-                        <p className="mb-1">
-                          Clicking here will open a new tab to Vercel's
-                          documentation:
-                        </p>
-                        <p className="mb-1">
-                          https://sdk.vercel.ai/providers/ai-sdk-providers
-                        </p>
-                      </Tooltip>
-                    </div>
+                  >
+                    <Tooltip className="cursor-pointer">
+                      <p className="mb-1">
+                        Provider options are for Vercel's AI SDK.
+                      </p>
+                      <p className="mb-1">
+                        Clicking here will open a new tab to Vercel's
+                        documentation:
+                      </p>
+                      <p className="mb-1">
+                        https://sdk.vercel.ai/providers/ai-sdk-providers
+                      </p>
+                    </Tooltip>
                   </div>
-                  <Textarea
-                    id={`${provider.providerId}-providerOptions`}
-                    defaultValue={
-                      provider.providerOptions
-                        ? JSON.stringify(provider.providerOptions, null, 2)
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleProviderChange(
-                        provider.providerId,
-                        "providerOptions",
-                        e.target.value
-                      )
-                    }
-                    placeholder="Enter provider options as JSON"
-                    rows={4}
-                    className="resize-y min-h-[80px] font-mono"
-                  />
                 </div>
+                <Textarea
+                  id={`${provider.providerId}-providerOptions`}
+                  defaultValue={
+                    provider.providerOptions
+                      ? JSON.stringify(provider.providerOptions, null, 2)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleProviderChange(
+                      provider.providerId,
+                      "providerOptions",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Enter provider options as JSON"
+                  rows={4}
+                  className="resize-y min-h-[80px] font-mono"
+                />
+              </div>
 
-                {/* Models Section */}
-                <div className="space-y-3 mt-4">
-                  <h3 className="text-md font-medium">Models</h3>
-                  {provider.models.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      No models configured
-                    </p>
-                  ) : (
-                    <div className="grid gap-4">
-                      {provider.models.map((model, modelIndex) => (
-                        <Card
-                          key={`${provider.providerId}-model-${modelIndex}`}
-                          className="p-4 relative"
+              {/* Models Section */}
+              <div className="space-y-3 mt-4">
+                <h3 className="text-md font-medium">Models</h3>
+                {provider.models.length === 0 ? (
+                  <p className="text-sm text-gray-500">No models configured</p>
+                ) : (
+                  <div className="grid gap-4">
+                    {provider.models.map((model, modelIndex) => (
+                      <Card
+                        key={`${provider.providerId}-model-${modelIndex}`}
+                        className="p-4 relative"
+                      >
+                        <button
+                          type="button"
+                          className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+                          onClick={() =>
+                            handleDeleteModel(
+                              provider.providerId,
+                              model.modelId
+                            )
+                          }
+                          aria-label="Delete model"
                         >
-                          <button
-                            type="button"
-                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
-                            onClick={() =>
-                              handleDeleteModel(
-                                provider.providerId,
-                                model.modelId
-                              )
-                            }
-                            aria-label="Delete model"
-                          >
-                            ✕
-                          </button>
-                          <CardContent className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-1">
-                                <Label htmlFor={`${model.modelId}-modelId`}>
-                                  Model ID
-                                </Label>
-                                <Input
-                                  id={`${model.modelId}-modelId`}
-                                  value={model.modelId}
-                                  onChange={(e) =>
-                                    handleModelChange(
-                                      provider.providerId,
-                                      modelIndex,
-                                      "modelId",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="Model ID"
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <Label htmlFor={`${model.modelId}-name`}>
-                                  Name
-                                </Label>
-                                <Input
-                                  id={`${model.modelId}-name`}
-                                  value={model.name || ""}
-                                  onChange={(e) =>
-                                    handleModelChange(
-                                      provider.providerId,
-                                      modelIndex,
-                                      "name",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="Model name"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <Label htmlFor={`${model.modelId}-tools`}>
-                                Tools
+                          ✕
+                        </button>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label htmlFor={`${model.modelId}-modelId`}>
+                                Model ID
                               </Label>
-                              <Switch
-                                id={`${model.modelId}-tools`}
-                                checked={model.enableToolCalls}
-                                onCheckedChange={(checked) =>
+                              <Input
+                                id={`${model.modelId}-modelId`}
+                                value={model.modelId}
+                                onChange={(e) =>
                                   handleModelChange(
                                     provider.providerId,
                                     modelIndex,
-                                    "enableToolCalls",
-                                    checked
+                                    "modelId",
+                                    e.target.value
                                   )
                                 }
+                                placeholder="Model ID"
                               />
                             </div>
 
-                            <Accordion
-                              collapsible
-                              type="single"
-                              className="w-full"
-                            >
-                              <AccordionItem value="options">
-                                <AccordionTrigger>
-                                  Additional options
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-12 gap-2 mb-2">
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-maxTokens`}
-                                        >
-                                          Max output tokens
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-maxTokens`}
-                                          type="number"
-                                          value={model.options.maxTokens || ""}
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "maxTokens",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="Max tokens"
-                                        />
-                                      </div>
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-temperature`}
-                                        >
-                                          Temperature
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-temperature`}
-                                          type="number"
-                                          value={
-                                            model.options.temperature || ""
-                                          }
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "temperature",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="0 to 1"
-                                        />
-                                      </div>
-                                    </div>
+                            <div className="space-y-1">
+                              <Label htmlFor={`${model.modelId}-name`}>
+                                Name
+                              </Label>
+                              <Input
+                                id={`${model.modelId}-name`}
+                                value={model.name || ""}
+                                onChange={(e) =>
+                                  handleModelChange(
+                                    provider.providerId,
+                                    modelIndex,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Model name"
+                              />
+                            </div>
+                          </div>
 
-                                    <div className="grid grid-cols-12 gap-2 mb-2">
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-topP`}
-                                        >
-                                          Top P
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-topP`}
-                                          type="number"
-                                          value={model.options.topP || ""}
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "topP",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="0 to 1"
-                                        />
-                                      </div>
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-topK`}
-                                        >
-                                          Top K
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-topK`}
-                                          type="number"
-                                          value={model.options.topK || ""}
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "topK",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="0 to N"
-                                        />
-                                      </div>
-                                    </div>
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`${model.modelId}-tools`}>
+                              Tools
+                            </Label>
+                            <Switch
+                              id={`${model.modelId}-tools`}
+                              checked={model.enableToolCalls}
+                              onCheckedChange={(checked) =>
+                                handleModelChange(
+                                  provider.providerId,
+                                  modelIndex,
+                                  "enableToolCalls",
+                                  checked
+                                )
+                              }
+                            />
+                          </div>
 
-                                    <div className="grid grid-cols-12 gap-2">
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-frequencyPenalty`}
-                                        >
-                                          Frequency Penalty
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-frequencyPenalty`}
-                                          type="number"
-                                          value={
-                                            model.options.frequencyPenalty || ""
-                                          }
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "frequencyPenalty",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="-1 to 1"
-                                        />
-                                      </div>
-                                      <div className="col-span-6 space-y-1">
-                                        <Label
-                                          htmlFor={`${model.modelId}-presencePenalty`}
-                                        >
-                                          Presence Penalty
-                                        </Label>
-                                        <Input
-                                          id={`${model.modelId}-presencePenalty`}
-                                          type="number"
-                                          value={
-                                            model.options.presencePenalty || ""
-                                          }
-                                          onChange={(e) => {
-                                            const value =
-                                              e.target.value === ""
-                                                ? undefined
-                                                : Number(e.target.value);
-                                            handleModelOptionChange(
-                                              provider.providerId,
-                                              modelIndex,
-                                              "presencePenalty",
-                                              value
-                                            );
-                                          }}
-                                          placeholder="-1 to 1"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
+                          <Accordion
+                            collapsible
+                            type="single"
+                            className="w-full"
+                          >
+                            <AccordionItem value="options">
+                              <AccordionTrigger>
+                                Additional options
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-12 gap-2 mb-2">
+                                    <div className="col-span-6 space-y-1">
                                       <Label
-                                        htmlFor={`${model.modelId}-providerOptions`}
+                                        htmlFor={`${model.modelId}-maxTokens`}
                                       >
-                                        Provider Options
+                                        Max output tokens
                                       </Label>
-                                      <Textarea
-                                        id={`${model.modelId}-providerOptions`}
-                                        defaultValue={
-                                          model.options.providerOptions
-                                            ? JSON.stringify(
-                                                model.options.providerOptions,
-                                                null,
-                                                2
-                                              )
-                                            : ""
-                                        }
-                                        onChange={(e) =>
-                                          handleModelChange(
+                                      <Input
+                                        id={`${model.modelId}-maxTokens`}
+                                        type="number"
+                                        value={model.options.maxTokens || ""}
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
                                             provider.providerId,
                                             modelIndex,
-                                            "providerOptions",
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="Enter provider options as JSON"
-                                        rows={3}
-                                        className="resize-y min-h-[60px] font-mono text-sm"
+                                            "maxTokens",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="Max tokens"
+                                      />
+                                    </div>
+                                    <div className="col-span-6 space-y-1">
+                                      <Label
+                                        htmlFor={`${model.modelId}-temperature`}
+                                      >
+                                        Temperature
+                                      </Label>
+                                      <Input
+                                        id={`${model.modelId}-temperature`}
+                                        type="number"
+                                        value={model.options.temperature || ""}
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "temperature",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="0 to 1"
                                       />
                                     </div>
                                   </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAddModel(provider.providerId)}
-                    className="mt-2"
-                  >
-                    Add Model
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+                                  <div className="grid grid-cols-12 gap-2 mb-2">
+                                    <div className="col-span-6 space-y-1">
+                                      <Label htmlFor={`${model.modelId}-topP`}>
+                                        Top P
+                                      </Label>
+                                      <Input
+                                        id={`${model.modelId}-topP`}
+                                        type="number"
+                                        value={model.options.topP || ""}
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "topP",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="0 to 1"
+                                      />
+                                    </div>
+                                    <div className="col-span-6 space-y-1">
+                                      <Label htmlFor={`${model.modelId}-topK`}>
+                                        Top K
+                                      </Label>
+                                      <Input
+                                        id={`${model.modelId}-topK`}
+                                        type="number"
+                                        value={model.options.topK || ""}
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "topK",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="0 to N"
+                                      />
+                                    </div>
+                                  </div>
 
-        <div className="flex items-center mt-6">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Settings"}
-          </Button>
-          {saveStatus === "success" && (
-            <span className="ml-2 text-green-400 flex items-center">
-              Settings saved!
-            </span>
-          )}
-          {saveStatus === "error" && (
-            <span className="ml-2 text-red-400 flex items-center">
-              Failed to save settings
-            </span>
-          )}
-          {saveStatus === "json-error" && (
-            <span className="ml-2 text-red-400 flex items-center">
-              Invalid JSON in options
-            </span>
-          )}
-        </div>
-      </form>
-    </div>
+                                  <div className="grid grid-cols-12 gap-2">
+                                    <div className="col-span-6 space-y-1">
+                                      <Label
+                                        htmlFor={`${model.modelId}-frequencyPenalty`}
+                                      >
+                                        Frequency Penalty
+                                      </Label>
+                                      <Input
+                                        id={`${model.modelId}-frequencyPenalty`}
+                                        type="number"
+                                        value={
+                                          model.options.frequencyPenalty || ""
+                                        }
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "frequencyPenalty",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="-1 to 1"
+                                      />
+                                    </div>
+                                    <div className="col-span-6 space-y-1">
+                                      <Label
+                                        htmlFor={`${model.modelId}-presencePenalty`}
+                                      >
+                                        Presence Penalty
+                                      </Label>
+                                      <Input
+                                        id={`${model.modelId}-presencePenalty`}
+                                        type="number"
+                                        value={
+                                          model.options.presencePenalty || ""
+                                        }
+                                        onChange={(e) => {
+                                          const value =
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value);
+                                          handleModelOptionChange(
+                                            provider.providerId,
+                                            modelIndex,
+                                            "presencePenalty",
+                                            value
+                                          );
+                                        }}
+                                        placeholder="-1 to 1"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label
+                                      htmlFor={`${model.modelId}-providerOptions`}
+                                    >
+                                      Provider Options
+                                    </Label>
+                                    <Textarea
+                                      id={`${model.modelId}-providerOptions`}
+                                      defaultValue={
+                                        model.options.providerOptions
+                                          ? JSON.stringify(
+                                              model.options.providerOptions,
+                                              null,
+                                              2
+                                            )
+                                          : ""
+                                      }
+                                      onChange={(e) =>
+                                        handleModelChange(
+                                          provider.providerId,
+                                          modelIndex,
+                                          "providerOptions",
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder="Enter provider options as JSON"
+                                      rows={3}
+                                      className="resize-y min-h-[60px] font-mono text-sm"
+                                    />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleAddModel(provider.providerId)}
+                  className="mt-2"
+                >
+                  Add Model
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </SettingsTabHeaderFooter>
   );
 };

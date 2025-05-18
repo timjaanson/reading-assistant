@@ -394,7 +394,7 @@ export const ChatInput = ({
           className="absolute bottom-14 right-[50px] z-50"
           onClick={(e) => e.stopPropagation()}
         >
-          <Card className="w-44 py-1">
+          <Card className="w-fit py-1">
             <CardContent className="p-0">
               <div className="flex flex-col text-sm">
                 <button
@@ -411,7 +411,7 @@ export const ChatInput = ({
                   className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
                 >
                   <FileText size={14} />
-                  <span>Extract page text</span>
+                  <span>Extract active tab text</span>
                 </button>
               </div>
             </CardContent>

@@ -17,7 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { CircleX } from "lucide-react";
+import { CircleX, Info } from "lucide-react";
+import {
+  SettingsTabHeaderFooter,
+  SaveStatus,
+} from "../views-components/SettingsTabHeaderFooter";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const ExternalToolSettingsTab = () => {
   const [settings, setSettings] = useState<ToolSettings>(
@@ -26,9 +36,7 @@ export const ExternalToolSettingsTab = () => {
   const [selectedSearchToolIndex, setSelectedSearchToolIndex] =
     useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [mcpHeadersInputs, setMcpHeadersInputs] = useState<string[]>([]);
   const [mcpHeadersErrors, setMcpHeadersErrors] = useState<string[]>([]);
 
@@ -88,7 +96,7 @@ export const ExternalToolSettingsTab = () => {
     setMcpHeadersErrors(newErrors);
 
     if (!isValid) {
-      setSaveStatus("error");
+      setSaveStatus("json-error");
       return;
     }
 
@@ -268,208 +276,253 @@ export const ExternalToolSettingsTab = () => {
   const isSelectedToolActive = settings.search.active?.id === selectedTool?.id;
 
   return (
-    <div className="p-4 h-full overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4">Tool Settings</h2>
+    <SettingsTabHeaderFooter
+      headerText="Tool Settings"
+      onSave={handleSaveSettings}
+      saveStatus={saveStatus}
+      isLoading={isSaving}
+      wrapInForm={false}
+    >
+      <div className="space-y-6">
+        <div className="mb-6">
+          <h3 className="text-sm font-medium mb-2">Internal Tools</h3>
 
-      {/* Internal Tools Section */}
-      <div className="mb-6">
-        <h3 className="text-md font-medium mb-3">Internal Tools</h3>
+          <Card>
+            <CardContent>
+              <div className="flex items-center mb-3">
+                <Switch
+                  checked={settings.extractActiveTab.active}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      extractActiveTab: { active: checked },
+                    }))
+                  }
+                />
+                <Label className="font-medium ml-2">
+                  Extract Active Tab Content
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info
+                      size={16}
+                      className="text-orange-700 dark:text-orange-500 ml-1"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    avoidCollisions
+                    className="space-y-1 max-w-96 break-words"
+                  >
+                    <p>
+                      The model can extract text content from the user's active
+                      browser tab.
+                    </p>
+                    <p>
+                      The user will always be prompted to{" "}
+                      <span className="text-green-500 font-semibold">
+                        APPROVE
+                      </span>{" "}
+                      or{" "}
+                      <span className="text-red-500 font-semibold">DENY</span>{" "}
+                      the request every time the model wants to use this tool.
+                    </p>
+                    <p className="mt-2">
+                      <span className="text-orange-700 dark:text-orange-500 font-semibold">
+                        WARNING:
+                      </span>{" "}
+                      If the active tab contains personal information in text
+                      form, it WILL be included in the request sent to the
+                      selected model provider. Prefer the use of local models on
+                      hardware you own where possible.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
 
-        <Card>
-          <CardContent>
-            <div className="flex items-center mb-3">
-              <Switch
-                checked={settings.extractActiveTab.active}
-                onCheckedChange={(checked) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    extractActiveTab: { active: checked },
-                  }))
-                }
-              />
-              <Label className="font-medium ml-2">
-                Extract Active Tab Content
-              </Label>
-            </div>
-
-            <div className="flex items-center">
-              <Switch
-                checked={settings.memoryManagement.active}
-                onCheckedChange={(checked) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    memoryManagement: { active: checked },
-                  }))
-                }
-              />
-              <Label className="font-medium ml-2">Memory Management</Label>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <h2 className="text-lg font-semibold mb-4">External Tool Settings</h2>
-
-      <div className="mb-6">
-        <h3 className="text-md font-medium mb-2">Search Tools</h3>
-
-        <div className="space-y-2 mb-3">
-          <Label htmlFor="searchTool" className="block text-sm font-medium">
-            Select Search Tool
-          </Label>
-          <Select
-            value={selectedSearchToolIndex.toString()}
-            onValueChange={handleToolSelectChange}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a search tool" />
-            </SelectTrigger>
-            <SelectContent>
-              {settings.search.options.map((tool, index) => (
-                <SelectItem key={tool.id} value={index.toString()}>
-                  {tool.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <div className="flex items-center">
+                <Switch
+                  checked={settings.memoryManagement.active}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      memoryManagement: { active: checked },
+                    }))
+                  }
+                />
+                <Label className="font-medium ml-2">Memory Management</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info size={16} className="ml-1" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      Even if memory management tools are disabled, active
+                      memories are still added to system prompts
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="flex items-center gap-x-2 mb-3">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="activeTool"
-              checked={isSelectedToolActive}
-              onCheckedChange={handleActiveChange}
+        <Separator />
+
+        <h2 className="text-lg font-semibold mb-4">External Tool Settings</h2>
+
+        <div className="mb-6">
+          <h3 className="text-sm font-medium mb-2">Search Tools</h3>
+
+          <div className="space-y-2 mb-3">
+            <Select
+              value={selectedSearchToolIndex.toString()}
+              onValueChange={handleToolSelectChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a search tool" />
+              </SelectTrigger>
+              <SelectContent>
+                {settings.search.options.map((tool, index) => (
+                  <SelectItem key={tool.id} value={index.toString()}>
+                    {tool.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-x-2 mb-3">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="activeTool"
+                checked={isSelectedToolActive}
+                onCheckedChange={handleActiveChange}
+              />
+              <Label htmlFor="activeTool">Active</Label>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <Label htmlFor="apiKey" className="block text-sm font-medium mb-1">
+              API Key
+            </Label>
+            <Input
+              id="apiKey"
+              type="password"
+              value={selectedTool?.apiKey || ""}
+              onChange={handleApiKeyChange}
+              className="w-full"
+              placeholder={`Enter ${selectedTool?.name} API Key`}
             />
-            <Label htmlFor="activeTool">Active</Label>
           </div>
         </div>
 
-        <div className="mb-3">
-          <Label htmlFor="apiKey" className="block text-sm font-medium mb-1">
-            API Key
-          </Label>
-          <Input
-            id="apiKey"
-            type="password"
-            value={selectedTool?.apiKey || ""}
-            onChange={handleApiKeyChange}
-            className="w-full"
-            placeholder={`Enter ${selectedTool?.name} API Key`}
-          />
-        </div>
-      </div>
+        <Separator />
 
-      {/* MCP Servers Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-md font-medium">MCP Servers</h3>
-          <Button onClick={handleAddMCPServer}>+ Add Server</Button>
-        </div>
-
-        {settings.mcp.servers.length === 0 ? (
-          <div className="text-sm py-2">
-            No MCP servers configured. Click "Add Server" to add one.
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">MCP Servers</h3>
+            <Button onClick={handleAddMCPServer}>+ Add Server</Button>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {settings.mcp.servers.map((server, serverIndex) => (
-              <Card key={serverIndex}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={server.active}
-                        onCheckedChange={(checked) =>
-                          handleMCPServerChange(serverIndex, "active", checked)
-                        }
-                      />
-                      <Label>Active</Label>
+
+          {settings.mcp.servers.length === 0 ? (
+            <div className="text-sm py-2">
+              No MCP servers configured. Click "Add Server" to add one.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {settings.mcp.servers.map((server, serverIndex) => (
+                <Card key={serverIndex}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={server.active}
+                          onCheckedChange={(checked) =>
+                            handleMCPServerChange(
+                              serverIndex,
+                              "active",
+                              checked
+                            )
+                          }
+                        />
+                        <Label>Active</Label>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteMCPServer(serverIndex)}
+                        className="cursor-pointer opacity-80 hover:opacity-100"
+                      >
+                        <CircleX size={16} className="text-destructive" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteMCPServer(serverIndex)}
-                      className="cursor-pointer opacity-80 hover:opacity-100"
-                    >
-                      <CircleX size={16} className="text-destructive" />
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3 py-0">
-                  <div>
-                    <Label className="block text-sm font-medium mb-1">
-                      Name
-                    </Label>
-                    <Input
-                      type="text"
-                      value={server.name}
-                      onChange={(e) =>
-                        handleMCPServerChange(
-                          serverIndex,
-                          "name",
-                          e.target.value
-                        )
-                      }
-                      className="w-full"
-                      placeholder="Server name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="block text-sm font-medium mb-1">
-                      URL
-                    </Label>
-                    <Input
-                      type="text"
-                      value={server.url}
-                      onChange={(e) =>
-                        handleMCPServerChange(
-                          serverIndex,
-                          "url",
-                          e.target.value
-                        )
-                      }
-                      className="w-full"
-                      placeholder="http://localhost:8080/sse"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="block text-sm font-medium mb-1">
-                      Headers (JSON format)
-                    </Label>
-                    <div className="relative">
-                      <Textarea
-                        value={mcpHeadersInputs[serverIndex] || "{}"}
-                        rows={3}
+                  </CardHeader>
+                  <CardContent className="space-y-3 py-0">
+                    <div>
+                      <Label className="block text-sm font-medium mb-1">
+                        Name
+                      </Label>
+                      <Input
+                        type="text"
+                        value={server.name}
                         onChange={(e) =>
-                          handleHeadersChange(serverIndex, e.target.value)
+                          handleMCPServerChange(
+                            serverIndex,
+                            "name",
+                            e.target.value
+                          )
                         }
-                        className="w-full resize-y font-mono text-sm"
-                        placeholder='{ "X-API-Key": "your-api-key" }'
+                        className="w-full"
+                        placeholder="Server name"
                       />
-                      {mcpHeadersErrors[serverIndex] && (
-                        <div className="text-red-400 text-xs mt-1">
-                          {mcpHeadersErrors[serverIndex]}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
 
-      <Button onClick={handleSaveSettings} disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save"}
-      </Button>
-      {saveStatus === "success" && (
-        <span className="ml-2 text-green-400">Settings saved!</span>
-      )}
-      {saveStatus === "error" && (
-        <span className="ml-2 text-red-400">Failed to save settings</span>
-      )}
-    </div>
+                    <div>
+                      <Label className="block text-sm font-medium mb-1">
+                        URL
+                      </Label>
+                      <Input
+                        type="text"
+                        value={server.url}
+                        onChange={(e) =>
+                          handleMCPServerChange(
+                            serverIndex,
+                            "url",
+                            e.target.value
+                          )
+                        }
+                        className="w-full"
+                        placeholder="http://localhost:8080/sse"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="block text-sm font-medium mb-1">
+                        Headers (JSON format)
+                      </Label>
+                      <div className="relative">
+                        <Textarea
+                          value={mcpHeadersInputs[serverIndex] || "{}"}
+                          rows={3}
+                          onChange={(e) =>
+                            handleHeadersChange(serverIndex, e.target.value)
+                          }
+                          className="w-full resize-y font-mono text-sm"
+                          placeholder='{ "X-API-Key": "your-api-key" }'
+                        />
+                        {mcpHeadersErrors[serverIndex] && (
+                          <div className="text-red-400 text-xs mt-1">
+                            {mcpHeadersErrors[serverIndex]}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </SettingsTabHeaderFooter>
   );
 };

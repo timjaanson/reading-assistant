@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { MemoryItem } from "../types/memory";
 import { memoryDb } from "../storage/memoryDatabase";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Tooltip } from "../views-components/Tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { SettingsTabHeaderFooter } from "../views-components/SettingsTabHeaderFooter";
 import {
   Card,
   CardContent,
@@ -14,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CircleX } from "lucide-react";
+import { CircleX, Info } from "lucide-react";
 
 const editableTextClasses =
   "cursor-pointer hover:bg-muted/30 rounded-sm px-1 py-0.5";
@@ -165,140 +170,156 @@ export const MemoryTab = () => {
   );
 
   return (
-    <div className="p-4 flex flex-col h-full">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-lg font-semibold">Manage Memory</h2>
-        <Tooltip>
-          <p className="mb-1">
-            Active memories are added to the end of all system prompts.
-          </p>
-          <p className="mb-1">
-            Use it to change AI behavior, formatting, or for it to remember
-            things.
-          </p>
-          <p className="mb-1">
-            Memories can also be managed through chat with models that support
-            tool calling.
-          </p>
-          <p className="mb-1">
-            Saying in chat "remember this" or "add memory" will add a new memory
-            item.
-          </p>
-        </Tooltip>
-      </div>
+    <SettingsTabHeaderFooter headerText="Manage Memory" noFooter>
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-2 mb-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1">
+                <span>What is this?</span>
+                <Info size={16} />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" avoidCollisions>
+              <p className="mb-1">
+                Active memories are added to the end of all system prompts.
+              </p>
+              <p className="mb-1">
+                Use it to change AI behavior, formatting, or for it to remember
+                things.
+              </p>
+              <p className="mb-1">
+                Memories can also be managed through chat with models that
+                support tool calling.
+              </p>
+              <p className="mb-1">
+                Saying in chat "remember this" or "add memory" will add a new
+                memory item.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      {/* Add New Memory Form */}
-      <Card className="mb-1">
-        <CardHeader>
-          <CardTitle className="text-md font-medium">Add New Memory</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Textarea
-              placeholder="Memory Content"
-              value={newContent}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setNewContent(e.target.value)
-              }
-              rows={3}
-              disabled={isLoading}
-              className="resize-y"
-            />
-            <Button
-              onClick={handleAddMemory}
-              disabled={isLoading || !newContent.trim()}
-            >
-              {isLoading ? "Adding..." : "Add Memory"}
-            </Button>
-          </div>
-          {error && (
-            <p className="text-destructive text-sm mt-3">Error: {error}</p>
+        <Card className="my-2">
+          <CardHeader>
+            <CardTitle className="text-md font-medium">
+              Add New Memory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Memory Content"
+                value={newContent}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setNewContent(e.target.value)
+                }
+                rows={3}
+                disabled={isLoading}
+                className="resize-y"
+              />
+              <Button
+                onClick={handleAddMemory}
+                disabled={isLoading || !newContent.trim()}
+              >
+                {isLoading ? "Adding..." : "Add Memory"}
+              </Button>
+            </div>
+            {error && (
+              <p className="text-destructive text-sm mt-3">Error: {error}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Memory List */}
+        <div className="flex-1 overflow-y-auto mt-2">
+          <h3 className="text-md font-medium mb-2">
+            Stored Memories ({memories.length})
+          </h3>
+          {isLoading && memories.length === 0 && <p>Loading...</p>}
+          {!isLoading && memories.length === 0 && (
+            <p>No memories stored yet.</p>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Memory List */}
-      <div className="flex-1 overflow-y-auto mt-2">
-        <h3 className="text-md font-medium mb-2">
-          Stored Memories ({memories.length})
-        </h3>
-        {isLoading && memories.length === 0 && <p>Loading...</p>}
-        {!isLoading && memories.length === 0 && <p>No memories stored yet.</p>}
-        <ul className="space-y-2">
-          {memories.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="pt-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1 mr-4">
-                    {editingMemoryId === item.id ? (
-                      <Textarea
-                        value={editText}
-                        onChange={handleEditChange}
-                        onBlur={() => handleEditSave(item.id)}
-                        className="resize-y text-xs h-auto"
-                        rows={3}
-                        autoFocus
-                        disabled={isLoading}
-                        aria-label="Edit memory content"
-                      />
-                    ) : (
-                      <p
-                        className={`text-xs whitespace-pre-wrap ${editableTextClasses}`}
-                        onClick={() =>
-                          !isLoading && handleEditStart(item.id, item.content)
-                        }
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (
-                            !isLoading &&
-                            (e.key === "Enter" || e.key === " ")
-                          ) {
-                            e.preventDefault();
-                            handleEditStart(item.id, item.content);
+          <ul className="space-y-2">
+            {memories.map((item) => (
+              <Card key={item.id}>
+                <CardContent className="pt-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 mr-4">
+                      {editingMemoryId === item.id ? (
+                        <Textarea
+                          value={editText}
+                          onChange={handleEditChange}
+                          onBlur={() => handleEditSave(item.id)}
+                          className="resize-y text-xs h-auto"
+                          rows={3}
+                          autoFocus
+                          disabled={isLoading}
+                          aria-label="Edit memory content"
+                        />
+                      ) : (
+                        <p
+                          className={`text-xs whitespace-pre-wrap ${editableTextClasses}`}
+                          onClick={() =>
+                            !isLoading && handleEditStart(item.id, item.content)
                           }
-                        }}
-                        title="Click to edit"
-                      >
-                        {item.content}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={item.active}
-                        onCheckedChange={() =>
-                          handleToggleActive(item.id, item.active)
-                        }
-                        disabled={isLoading}
-                        id={`active-switch-${item.id}`}
-                      />
-                      <Label htmlFor={`active-switch-${item.id}`}>Active</Label>
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (
+                              !isLoading &&
+                              (e.key === "Enter" || e.key === " ")
+                            ) {
+                              e.preventDefault();
+                              handleEditStart(item.id, item.content);
+                            }
+                          }}
+                          title="Click to edit"
+                        >
+                          {item.content}
+                        </p>
+                      )}
                     </div>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={item.active}
+                          onCheckedChange={() =>
+                            handleToggleActive(item.id, item.active)
+                          }
+                          disabled={isLoading}
+                          id={`active-switch-${item.id}`}
+                        />
+                        <Label htmlFor={`active-switch-${item.id}`}>
+                          Active
+                        </Label>
+                      </div>
 
-                    <button
-                      onClick={() => handleDeleteMemory(item.id)}
-                      disabled={isLoading}
-                      title="Delete Memory"
-                      className="cursor-pointer opacity-80 hover:opacity-100"
-                    >
-                      <CircleX size={16} className="text-destructive" />
-                    </button>
+                      <button
+                        onClick={() => handleDeleteMemory(item.id)}
+                        disabled={isLoading}
+                        title="Delete Memory"
+                        className="cursor-pointer opacity-80 hover:opacity-100"
+                      >
+                        <CircleX size={16} className="text-destructive" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="text-xs border-t">
-                <span>Created: {getCompactLocaleDateTime(item.createdAt)}</span>
-                <span className="ml-4">
-                  Updated: {getCompactLocaleDateTime(item.updatedAt)}
-                </span>
-              </CardFooter>
-            </Card>
-          ))}
-        </ul>
+                </CardContent>
+                <CardFooter className="text-xs border-t">
+                  <span>
+                    Created: {getCompactLocaleDateTime(item.createdAt)}
+                  </span>
+                  <span className="ml-4">
+                    Updated: {getCompactLocaleDateTime(item.updatedAt)}
+                  </span>
+                </CardFooter>
+              </Card>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </SettingsTabHeaderFooter>
   );
 };
 
