@@ -519,13 +519,13 @@ export const ProviderSettingsTab = () => {
                                   Additional options
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                  <div className="space-y-3">
-                                    <div className="grid grid-cols-12 gap-2">
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-12 gap-2 mb-2">
                                       <div className="col-span-6 space-y-1">
                                         <Label
                                           htmlFor={`${model.modelId}-maxTokens`}
                                         >
-                                          Max Tokens
+                                          Max output tokens
                                         </Label>
                                         <Input
                                           id={`${model.modelId}-maxTokens`}
@@ -546,11 +546,11 @@ export const ProviderSettingsTab = () => {
                                           placeholder="Max tokens"
                                         />
                                       </div>
-                                      <div className="col-span-2 space-y-1">
+                                      <div className="col-span-6 space-y-1">
                                         <Label
                                           htmlFor={`${model.modelId}-temperature`}
                                         >
-                                          Temp
+                                          Temperature
                                         </Label>
                                         <Input
                                           id={`${model.modelId}-temperature`}
@@ -570,10 +570,13 @@ export const ProviderSettingsTab = () => {
                                               value
                                             );
                                           }}
-                                          placeholder="0-1"
+                                          placeholder="0 to 1"
                                         />
                                       </div>
-                                      <div className="col-span-2 space-y-1">
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-2 mb-2">
+                                      <div className="col-span-6 space-y-1">
                                         <Label
                                           htmlFor={`${model.modelId}-topP`}
                                         >
@@ -595,10 +598,10 @@ export const ProviderSettingsTab = () => {
                                               value
                                             );
                                           }}
-                                          placeholder="0-1"
+                                          placeholder="0 to 1"
                                         />
                                       </div>
-                                      <div className="col-span-2 space-y-1">
+                                      <div className="col-span-6 space-y-1">
                                         <Label
                                           htmlFor={`${model.modelId}-topK`}
                                         >
@@ -620,7 +623,64 @@ export const ProviderSettingsTab = () => {
                                               value
                                             );
                                           }}
-                                          placeholder="0-1"
+                                          placeholder="0 to N"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-2">
+                                      <div className="col-span-6 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-frequencyPenalty`}
+                                        >
+                                          Frequency Penalty
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-frequencyPenalty`}
+                                          type="number"
+                                          value={
+                                            model.options.frequencyPenalty || ""
+                                          }
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "frequencyPenalty",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="-1 to 1"
+                                        />
+                                      </div>
+                                      <div className="col-span-6 space-y-1">
+                                        <Label
+                                          htmlFor={`${model.modelId}-presencePenalty`}
+                                        >
+                                          Presence Penalty
+                                        </Label>
+                                        <Input
+                                          id={`${model.modelId}-presencePenalty`}
+                                          type="number"
+                                          value={
+                                            model.options.presencePenalty || ""
+                                          }
+                                          onChange={(e) => {
+                                            const value =
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value);
+                                            handleModelOptionChange(
+                                              provider.providerId,
+                                              modelIndex,
+                                              "presencePenalty",
+                                              value
+                                            );
+                                          }}
+                                          placeholder="-1 to 1"
                                         />
                                       </div>
                                     </div>

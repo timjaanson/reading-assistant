@@ -39,6 +39,8 @@ export interface ModelOptions {
   temperature?: number;
   topK?: number;
   topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
   providerOptions?: ProviderOptions;
 }
 

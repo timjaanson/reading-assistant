@@ -1,4 +1,4 @@
-import { generateText, streamText } from "ai";
+import { streamText } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -18,14 +18,13 @@ export const getCustomBackendResponse = async (
   const tooling = await getTooling(languageModel);
   const mcpClients = await getActiveMCPClients(languageModel);
 
-  //iterate clients inside try catch and return tools from all as single array
   const mcpTools = [];
   for (const client of mcpClients) {
     try {
       const toolsResult = await client.tools();
       mcpTools.push(toolsResult);
     } catch (error) {
-      console.error(`Error loading tools from MCP client:`, error);
+      console.error("Error loading tools from MCP client", error);
     }
   }
 
@@ -52,7 +51,9 @@ export const getCustomBackendResponse = async (
       topP: languageModel.modelOptions.topP,
       maxTokens: languageModel.modelOptions.maxTokens,
       providerOptions: languageModel.modelOptions.providerOptions,
-
+      frequencyPenalty: languageModel.modelOptions.frequencyPenalty,
+      presencePenalty: languageModel.modelOptions.presencePenalty,
+      maxRetries: 3,
       system: prompt,
       messages: messages,
       tools: allTools,
@@ -81,59 +82,5 @@ export const getCustomBackendResponse = async (
   return response.toDataStreamResponse({
     sendReasoning: true,
     sendSources: true,
-  });
-};
-
-export const getTextResponse = async (
-  messages: any[],
-  options: GetTextResponseOptions = {}
-) => {
-  const languageModel = await getLanguageModel();
-  const tooling = await getTooling(languageModel);
-  const mcpClients = await getActiveMCPClients(languageModel);
-
-  const mcpTools = [];
-  for (const client of mcpClients) {
-    try {
-      const toolsResult = await client.tools();
-      mcpTools.push(toolsResult);
-    } catch (error) {
-      console.error(`Error loading tools from MCP client:`, error);
-    }
-  }
-
-  const allTools = { ...(tooling?.tools || {}) };
-  mcpTools.forEach((toolSet) => {
-    Object.assign(allTools, toolSet);
-  });
-
-  const response = await generateText({
-    model: languageModel.model,
-    temperature: languageModel.modelOptions.temperature,
-    topK: languageModel.modelOptions.topK,
-    topP: languageModel.modelOptions.topP,
-    maxTokens: languageModel.modelOptions.maxTokens,
-    providerOptions: languageModel.modelOptions.providerOptions,
-    tools: allTools,
-    toolChoice: tooling?.toolChoice,
-    messages: messages,
-    system: options.systemPrompt || (await defaultSystemMessage()),
-    maxSteps: 20,
-    abortSignal: options.abortSignal,
-  });
-
-  mcpClients.forEach((client) => {
-    try {
-      client.close();
-    } catch (error) {
-      console.warn("Error closing MCP client", error);
-    }
-  });
-
-  return new Response(JSON.stringify(response), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-    },
   });
 };
