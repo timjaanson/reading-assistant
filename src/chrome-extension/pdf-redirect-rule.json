@@ -9,7 +9,7 @@
       }
     },
     "condition": {
-      "regexFilter": "(https?://[^?#]+.(?:pdf|PDF)(?:[?#].*)?)|(^https://arxiv.org/pdf/.*)|(^file://.+?\\.(?:pdf|PDF)(?:[?#].*)?)",
+      "regexFilter": "(https?://[^?#]+\\.(?:pdf|PDF)(?:[?#].*)?)|(^https://arxiv.org/pdf/.*)|(^file://.+?\\.(?:pdf|PDF)(?:[?#].*)?)",
       "resourceTypes": ["main_frame"]
     }
   }
