@@ -82,7 +82,7 @@ const htmlToTextOptions = {
   ],
 
   limits: {
-    maxInputLength: 2_000_000, // 2MB
+    maxInputLength: 20_000_000,
     maxDepth: 30, // 20 levels of nested elements
     ellipsis: "…",
   },

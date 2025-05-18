@@ -107,7 +107,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
             }
           }}
           options={pdfOptions}
-          className="bg-background shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
+          className="bg-transparent shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
         >
           {numPages &&
             Array.from({ length: numPages }, (_, index) => {
@@ -118,6 +118,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
                   className="relative"
                   data-page-number={pageNumberValue}
                 >
+                  <span className="text-transparent bg-transparent block">
+                    {`<PAGE_NUMBER_${pageNumberValue}_START>`}
+                  </span>
                   <Page
                     pageNumber={pageNumberValue}
                     scale={scale}
@@ -135,6 +138,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
                       )
                     }
                   />
+                  <span className="text-transparent bg-transparent block">
+                    {`<PAGE_NUMBER_${pageNumberValue}_END>`}
+                  </span>
                 </div>
               );
             })}
