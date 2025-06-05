@@ -65,6 +65,7 @@ export const ProviderSettingsTab = () => {
               valueToSet = JSON.parse(value as string);
               setSaveStatus("idle");
             } catch (e) {
+              console.error(e);
               setSaveStatus("json-error");
             }
           }
@@ -117,6 +118,7 @@ export const ProviderSettingsTab = () => {
                         },
                       };
                     } catch (e) {
+                      console.error(e);
                       setSaveStatus("json-error");
                       return model;
                     }
@@ -252,6 +254,7 @@ export const ProviderSettingsTab = () => {
         try {
           JSON.parse(providerOptionsStr.value);
         } catch (e) {
+          console.error(e);
           hasJsonError = true;
         }
       }
@@ -266,6 +269,7 @@ export const ProviderSettingsTab = () => {
           try {
             JSON.parse(modelOptionsStr.value);
           } catch (e) {
+            console.error(e);
             hasJsonError = true;
           }
         }
@@ -290,6 +294,7 @@ export const ProviderSettingsTab = () => {
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
+      console.error(err);
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
     } finally {

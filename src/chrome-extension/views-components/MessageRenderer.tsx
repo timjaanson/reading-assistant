@@ -64,8 +64,7 @@ const PartRenderer = ({
       // Handle potential unknown part types gracefully
       return (
         <div className={`text-xs ${textColor}`}>
-          {/* @ts-ignore - in case in the future other part types are added */}
-          UNKNOWN TYPE: [{part.type}]
+          UNKNOWN TYPE: [{JSON.stringify(part)}]
         </div>
       );
   }

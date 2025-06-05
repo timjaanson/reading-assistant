@@ -105,6 +105,8 @@ export const TextPartRenderer = ({
               {children}
             </li>
           ),
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
           code: ({ node, className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || "");
             const language = match ? match[1] : "";
@@ -148,6 +150,7 @@ export const TextPartRenderer = ({
               </div>
             );
           },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           table: ({ node, ...props }) => (
             <div className="max-w-full overflow-x-auto p-2 scrollbar scrollbar-thumb-muted scrollbar-track-background">
               <table
@@ -156,15 +159,18 @@ export const TextPartRenderer = ({
               />
             </div>
           ),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           thead: ({ node, ...props }) => (
             <thead
               className={`border-b border-gray-500 ${textColor}`}
               {...props}
             />
           ),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           th: ({ node, ...props }) => (
             <th className={`p-3 font-bold ${textColor}`} {...props} />
           ),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           tr: ({ node, children, ...props }) => (
             <tr
               className={`border-b border-gray-500 last:border-b-0 ${textColor}`}
@@ -173,9 +179,11 @@ export const TextPartRenderer = ({
               {children}
             </tr>
           ),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           td: ({ node, ...props }) => (
             <td className={`p-3 max-w-48 ${textColor}`} {...props} />
           ),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           p: ({ node, ...props }) => (
             <p
               className={`whitespace-pre-line break-words ${textColor}`}
@@ -282,7 +290,14 @@ export const ToolPartRenderer = ({
                 wrapLongLines
                 style={theme === "dark" ? oneDark : oneLight}
               >
-                {JSON.stringify((toolInvocation as any).result, null, 2)}
+                {JSON.stringify(
+                  (toolInvocation.state === "result"
+                    ? toolInvocation
+                    : { result: "No result" }
+                  ).result,
+                  null,
+                  2
+                )}
               </SyntaxHighlighter>
             </div>
           </div>
@@ -340,6 +355,7 @@ export const SourcePartRenderer = ({
       displayName = url.hostname || url.pathname || source.url;
     }
   } catch (e) {
+    console.error("Error in SourcePartRenderer:", e);
     displayName = source.title || source.url || "Source";
   }
 

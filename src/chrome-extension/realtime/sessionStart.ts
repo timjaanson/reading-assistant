@@ -27,9 +27,11 @@ export async function getOpenAIRealtimeSession() {
     const res = (await r.json()) as SessionStartResponse;
 
     return res;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error:", error);
-    return { error: error.message };
+    return {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    };
   }
 }
 

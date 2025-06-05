@@ -88,6 +88,7 @@ export const ExternalToolSettingsTab = () => {
         JSON.parse(mcpHeadersInputs[i]);
         newErrors[i] = "";
       } catch (e) {
+        console.error(e);
         newErrors[i] = "Invalid JSON format";
         isValid = false;
       }
@@ -227,6 +228,7 @@ export const ExternalToolSettingsTab = () => {
   const handleMCPServerChange = (
     index: number,
     field: keyof MCPServer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any
   ) => {
     setSettings((prev) => {
@@ -261,6 +263,7 @@ export const ExternalToolSettingsTab = () => {
         return newErrors;
       });
     } catch (e) {
+      console.error(e);
       setMcpHeadersErrors((prev) => {
         const newErrors = [...prev];
         newErrors[serverIndex] = "Invalid JSON format";

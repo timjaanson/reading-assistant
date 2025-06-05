@@ -5,6 +5,7 @@ export const getLocalDateTimeWithWeekday = (date?: Date): string => {
   try {
     locale = navigator && navigator.language ? navigator.language : undefined;
   } catch (error) {
+    console.error("Error in getLocalDateTimeWithWeekday:", error);
     locale = undefined;
   }
 
@@ -30,6 +31,7 @@ export const getCompactLocaleDateTime = (date?: Date): string => {
   try {
     locale = navigator && navigator.language ? navigator.language : undefined;
   } catch (error) {
+    console.error("Error in getCompactLocaleDateTime:", error);
     locale = undefined;
   }
 

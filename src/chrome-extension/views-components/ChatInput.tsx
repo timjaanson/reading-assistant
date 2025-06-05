@@ -308,7 +308,9 @@ export const ChatInput = ({
                   e.stopPropagation();
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    submitMessageHandler(e as any);
+                    submitMessageHandler(
+                      e as unknown as React.FormEvent<HTMLFormElement>
+                    );
                   }
                 }}
                 onKeyUp={(e) => e.stopPropagation()}

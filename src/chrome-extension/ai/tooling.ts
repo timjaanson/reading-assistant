@@ -20,6 +20,8 @@ export const getTooling = async (
 
   const toolSettings = await ToolsSettingsStorage.loadToolSettings();
 
+  //allow allowObjectTypes
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   const tools: Record<string, Tool | {}> = {};
 
   if (

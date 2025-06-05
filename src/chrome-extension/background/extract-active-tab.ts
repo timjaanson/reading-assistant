@@ -16,7 +16,9 @@ async function extractActiveTabContent(): Promise<TabContentResponse> {
       currentWindow: true,
     });
     activeTab = tab;
-  } catch (error) {}
+  } catch (error) {
+    console.error("Error in extractActiveTabContent for tab query:", error);
+  }
 
   if (!activeTab || !activeTab.id || !activeTab.url) {
     //if no active tab, might be because of extension internal pdf viewer

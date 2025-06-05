@@ -1,3 +1,4 @@
+import { UIMessage } from "ai";
 import { getCustomBackendResponse } from "./ai";
 
 // It maintains compatibility with useChat by reconstructing a Response with a ReadableStream
@@ -8,7 +9,10 @@ export const createCustomBackgroundFetch = () => {
         throw new Error("No request body provided");
       }
 
-      const body = JSON.parse(init.body.toString());
+      const body = JSON.parse(init.body.toString()) as {
+        messages: UIMessage[];
+        systemPrompt?: string;
+      };
 
       if (!body.messages || !Array.isArray(body.messages)) {
         throw new Error("No messages found in request body");

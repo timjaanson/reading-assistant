@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, UIMessage } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -11,7 +11,7 @@ export type GetTextResponseOptions = {
 
 // Updated to accept any message format
 export const getCustomBackendResponse = async (
-  messages: any[],
+  messages: UIMessage[],
   options: GetTextResponseOptions = {}
 ) => {
   const languageModel = await getLanguageModel();

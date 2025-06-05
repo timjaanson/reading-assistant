@@ -17,6 +17,7 @@ export interface RealtimeConnectionState {
 
 interface ToolCallOutput {
   response: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
