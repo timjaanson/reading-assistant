@@ -2,35 +2,30 @@
 
 ## Description
 
-Reading assistant is a browser extension that helps with reading and comprehension by providing additional context and tools while browsing the web or viewing PDFs. This extension aims to enhance the reading experience by offering features like definitions, summaries, and related information for highlighted text.
+Reading assistant is a Chrome browser extension that enhances reading experience by providing AI-powered text analysis and research capabilities. The extension operates in a sidepanel interface and can interact with active tab pages including PDFs through a custom PDF viewer.
 
 ## Usage
 
-### Text Selection Feature
+The extension provides AI-powered assistance through a sidepanel interface:
 
-#### Tooltip
-
-The extension adds a tooltip by default for PDFs loaded using the extension.
-
-For text selection tooltip on webpages, add a matching url or '\*' in the extension settings
-
-1. Select any text on PDF or added website
-2. A tooltip will appear above the selected text
-3. Click on the "Summary" button or any other option in the tooltip
-4. Embeds a floating window for interacting with an LLM based on the selected text
-
-#### Right-click context menu
-
-There is a right-click context menu item available if text is selected to perform the same operation, e.g. "Summary"
+1. Open the extension sidepanel
+2. Configure an AI provider (Anthropic, OpenAI, Google, or any OpenAI compatible provider) and add model(s)
+3. Interact with pages and PDFs through the extension's chat interface
+4. The extension can extract page content and PDF text for AI analysis
+5. All data is persisted locally in the browser via IndexedDB or extension localstorage.
+6. Memory system can be managed manually or automatically via AI tools (if enabled)
 
 ## Technical Stack
 
-- JavaScript/TypeScript
-- React.js
-- Chrome Extension API
-- Vite (for building)
-- Tailwind for styling
-- Node.js and npm for package management
+- TypeScript/React with strict type checking
+- Vite for building
+- Tailwind CSS v4
+- Chrome Extension API (Manifest V3)
+- Vercel AI SDK for LLM integration
+- Dexie for IndexedDB storage
+- PDF.js for custom PDF viewer
+- shadcn/ui components with Radix UI primitives
+- MCP (Model Context Protocol) client support with SSE transport for additional tools
 
 ## Getting Started
 
