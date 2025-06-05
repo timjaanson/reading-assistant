@@ -277,9 +277,9 @@ export const ChatInput = ({
       <div className="shrink-0 bg-transparent p-2 border-t">
         <form onSubmit={submitMessageHandler}>
           <div className="flex flex-col space-y-2">
-            {/* Textarea with Send Button Row */}
-            <div className="flex items-center space-x-2">
-              <div className="relative w-full flex text-sm max-h-44">
+            {/* Textarea Row */}
+            <div className="w-full">
+              <div className="relative flex text-sm max-h-44">
                 <Textarea
                   disabled={isBusy}
                   autoFocus
@@ -319,96 +319,98 @@ export const ChatInput = ({
                   }}
                 />
               </div>
-
-              <Button
-                type={isBusy ? "button" : "submit"}
-                size="iconLg"
-                onClick={isBusy ? () => stop() : undefined}
-              >
-                <span className="px-2 py-1 flex items-center justify-center">
-                  {isBusy ? (
-                    <div
-                      className={`inline-flex items-center justify-center relative`}
-                    >
-                      <Square
-                        size={12}
-                        className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
-                      />
-                      <Square
-                        size={12}
-                        className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
-                      />
-                    </div>
-                  ) : (
-                    <SendHorizontal
-                      size={12}
-                      className="text-background fill-background dark:text-foreground dark:fill-foreground"
-                    />
-                  )}
-                </span>
-              </Button>
             </div>
 
-            {/* Action Buttons Row with ScrollArea */}
-            <div className="w-full">
-              <ScrollArea className="w-full">
-                <div className="flex items-center space-x-4 p-1 min-w-max">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={isBusy}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent avoidCollisions>
-                      <DropdownMenuItem onClick={handleFileButtonClick}>
-                        <Paperclip className="h-4 w-4" />
-                        <span>Attach file</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleExtractPageContent}>
-                        <FileText className="h-4 w-4" />
-                        <span>Extract active tab text</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <Toggle
-                    pressed={isVoiceChatActive}
-                    onPressedChange={setIsVoiceChatActive}
-                    disabled={isBusy}
-                    size="sm"
-                  >
-                    <Mic className="h-4 w-4" />
-                    <span>Voice</span>
-                  </Toggle>
-
-                  <div className="flex items-center space-x-1">
+            {/* Action Buttons Row with Left and Right Groups */}
+            <div className="flex items-center space-x-2 w-full">
+              {/* Left Scrollable Group */}
+              <div className="flex-1 min-w-0">
+                <ScrollArea className="w-full">
+                  <div className="flex items-center space-x-3 p-1 min-w-max">
                     <ProviderQuickSelect disabled={isBusy} />
 
-                    {modelUsage && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info size={16} />
-                        </TooltipTrigger>
-                        <TooltipContent avoidCollisions>
-                          <Label>Last Message Tokens</Label>
-                          <p>
-                            {modelUsage.promptTokens} input (+system prompt)
-                          </p>
-                          <p>{modelUsage.completionTokens} output</p>
-                          <p>{modelUsage.totalTokens} total</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isBusy}
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Add</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent avoidCollisions>
+                        <DropdownMenuItem onClick={handleFileButtonClick}>
+                          <Paperclip className="h-4 w-4" />
+                          <span>Attach file</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExtractPageContent}>
+                          <FileText className="h-4 w-4" />
+                          <span>Extract active tab text</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Toggle
+                      pressed={isVoiceChatActive}
+                      onPressedChange={setIsVoiceChatActive}
+                      disabled={isBusy}
+                      size="sm"
+                    >
+                      <Mic className="h-4 w-4" />
+                      <span>Voice</span>
+                    </Toggle>
                   </div>
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </div>
+
+              {/* Right Always-Visible Group */}
+              <div className="flex items-center flex-shrink-0 space-x-2">
+                {modelUsage && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info size={16} />
+                    </TooltipTrigger>
+                    <TooltipContent avoidCollisions>
+                      <Label>Last Message Tokens</Label>
+                      <p>input: {modelUsage.promptTokens}</p>
+                      <p>output: {modelUsage.completionTokens}</p>
+                      <p>total: {modelUsage.totalTokens}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                <Button
+                  type={isBusy ? "button" : "submit"}
+                  size="icon"
+                  onClick={isBusy ? () => stop() : undefined}
+                >
+                  <span className="px-2 py-1 flex items-center justify-center">
+                    {isBusy ? (
+                      <div
+                        className={`inline-flex items-center justify-center relative`}
+                      >
+                        <Square
+                          size={12}
+                          className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                        />
+                        <Square
+                          size={12}
+                          className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                        />
+                      </div>
+                    ) : (
+                      <SendHorizontal
+                        size={12}
+                        className="text-background fill-background dark:text-foreground dark:fill-foreground"
+                      />
+                    )}
+                  </span>
+                </Button>
+              </div>
             </div>
           </div>
         </form>

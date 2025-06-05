@@ -10,6 +10,7 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/components/ui/select";
+import { SquareFunction } from "lucide-react";
 
 type ProviderQuickSelectProps = {
   disabled?: boolean;
@@ -86,7 +87,12 @@ export const ProviderQuickSelect = ({
                     key={`${model.providerId}-${model.modelId}`}
                     value={`${model.providerId}::${model.modelId}`}
                   >
-                    {model.name}
+                    <div className="flex items-center gap-2">
+                      {model.name}
+                      {model.enableToolCalls && (
+                        <SquareFunction className="h-4 w-4" />
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectGroup>
