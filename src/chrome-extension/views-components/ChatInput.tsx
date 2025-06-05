@@ -7,9 +7,9 @@ import { SendIcon } from "../common/icons/Send";
 import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Paperclip, FileText, Plus, Mic } from "lucide-react";
 import { File as FileIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { getActiveTabContent } from "../util/pageContent";
 import { Message, UIMessage } from "ai";
 import {
@@ -19,11 +19,6 @@ import {
 } from "@ai-sdk/ui-utils";
 import { Realtime } from "./Realtime";
 import { Toggle } from "@/components/ui/toggle";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { messagesHasUnresolvedToolCalls } from "../ai/utils";
 import { ToolName } from "../ai/toolType";
 import {
@@ -33,6 +28,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type ChatInputProps = {
   chatId: string;
@@ -50,7 +51,6 @@ export const ChatInput = ({
   const [visualError, setVisualError] = useState<string | null>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAddMenu, setShowAddMenu] = useState(false);
   const [providerSelectClosed, setProviderSelectClosed] = useState(true);
   const currentUserMessage = useRef<UIMessage[] | null>(null);
   const lastAssistantMessage = useRef<Message | null>(null);
@@ -192,12 +192,7 @@ export const ChatInput = ({
   };
 
   const handleFileButtonClick = () => {
-    setShowAddMenu(false);
-    setTimeout(() => {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    }, 50);
+    fileInputRef.current?.click();
   };
 
   const handleRemoveFile = (fileToRemove: File) => {
@@ -217,8 +212,6 @@ export const ChatInput = ({
   };
 
   const handleExtractPageContent = async () => {
-    setShowAddMenu(false);
-
     try {
       const result = await getActiveTabContent();
 
@@ -240,31 +233,6 @@ export const ChatInput = ({
           : "Failed to extract page content"
       );
     }
-  };
-
-  const toggleAddMenu = () => {
-    setShowAddMenu(!showAddMenu);
-    if (!showAddMenu) {
-      setProviderSelectClosed(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleBodyClick = () => {
-      if (showAddMenu) {
-        setShowAddMenu(false);
-      }
-    };
-    document.body.addEventListener("click", handleBodyClick);
-
-    return () => {
-      document.body.removeEventListener("click", handleBodyClick);
-    };
-  }, [showAddMenu]);
-
-  const plusButtonClicked = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleAddMenu();
   };
 
   return (
@@ -295,90 +263,106 @@ export const ChatInput = ({
       {/* Input Container */}
       <div className="shrink-0 bg-transparent p-1 border-t">
         <form onSubmit={submitMessageHandler}>
-          <div className="flex items-center space-x-1">
-            <div className="relative w-full flex text-sm max-h-32">
-              <Textarea
-                disabled={isBusy}
-                autoFocus
-                value={input}
-                onChange={(e) => {
-                  handleInputChange(e);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submitMessageHandler(
-                      e as unknown as React.FormEvent<HTMLFormElement>
-                    );
-                  }
-                }}
-                onKeyUp={(e) => e.stopPropagation()}
-                onKeyPress={(e) => e.stopPropagation()}
-                placeholder={isBusy ? "" : "Type your message"}
-                className="min-h-16 flex-1 border rounded-md py-2 px-3 resize-none scrollbar-none text-sm w-full pr-7"
-              />
-              {isBusy && (
-                <div className="absolute top-1/2 left-4 -translate-y-1/2 pointer-events-none">
-                  <LoadingDots size={3} />
-                </div>
-              )}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <div className="flex flex-col items-center space-y-1">
-                  <button
-                    type="button"
-                    onClick={plusButtonClicked}
-                    disabled={isBusy}
-                    title="Add content"
-                    className="text-md cursor-pointer transition-colors"
-                  >
-                    <Plus className="text-foreground p-1" />
-                  </button>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Toggle
-                        pressed={isVoiceChatActive}
-                        onPressedChange={setIsVoiceChatActive}
-                        disabled={isBusy}
-                        size="sm"
-                      >
-                        <Mic className="h-4 w-4" />
-                      </Toggle>
-                    </TooltipTrigger>
-                    <TooltipContent avoidCollisions>
-                      <p>Activate realtime voicechat proxy</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+          <div className="flex flex-col space-y-2">
+            {/* Textarea with Send Button Row */}
+            <div className="flex items-start space-x-1">
+              <div className="relative w-full flex text-sm max-h-32">
+                <Textarea
+                  disabled={isBusy}
+                  autoFocus
+                  value={input}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      submitMessageHandler(
+                        e as unknown as React.FormEvent<HTMLFormElement>
+                      );
+                    }
+                  }}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  onKeyPress={(e) => e.stopPropagation()}
+                  placeholder={isBusy ? "" : "Type your message"}
+                  className="min-h-20 flex-1 border rounded-md py-2 px-3 pb-10 resize-none scrollbar-none text-sm w-full"
+                />
+                {isBusy && (
+                  <div className="absolute top-3 left-4 pointer-events-none">
+                    <LoadingDots size={3} />
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setFiles(e.target.files);
+                    }
+                  }}
+                />
               </div>
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    setFiles(e.target.files);
-                  }
-                }}
+              <ProviderQuickSelect
+                disabled={isBusy}
+                closed={providerSelectClosed}
+                onToggle={(isOpen) => setProviderSelectClosed(!isOpen)}
               />
+
+              <Button
+                type={isBusy ? "button" : "submit"}
+                onClick={isBusy ? () => stop() : undefined}
+              >
+                <span className="px-2 py-1 flex items-center justify-center">
+                  {isBusy ? <StopIndicator /> : <SendIcon />}
+                </span>
+              </Button>
             </div>
 
-            <ProviderQuickSelect
-              disabled={isBusy}
-              closed={providerSelectClosed}
-              onToggle={(isOpen) => setProviderSelectClosed(!isOpen)}
-            />
+            {/* Action Buttons Row with ScrollArea */}
+            <div className="w-full">
+              <ScrollArea className="w-full">
+                <div className="flex items-center space-x-2 p-1 min-w-max">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isBusy}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent avoidCollisions>
+                      <DropdownMenuItem onClick={handleFileButtonClick}>
+                        <Paperclip className="h-4 w-4" />
+                        <span>Attach file</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExtractPageContent}>
+                        <FileText className="h-4 w-4" />
+                        <span>Extract active tab text</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-            <Button
-              type={isBusy ? "button" : "submit"}
-              onClick={isBusy ? () => stop() : undefined}
-            >
-              <span className="px-2 py-1 flex items-center justify-center">
-                {isBusy ? <StopIndicator /> : <SendIcon />}
-              </span>
-            </Button>
+                  <Toggle
+                    pressed={isVoiceChatActive}
+                    onPressedChange={setIsVoiceChatActive}
+                    disabled={isBusy}
+                    size="sm"
+                  >
+                    <Mic className="h-4 w-4" />
+                    <span>Voice</span>
+                  </Toggle>
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         </form>
       </div>
@@ -389,37 +373,6 @@ export const ChatInput = ({
           </div>
         )}
       </div>
-
-      {/* Dropdown menu positioned at fixed location in DOM */}
-      {showAddMenu && (
-        <div
-          className="absolute bottom-14 right-[50px] z-50"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Card className="w-fit py-1">
-            <CardContent className="p-0">
-              <div className="flex flex-col text-sm">
-                <button
-                  type="button"
-                  onClick={handleFileButtonClick}
-                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
-                >
-                  <Paperclip size={14} />
-                  <span>Attach file</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleExtractPageContent}
-                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
-                >
-                  <FileText size={14} />
-                  <span>Extract active tab text</span>
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {isVoiceChatActive && (
         <Realtime lastMessage={lastAssistantMessage} append={append} />
