@@ -55,11 +55,7 @@ type ChatInputProps = {
   pageUrl?: URL;
 };
 
-export const ChatInput = ({
-  chatId,
-  initialMessages,
-  systemPrompt,
-}: ChatInputProps) => {
+export const ChatInput = ({ chatId, initialMessages }: ChatInputProps) => {
   const [visualError, setVisualError] = useState<string | null>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,9 +83,6 @@ export const ChatInput = ({
     id: chatId,
     initialMessages: initialMessages,
     fetch: createCustomBackgroundFetch(),
-    body: {
-      systemPrompt: systemPrompt,
-    },
     onFinish(message, options) {
       setModelUsage(options.usage);
       //TODO: this doesn't cover user added tool responses like extract content

@@ -1,23 +1,28 @@
 import { memoryDb } from "../storage/memoryDatabase";
 import { getLocalDateTimeWithWeekday } from "../util/datetime";
 
-export const defaultSystemMessage = async (url?: URL) => `## Your role
-You are a helpful assistant inside a Chrome extension called "Reading Assistant".
+export const defaultSystemMessage = async () => {
+  const memoriesSection = await getFormattedMemories();
 
-## Response format
+  return `# Your role
+You are a helpful assistant inside a Chrome extension called "Reading Assistant".
+Your goal is to achieve the user's intent, making full use of your capabilities.
+
+# Response format
 * You should respond in markdown format.
 * When presenting code, you should use markdown code blocks.
 * If the previous message was a tool call, you should base your response on the tool call result.
 
-## Context about the user
+# Context about the user
 The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
-${url ? `The user is currently on the page: ${url.toString()}` : ""}
 
-### User added information that takes precedence and can override formatting rules or instructions
-${await getMemories()}
-`;
+${memoriesSection}`;
+};
 
-export const realtimeVoiceSystemMessage = async () => `# Role
+export const realtimeVoiceSystemMessage = async () => {
+  const memoriesSection = await getFormattedMemories();
+
+  return `# Role
 - You are a proxy assistant in a Chrome extension called 'reading-assistant'. Your primary function is to forward user requests to the agent, except for basic interaction and general world knowledge questions, which you may answer directly.
 
 # Voice and Personality
@@ -48,33 +53,24 @@ Emotion: Warm and helpful, always ready to assist efficiently.
 # Context about the user
 - The user's current weekday, date and time is ${getLocalDateTimeWithWeekday()}.
 
-## Memories - User added information that takes precedence and can override formatting rules or instructions
-${await getMemories()}
-`;
+${memoriesSection}`;
+};
 
-export const REALTIME_AGENT_SYSTEM_PROMPT = `# Role
-- You are an assistant tasked with completing a specific task as described in the input.
-
-# Instructions
-- Respond with only the information, action, or output required to fulfill the task—no preamble, greetings, or conversational text.
-- Be concise, precise, and strictly focused on the task at hand.
-- Do not provide explanations, context, or additional information unless explicitly requested.
-- Only ask clarifying questions if the task is ambiguous or lacks necessary details.
-- Format your output clearly and exactly as requested.
-- If the task cannot be completed as described, state this concisely and specify the reason.
-`;
-
-const getMemories = async () => {
+const getFormattedMemories = async () => {
   try {
     const memories = await memoryDb.getActiveMemories();
-    console.log("[prompts] Retrieved memories:", memories.length);
+    console.debug("[prompts] Retrieved memories:", memories.length);
 
-    return memories
-      .map(
-        (memory) =>
-          `ID:${memory.id} updated: ${memory.updatedAt} - ${memory.content}`
-      )
+    if (memories.length === 0) {
+      return "";
+    }
+
+    const formattedMemories = memories
+      .map((memory) => `- ID:${memory.id} > ${memory.content}`)
       .join("\n");
+
+    return `## User added information that takes precedence and overrides formatting rules and instructions
+${formattedMemories}`;
   } catch (error) {
     console.warn("[prompts] Error fetching memories:", error);
     return "";

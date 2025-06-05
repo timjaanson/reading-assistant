@@ -9,7 +9,6 @@ import { chatDb } from "../storage/chatDatabase";
 type ChatProps = ChatBehaviorProps & {
   initialChatId: string;
   initialMessages: UIMessage[];
-  systemPrompt: string;
   initialChatName: string;
   pageUrl?: URL;
 };
@@ -17,7 +16,6 @@ type ChatProps = ChatBehaviorProps & {
 export const Chat = ({
   initialChatId,
   initialMessages,
-  systemPrompt,
   initialChatName,
   pageUrl,
 }: ChatProps) => {
@@ -36,9 +34,6 @@ export const Chat = ({
     id: initialChatId,
     initialMessages,
     fetch: createCustomBackgroundFetch(),
-    body: {
-      systemPrompt: systemPrompt,
-    },
     onResponse() {
       if (id !== savedChatValues.current.id) {
         savedChatValues.current.id = id;
