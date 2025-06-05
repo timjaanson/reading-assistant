@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export type SaveStatus = "idle" | "success" | "error" | "json-error";
 
@@ -66,14 +67,15 @@ export const SettingsTabHeaderFooter = ({
   // Different content based on whether we're wrapping in a form and whether we show footer
   const content = wrapInForm ? (
     <form className="flex flex-col h-full" onSubmit={onSave}>
-      <div
-        className={`flex-1 overflow-auto px-4 py-2 ${noFooter ? "pb-4" : ""}`}
+      <ScrollArea
+        className={`flex-1 px-4 py-2 ${noFooter ? "pb-4" : ""}`}
         style={{
           maxHeight: noFooter ? "calc(100vh - 80px)" : maxContentHeight,
         }}
       >
         {children}
-      </div>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
       {!noFooter && (
         <div className="sticky bottom-0 bg-background border-t p-4 flex items-center z-10">
           {saveButton}
@@ -82,14 +84,15 @@ export const SettingsTabHeaderFooter = ({
     </form>
   ) : (
     <>
-      <div
-        className={`flex-1 overflow-auto px-4 py-2 ${noFooter ? "pb-4" : ""}`}
+      <ScrollArea
+        className={`flex-1 px-4 py-2 ${noFooter ? "pb-4" : ""}`}
         style={{
           maxHeight: noFooter ? "calc(100vh - 80px)" : maxContentHeight,
         }}
       >
         {children}
-      </div>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
       {!noFooter && (
         <div className="sticky bottom-0 bg-background border-t p-4 flex items-center z-10">
           {saveButton}

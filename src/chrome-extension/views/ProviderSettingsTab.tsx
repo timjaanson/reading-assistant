@@ -310,7 +310,7 @@ export const ProviderSettingsTab = () => {
       isLoading={isLoading}
       wrapInForm={true}
     >
-      <Accordion collapsible type="single" className="w-full">
+      <Accordion collapsible type="single" className="w-full mb-2">
         {providerSettings.all.map((provider) => (
           <AccordionItem key={provider.providerId} value={provider.providerId}>
             <AccordionTrigger>

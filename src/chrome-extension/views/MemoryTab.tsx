@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CircleX, Info } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const editableTextClasses =
   "cursor-pointer hover:bg-muted/30 rounded-sm px-1 py-0.5";
@@ -232,7 +233,7 @@ export const MemoryTab = () => {
         </Card>
 
         {/* Memory List */}
-        <div className="flex-1 overflow-y-auto mt-2">
+        <ScrollArea className="flex-1 mt-2">
           <h3 className="text-md font-medium mb-2">
             Stored Memories ({memories.length})
           </h3>
@@ -317,7 +318,8 @@ export const MemoryTab = () => {
               </Card>
             ))}
           </ul>
-        </div>
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
       </div>
     </SettingsTabHeaderFooter>
   );
