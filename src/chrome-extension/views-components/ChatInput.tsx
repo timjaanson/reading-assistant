@@ -1,17 +1,23 @@
 import { useChat } from "@ai-sdk/react";
 import { createCustomBackgroundFetch } from "../ai/custom-fetch";
 import { useEffect, useRef, useState } from "react";
-import { StopIndicator } from "../common/icons/StopIndicator";
 import { LoadingDots } from "../common/icons/LoadingDots";
-import { SendIcon } from "../common/icons/Send";
 import { Button } from "@/components/ui/button";
 import { ProviderQuickSelect } from "./ProviderQuickSelect";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Paperclip, FileText, Plus, Mic } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Paperclip,
+  FileText,
+  Plus,
+  Mic,
+  SendHorizontal,
+  Square,
+  Info,
+} from "lucide-react";
 import { File as FileIcon } from "lucide-react";
 import { getActiveTabContent } from "../util/pageContent";
-import { Message, UIMessage } from "ai";
+import { LanguageModelUsage, Message, UIMessage } from "ai";
 import {
   fillMessageParts,
   prepareAttachmentsForRequest,
@@ -34,6 +40,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
 
 type ChatInputProps = {
   chatId: string;
@@ -51,10 +63,10 @@ export const ChatInput = ({
   const [visualError, setVisualError] = useState<string | null>(null);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [providerSelectClosed, setProviderSelectClosed] = useState(true);
   const currentUserMessage = useRef<UIMessage[] | null>(null);
   const lastAssistantMessage = useRef<Message | null>(null);
   const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
+  const [modelUsage, setModelUsage] = useState<LanguageModelUsage | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentToolInvocation, setCurrentToolInvocation] =
@@ -78,7 +90,8 @@ export const ChatInput = ({
     body: {
       systemPrompt: systemPrompt,
     },
-    onFinish(message) {
+    onFinish(message, options) {
+      setModelUsage(options.usage);
       //TODO: this doesn't cover user added tool responses like extract content
       if (!messagesHasUnresolvedToolCalls([message])) {
         lastAssistantMessage.current = message;
@@ -261,12 +274,12 @@ export const ChatInput = ({
       )}
 
       {/* Input Container */}
-      <div className="shrink-0 bg-transparent p-1 border-t">
+      <div className="shrink-0 bg-transparent p-2 border-t">
         <form onSubmit={submitMessageHandler}>
           <div className="flex flex-col space-y-2">
             {/* Textarea with Send Button Row */}
-            <div className="flex items-start space-x-1">
-              <div className="relative w-full flex text-sm max-h-32">
+            <div className="flex items-center space-x-2">
+              <div className="relative w-full flex text-sm max-h-44">
                 <Textarea
                   disabled={isBusy}
                   autoFocus
@@ -286,7 +299,7 @@ export const ChatInput = ({
                   onKeyUp={(e) => e.stopPropagation()}
                   onKeyPress={(e) => e.stopPropagation()}
                   placeholder={isBusy ? "" : "Type your message"}
-                  className="min-h-20 flex-1 border rounded-md py-2 px-3 pb-10 resize-none scrollbar-none text-sm w-full"
+                  className="min-h-16 flex-1 border rounded-md p-2 resize-none scrollbar-none text-sm w-full"
                 />
                 {isBusy && (
                   <div className="absolute top-3 left-4 pointer-events-none">
@@ -307,18 +320,31 @@ export const ChatInput = ({
                 />
               </div>
 
-              <ProviderQuickSelect
-                disabled={isBusy}
-                closed={providerSelectClosed}
-                onToggle={(isOpen) => setProviderSelectClosed(!isOpen)}
-              />
-
               <Button
                 type={isBusy ? "button" : "submit"}
+                size="iconLg"
                 onClick={isBusy ? () => stop() : undefined}
               >
                 <span className="px-2 py-1 flex items-center justify-center">
-                  {isBusy ? <StopIndicator /> : <SendIcon />}
+                  {isBusy ? (
+                    <div
+                      className={`inline-flex items-center justify-center relative`}
+                    >
+                      <Square
+                        size={12}
+                        className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                      />
+                      <Square
+                        size={12}
+                        className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                      />
+                    </div>
+                  ) : (
+                    <SendHorizontal
+                      size={12}
+                      className="text-background fill-background dark:text-foreground dark:fill-foreground"
+                    />
+                  )}
                 </span>
               </Button>
             </div>
@@ -326,7 +352,7 @@ export const ChatInput = ({
             {/* Action Buttons Row with ScrollArea */}
             <div className="w-full">
               <ScrollArea className="w-full">
-                <div className="flex items-center space-x-2 p-1 min-w-max">
+                <div className="flex items-center space-x-4 p-1 min-w-max">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <Button
@@ -360,7 +386,28 @@ export const ChatInput = ({
                     <Mic className="h-4 w-4" />
                     <span>Voice</span>
                   </Toggle>
+
+                  <div className="flex items-center space-x-1">
+                    <ProviderQuickSelect disabled={isBusy} />
+
+                    {modelUsage && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info size={16} />
+                        </TooltipTrigger>
+                        <TooltipContent avoidCollisions>
+                          <Label>Last Message Tokens</Label>
+                          <p>
+                            {modelUsage.promptTokens} input (+system prompt)
+                          </p>
+                          <p>{modelUsage.completionTokens} output</p>
+                          <p>{modelUsage.totalTokens} total</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
           </div>

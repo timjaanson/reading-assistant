@@ -144,7 +144,7 @@ export const TextPartRenderer = ({
                     wrapLongLines={false}
                     showLineNumbers={language !== "text" && language !== ""}
                   >
-                    {String(children).replace(/\n$/, "")}
+                    {String(children)}
                   </SyntaxHighlighter>
                 </div>
               </div>
