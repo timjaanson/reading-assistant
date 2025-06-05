@@ -1,4 +1,4 @@
-import { streamText, UIMessage } from "ai";
+import { APICallError, streamText, UIMessage } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -42,6 +42,7 @@ export const getCustomBackendResponse = async (
   }
 
   let response;
+  let errorMessage = "";
   try {
     const prompt = options.systemPrompt || (await defaultSystemMessage());
     response = streamText({
@@ -62,7 +63,17 @@ export const getCustomBackendResponse = async (
       abortSignal: options.abortSignal,
       onError: (error) => {
         console.error("Error getting streamed text response", error);
-        throw error;
+        if ("error" in error && APICallError.isInstance(error.error)) {
+          errorMessage = JSON.stringify({
+            url: error.error.url,
+            statusCode: error.error.statusCode,
+            responseHeaders: error.error.responseHeaders,
+            errorData: error.error.data,
+          });
+        } else {
+          errorMessage =
+            error instanceof Error ? error.message : JSON.stringify(error);
+        }
       },
       onFinish: () => {
         mcpClients.forEach((client) => {
@@ -81,6 +92,11 @@ export const getCustomBackendResponse = async (
 
   return response.toDataStreamResponse({
     sendReasoning: true,
+    sendUsage: true,
+    getErrorMessage: (error) => {
+      console.error("Error getting streamed text response", error);
+      return errorMessage;
+    },
     sendSources: true,
   });
 };
