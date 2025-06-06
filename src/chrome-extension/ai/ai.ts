@@ -1,4 +1,4 @@
-import { APICallError, streamText, UIMessage } from "ai";
+import { APICallError, generateText, streamText, UIMessage } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -61,6 +61,73 @@ export const getCustomBackendResponse = async (
       toolChoice: tooling?.toolChoice,
       maxSteps: 20,
       abortSignal: options.abortSignal,
+      experimental_repairToolCall: async ({
+        toolCall,
+        tools,
+        error,
+        messages,
+        system,
+      }) => {
+        console.warn(
+          "Tool call failed, trying to repair via new LLM call",
+          error.message
+        );
+        const toolToRepair = tools[toolCall.toolName];
+        const result = await generateText({
+          tools: toolToRepair ? { [toolCall.toolName]: toolToRepair } : tools,
+          toolChoice: "required",
+          model: languageModel.model,
+          system,
+          temperature: languageModel.modelOptions.temperature,
+          topK: languageModel.modelOptions.topK,
+          topP: languageModel.modelOptions.topP,
+          maxTokens: languageModel.modelOptions.maxTokens,
+          providerOptions: languageModel.modelOptions.providerOptions,
+          frequencyPenalty: languageModel.modelOptions.frequencyPenalty,
+          presencePenalty: languageModel.modelOptions.presencePenalty,
+          maxRetries: 3,
+          maxSteps: 1,
+          abortSignal: options.abortSignal,
+          messages: [
+            ...messages,
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId: toolCall.toolCallId,
+                  toolName: toolCall.toolName,
+                  args: toolCall.args,
+                },
+              ],
+            },
+            {
+              role: "tool" as const,
+              content: [
+                {
+                  type: "tool-result",
+                  toolCallId: toolCall.toolCallId,
+                  toolName: toolCall.toolName,
+                  result: error.message,
+                },
+              ],
+            },
+          ],
+        });
+
+        const newToolCall = result.toolCalls.find(
+          (newToolCall) => newToolCall.toolName === toolCall.toolName
+        );
+
+        return newToolCall != null
+          ? {
+              toolCallType: "function" as const,
+              toolCallId: toolCall.toolCallId,
+              toolName: toolCall.toolName,
+              args: JSON.stringify(newToolCall.args),
+            }
+          : null;
+      },
       onError: (error) => {
         console.error("Error getting streamed text response", error);
         if ("error" in error && APICallError.isInstance(error.error)) {

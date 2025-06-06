@@ -30,26 +30,34 @@ export const getTooling = async (
   ) {
     tools["webSearch"] = {
       description:
-        "Perform a web search for the given query. Returns an optional answer and a list of search results. Make sure to include the source (url) of the information in your response.",
+        "Perform a web search for the given query. Returns an optional answer and a list of search results.",
       parameters: z.object({
         query: z
           .string()
           .describe(
             "The query string to search for. Include the search terms you want to find including the topic or type of source you are looking for."
           ),
-        options: z.object({
-          timeRange: z
-            .enum(["year", "month", "week", "day", "all"])
-            .describe(
-              "The time range back from the current date to filter results. Useful when looking for sources that have published data. Default is all."
-            ),
-          include_domains: z
-            .array(z.string())
-            .describe("Include only sources from these domains"),
-          exclude_domains: z
-            .array(z.string())
-            .describe("Exclude sources from these domains"),
-        }),
+        options: z
+          .object({
+            timeRange: z
+              .enum(["year", "month", "week", "day", "all"])
+              .describe(
+                "The time range back from the current date to filter results. Useful when looking for sources that have published data. Default is all."
+              ),
+            include_domains: z
+              .array(z.string())
+              .describe(
+                "Include only sources from these domains. Default is empty array []"
+              ),
+            exclude_domains: z
+              .array(z.string())
+              .describe(
+                "Exclude sources from these domains. Default is empty array []"
+              ),
+          })
+          .describe(
+            "Additional options for the search. options object MUST include timeRange, include_domains, exclude_domains fields!"
+          ),
       }),
       execute: async (parameters: unknown) => {
         console.debug("webSearch", parameters);
