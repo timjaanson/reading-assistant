@@ -1,4 +1,10 @@
-import { APICallError, generateText, streamText, UIMessage } from "ai";
+import {
+  APICallError,
+  generateObject,
+  NoSuchToolError,
+  streamText,
+  UIMessage,
+} from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
@@ -9,7 +15,6 @@ export type GetTextResponseOptions = {
   abortSignal?: AbortSignal;
 };
 
-// Updated to accept any message format
 export const getCustomBackendResponse = async (
   messages: UIMessage[],
   options: GetTextResponseOptions = {}
@@ -34,7 +39,6 @@ export const getCustomBackendResponse = async (
     Object.assign(allTools, toolSet);
   });
 
-  // Keep only the abort signal listener
   if (options.abortSignal) {
     options.abortSignal.addEventListener("abort", () => {
       console.log("[ai.ts] Abort signal triggered in getCustomBackendResponse");
@@ -64,69 +68,41 @@ export const getCustomBackendResponse = async (
       experimental_repairToolCall: async ({
         toolCall,
         tools,
+        parameterSchema,
         error,
-        messages,
-        system,
       }) => {
         console.warn(
-          "Tool call failed, trying to repair via new LLM call",
-          error.message
+          `Tool call ${toolCall.toolName} failed`,
+          JSON.stringify(error)
         );
-        const toolToRepair = tools[toolCall.toolName];
-        const result = await generateText({
-          tools: toolToRepair ? { [toolCall.toolName]: toolToRepair } : tools,
-          toolChoice: "required",
+        if (NoSuchToolError.isInstance(error)) {
+          console.error(`Unknown tool ${toolCall.toolName} called`);
+          return null; // do not attempt to fix invalid tool names
+        }
+
+        const tool = tools[toolCall.toolName as keyof typeof tools];
+
+        const { object: repairedArgs } = await generateObject({
           model: languageModel.model,
-          system,
-          temperature: languageModel.modelOptions.temperature,
-          topK: languageModel.modelOptions.topK,
-          topP: languageModel.modelOptions.topP,
-          maxTokens: languageModel.modelOptions.maxTokens,
-          providerOptions: languageModel.modelOptions.providerOptions,
-          frequencyPenalty: languageModel.modelOptions.frequencyPenalty,
-          presencePenalty: languageModel.modelOptions.presencePenalty,
-          maxRetries: 3,
-          maxSteps: 1,
+          ...languageModel.modelOptions,
           abortSignal: options.abortSignal,
-          messages: [
-            ...messages,
-            {
-              role: "assistant",
-              content: [
-                {
-                  type: "tool-call",
-                  toolCallId: toolCall.toolCallId,
-                  toolName: toolCall.toolName,
-                  args: toolCall.args,
-                },
-              ],
-            },
-            {
-              role: "tool" as const,
-              content: [
-                {
-                  type: "tool-result",
-                  toolCallId: toolCall.toolCallId,
-                  toolName: toolCall.toolName,
-                  result: error.message,
-                },
-              ],
-            },
-          ],
+          schema: tool.parameters,
+          prompt: [
+            `The model tried to call the tool "${toolCall.toolName}"` +
+              ` with the following arguments:`,
+            JSON.stringify(toolCall.args),
+            `The tool accepts the following schema:`,
+            JSON.stringify(parameterSchema(toolCall)),
+            "Please fix the arguments.",
+          ].join("\n"),
         });
 
-        const newToolCall = result.toolCalls.find(
-          (newToolCall) => newToolCall.toolName === toolCall.toolName
+        console.warn(
+          "Result of fixed tool call args",
+          JSON.stringify(repairedArgs)
         );
 
-        return newToolCall != null
-          ? {
-              toolCallType: "function" as const,
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              args: JSON.stringify(newToolCall.args),
-            }
-          : null;
+        return { ...toolCall, args: JSON.stringify(repairedArgs) };
       },
       onError: (error) => {
         console.error("Error getting streamed text response", error);
