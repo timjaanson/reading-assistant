@@ -98,7 +98,7 @@ export const getCustomBackendResponse = async (
         });
 
         console.warn(
-          "Result of fixed tool call args",
+          `Result of fixed tool call args for ${toolCall.toolName}`,
           JSON.stringify(repairedArgs)
         );
 
