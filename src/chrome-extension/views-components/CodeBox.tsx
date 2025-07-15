@@ -1,9 +1,15 @@
+import { CopyButton } from "../common/icons/CopyButton";
+
 type CodeBoxProps = {
   code: string;
 };
 
 export const CodeBox = ({ code }: CodeBoxProps) => {
   const lines = code.split("\n");
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+  };
 
   return (
     <div className="max-w-full overflow-x-auto border border-border dark:border-border rounded-md">
@@ -20,7 +26,7 @@ export const CodeBox = ({ code }: CodeBoxProps) => {
         </div>
 
         {/* Code content */}
-        <div className="flex-1 px-3 pr-6 py-2 text-foreground overflow-x-auto">
+        <div className="flex-1 px-3 py-2 text-foreground overflow-x-auto">
           <pre className="whitespace-pre leading-5">
             {lines.map((line, index) => (
               <div key={index} className="min-h-[1.25rem]">
@@ -28,6 +34,11 @@ export const CodeBox = ({ code }: CodeBoxProps) => {
               </div>
             ))}
           </pre>
+        </div>
+
+        {/* Copy button */}
+        <div className="flex-shrink-0 px-2 py-2 bg-card border-l border-border flex items-start justify-center">
+          <CopyButton onClick={handleCopy} />
         </div>
       </div>
     </div>
