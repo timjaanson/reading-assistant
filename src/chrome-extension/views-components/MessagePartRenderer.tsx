@@ -1,15 +1,10 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Spinner } from "../common/icons/Spinner";
 import { ToolInvocation } from "@ai-sdk/ui-utils";
 
-import { useTheme } from "../theme/theme-provider";
+import { CodeBox } from "./CodeBox";
 const TEXT_COLLAPSE_THRESHOLD = 500;
 
 type CollapsibleSectionProps = {
@@ -68,8 +63,6 @@ export const TextPartRenderer = ({
       ? content.substring(0, TEXT_COLLAPSE_THRESHOLD) + "..."
       : content;
 
-  const { theme } = useTheme();
-
   return (
     <div className={`${textColor}`}>
       <ReactMarkdown
@@ -108,8 +101,6 @@ export const TextPartRenderer = ({
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
           code: ({ node, className, children, ...props }: any) => {
-            const match = /language-(\w+)/.exec(className || "");
-            const language = match ? match[1] : "";
             const isInline = !className;
 
             if (isInline) {
@@ -123,32 +114,7 @@ export const TextPartRenderer = ({
               );
             }
 
-            return (
-              <div className="max-w-full relative">
-                <div className="overflow-x-auto max-w-full">
-                  <SyntaxHighlighter
-                    language={language}
-                    style={theme === "dark" ? oneDark : oneLight}
-                    customStyle={{
-                      margin: 0,
-                      borderRadius: "0.375rem",
-                      fontSize: "0.9em",
-                    }}
-                    codeTagProps={{
-                      style: {
-                        whiteSpace: "pre",
-                        wordBreak: "normal",
-                        overflowWrap: "normal",
-                      },
-                    }}
-                    wrapLongLines={false}
-                    showLineNumbers={language !== "text" && language !== ""}
-                  >
-                    {String(children)}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-            );
+            return <CodeBox code={String(children).trim()} />;
           },
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           table: ({ node, ...props }) => (
@@ -236,8 +202,6 @@ export const ToolPartRenderer = ({
   const { state, toolName, toolCallId, args } = toolInvocation;
   const isLoading = state === "partial-call" || state === "call";
 
-  const { theme } = useTheme();
-
   const openText = (
     <div className="flex items-center gap-2">
       <span>{`Show tool (${toolName})`}</span>
@@ -267,14 +231,7 @@ export const ToolPartRenderer = ({
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
               <div className="max-h-40 max-w-full overflow-auto">
-                <SyntaxHighlighter
-                  language="json"
-                  showLineNumbers
-                  wrapLongLines
-                  style={theme === "dark" ? oneDark : oneLight}
-                >
-                  {JSON.stringify(args, null, 2)}
-                </SyntaxHighlighter>
+                <CodeBox code={JSON.stringify(args, null, 2)} />
               </div>
             </div>
           </>
@@ -284,13 +241,8 @@ export const ToolPartRenderer = ({
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
             <div className="max-h-56 max-w-full overflow-auto">
-              <SyntaxHighlighter
-                language="json"
-                showLineNumbers
-                wrapLongLines
-                style={theme === "dark" ? oneDark : oneLight}
-              >
-                {JSON.stringify(
+              <CodeBox
+                code={JSON.stringify(
                   (toolInvocation.state === "result"
                     ? toolInvocation
                     : { result: "No result" }
@@ -298,7 +250,7 @@ export const ToolPartRenderer = ({
                   null,
                   2
                 )}
-              </SyntaxHighlighter>
+              />
             </div>
           </div>
         )}
