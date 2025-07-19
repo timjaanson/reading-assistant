@@ -2,6 +2,7 @@ import {
   APICallError,
   generateObject,
   NoSuchToolError,
+  smoothStream,
   streamText,
   UIMessage,
 } from "ai";
@@ -65,6 +66,10 @@ export const getCustomBackendResponse = async (
       toolChoice: tooling?.toolChoice,
       maxSteps: 20,
       abortSignal: options.abortSignal,
+      experimental_transform: smoothStream({
+        chunking: "word",
+        delayInMs: 10,
+      }),
       experimental_repairToolCall: async ({
         toolCall,
         tools,
