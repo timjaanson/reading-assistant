@@ -288,8 +288,6 @@ export const ChatTab = () => {
       <div className="flex-1 overflow-y-auto">
         <Chat
           key={`display-${chatInstanceKey}`}
-          initialChatName={currentChatSelection.name}
-          pageUrl={currentChatSelection.url}
           initialChatId={currentChatSelection.id}
           initialMessages={currentChatSelection.messages}
         />

@@ -10,6 +10,7 @@ export const createCustomBackgroundFetch = () => {
       }
 
       const body = JSON.parse(init.body.toString()) as {
+        id: string;
         messages: UIMessage[];
         systemPrompt?: string;
       };
@@ -32,6 +33,7 @@ export const createCustomBackgroundFetch = () => {
       const writer = writable.getWriter();
 
       const response = await getCustomBackendResponse(body.messages, {
+        chatId: body.id,
         systemPrompt: body.systemPrompt,
         abortSignal: controller.signal,
       });

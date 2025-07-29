@@ -10,15 +10,17 @@ import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
 import { getTooling } from "./tooling";
 import { getActiveMCPClients } from "./mcp-clients";
+import { chatDb } from "../storage/chatDatabase";
 
 export type GetTextResponseOptions = {
+  chatId: string;
   systemPrompt?: string;
   abortSignal?: AbortSignal;
 };
 
 export const getCustomBackendResponse = async (
   messages: UIMessage[],
-  options: GetTextResponseOptions = {}
+  options: GetTextResponseOptions
 ) => {
   const languageModel = await getLanguageModel();
   const tooling = await getTooling(languageModel);
@@ -123,7 +125,8 @@ export const getCustomBackendResponse = async (
             error instanceof Error ? error.message : JSON.stringify(error);
         }
       },
-      onFinish: () => {
+      onFinish: (event) => {
+        console.debug("onFinish", event);
         mcpClients.forEach((client) => {
           try {
             client.close();
@@ -131,6 +134,33 @@ export const getCustomBackendResponse = async (
             console.warn("Error closing MCP client", error);
           }
         });
+
+        const saveChat = async () => {
+          try {
+            const chat = await chatDb.getChat(options.chatId);
+
+            const chatName = chat?.name || "New Chat";
+
+            const messagesToSave: UIMessage[] = [
+              ...messages,
+
+              //FIXME: this doesn't have parts for some reason...
+              ...(event.response.messages as UIMessage[]),
+            ];
+
+            await chatDb.saveChat({
+              id: options.chatId,
+              name: chatName,
+              url: chat?.url || "",
+              messages: messagesToSave,
+            });
+            console.debug("Chat saved in onFinish", options.chatId);
+          } catch (error) {
+            console.error("Error saving chat in onFinish", error);
+          }
+        };
+
+        saveChat();
       },
     });
   } catch (error) {
