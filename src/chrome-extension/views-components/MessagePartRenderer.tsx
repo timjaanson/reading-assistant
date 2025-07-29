@@ -70,14 +70,14 @@ export const TextPartRenderer = ({
         components={{
           ol: ({ children }) => (
             <ol
-              className={`py-1 pl-3 list-decimal break-words whitespace-normal ${textColor}`}
+              className={`py-1 pl-3 list-decimal break-all-words whitespace-normal ${textColor}`}
             >
               {children}
             </ol>
           ),
           ul: ({ children }) => (
             <ul
-              className={`py-1 pl-3 list-disc break-words whitespace-normal ${textColor}`}
+              className={`py-1 pl-3 list-disc break-all-words whitespace-normal ${textColor}`}
             >
               {children}
             </ul>
@@ -94,7 +94,9 @@ export const TextPartRenderer = ({
             </a>
           ),
           li: ({ children }) => (
-            <li className={`my-1 break-words whitespace-normal ${textColor}`}>
+            <li
+              className={`my-1 break-all-words whitespace-normal ${textColor}`}
+            >
               {children}
             </li>
           ),
@@ -106,7 +108,7 @@ export const TextPartRenderer = ({
             if (isInline) {
               return (
                 <code
-                  className={`px-1 py-0.5 bg-black/10 dark:bg-black/30 rounded ${textColor}`}
+                  className={`px-1 py-0.5 break-all-words bg-black/10 dark:bg-black/30 rounded ${textColor}`}
                   {...props}
                 >
                   {children}
@@ -152,7 +154,7 @@ export const TextPartRenderer = ({
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           p: ({ node, ...props }) => (
             <p
-              className={`whitespace-pre-line break-words ${textColor}`}
+              className={`whitespace-pre-line break-all-words ${textColor}`}
               {...props}
             />
           ),
