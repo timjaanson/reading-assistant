@@ -9,7 +9,7 @@ import { memoryDb } from "../storage/memoryDatabase";
 import { NewMemoryData } from "../types/memory";
 import { LanguageModelWithOptions } from "./provider";
 import { Tool } from "ai";
-import { ToolName } from "./toolType";
+import { ToolName, ToolParameterFixResult } from "./toolType";
 
 export const getTooling = async (
   languageModel: LanguageModelWithOptions
@@ -28,7 +28,7 @@ export const getTooling = async (
     !languageModel.internalCompatibilityOptions.useSearchGrounding &&
     toolSettings.search.active
   ) {
-    tools["webSearch"] = {
+    tools[ToolName.WEB_SEARCH] = {
       description:
         "Perform a web search for the given query. Returns an optional answer and a list of search results.",
       parameters: z.object({
@@ -92,7 +92,7 @@ export const getTooling = async (
   }
 
   if (toolSettings.search.active?.id === "tavily") {
-    tools["urlExtractor"] = {
+    tools[ToolName.EXTRACT_URLS_CONTENT] = {
       description:
         "Extract the content from up to 10 URLs at a time. Returns the text and image content for each URL without html tags.",
       parameters: z.object({
@@ -221,4 +221,167 @@ const createMemoryTools = (): Record<string, Tool> => {
   };
 
   return tools;
+};
+
+export const toolParameterFix = (
+  toolName: ToolName,
+  incorrectParameters: Record<string, unknown>
+): ToolParameterFixResult => {
+  switch (toolName) {
+    case ToolName.WEB_SEARCH:
+      // Look for query at root level
+      let query: string | undefined;
+
+      if (
+        incorrectParameters.query &&
+        typeof incorrectParameters.query === "string"
+      ) {
+        query = incorrectParameters.query;
+      } else if (
+        incorrectParameters.options &&
+        typeof incorrectParameters.options === "object" &&
+        incorrectParameters.options !== null
+      ) {
+        // Look for query under options key
+        const options = incorrectParameters.options as Record<string, unknown>;
+        if (options.query && typeof options.query === "string") {
+          query = options.query;
+        }
+      }
+
+      if (query) {
+        // Extract and validate options
+        const validTimeRanges = ["year", "month", "week", "day", "all"];
+        let timeRange = "all";
+        let include_domains: string[] = [];
+        let exclude_domains: string[] = [];
+
+        // Check for options at root level or under options key
+        const optionsSource =
+          incorrectParameters.options || incorrectParameters;
+
+        if (typeof optionsSource === "object" && optionsSource !== null) {
+          const opts = optionsSource as Record<string, unknown>;
+
+          // Validate and set timeRange
+          if (
+            typeof opts.timeRange === "string" &&
+            validTimeRanges.includes(opts.timeRange)
+          ) {
+            timeRange = opts.timeRange;
+          }
+
+          // Validate and set include_domains
+          if (Array.isArray(opts.include_domains)) {
+            include_domains = opts.include_domains.filter(
+              (item) => typeof item === "string"
+            );
+          }
+
+          // Validate and set exclude_domains
+          if (Array.isArray(opts.exclude_domains)) {
+            exclude_domains = opts.exclude_domains.filter(
+              (item) => typeof item === "string"
+            );
+          }
+        }
+
+        return {
+          fixed: true,
+          fixedParameters: {
+            query,
+            options: {
+              timeRange,
+              include_domains,
+              exclude_domains,
+            },
+          },
+        };
+      }
+
+      return {
+        fixed: false,
+      };
+    case ToolName.EXTRACT_URLS_CONTENT:
+      // Case 1: Direct array (not wrapped in object)
+      if (Array.isArray(incorrectParameters)) {
+        const urls = incorrectParameters.filter(
+          (item) => typeof item === "string"
+        );
+        if (urls.length > 0) {
+          return {
+            fixed: true,
+            fixedParameters: {
+              urls,
+            },
+          };
+        }
+      }
+
+      // Case 2: Object with urls field but wrong type
+      if (incorrectParameters.urls) {
+        if (typeof incorrectParameters.urls === "string") {
+          return {
+            fixed: true,
+            fixedParameters: {
+              urls: [incorrectParameters.urls],
+            },
+          };
+        }
+        if (Array.isArray(incorrectParameters.urls)) {
+          const urls = incorrectParameters.urls.filter(
+            (item) => typeof item === "string"
+          );
+          if (urls.length > 0) {
+            return {
+              fixed: true,
+              fixedParameters: {
+                urls,
+              },
+            };
+          }
+        }
+      }
+
+      // Case 3: Object with single field of different name
+      const keys = Object.keys(incorrectParameters);
+      if (keys.length === 1) {
+        const key = keys[0];
+        const value = incorrectParameters[key];
+
+        if (typeof value === "string") {
+          return {
+            fixed: true,
+            fixedParameters: {
+              urls: [value],
+            },
+          };
+        }
+
+        if (Array.isArray(value)) {
+          const urls = value.filter((item) => typeof item === "string");
+          if (urls.length > 0) {
+            return {
+              fixed: true,
+              fixedParameters: {
+                urls,
+              },
+            };
+          }
+        }
+      }
+
+      return {
+        fixed: false,
+      };
+    case ToolName.EXTRACT_ACTIVE_TAB_CONTENT:
+      return {
+        fixed: true,
+        fixedParameters: {},
+      };
+    default:
+      return {
+        fixed: false,
+      };
+  }
 };

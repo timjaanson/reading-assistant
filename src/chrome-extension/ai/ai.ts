@@ -8,9 +8,10 @@ import {
 } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
-import { getTooling } from "./tooling";
+import { getTooling, toolParameterFix } from "./tooling";
 import { getActiveMCPClients } from "./mcp-clients";
 import { chatDb } from "../storage/chatDatabase";
+import { ToolName } from "./toolType";
 
 export type GetTextResponseOptions = {
   chatId: string;
@@ -89,6 +90,18 @@ export const getCustomBackendResponse = async (
 
         const tool = tools[toolCall.toolName as keyof typeof tools];
 
+        const toolParameterFixResult = toolParameterFix(
+          toolCall.toolName as ToolName,
+          JSON.parse(toolCall.args)
+        );
+
+        if (toolParameterFixResult.fixed) {
+          return {
+            ...toolCall,
+            args: JSON.stringify(toolParameterFixResult.fixedParameters),
+          };
+        }
+
         const { object: repairedArgs } = await generateObject({
           model: languageModel.model,
           ...languageModel.modelOptions,
@@ -97,7 +110,7 @@ export const getCustomBackendResponse = async (
           prompt: [
             `The model tried to call the tool "${toolCall.toolName}"` +
               ` with the following arguments:`,
-            JSON.stringify(toolCall.args),
+            toolCall.args,
             `The tool accepts the following schema:`,
             JSON.stringify(parameterSchema(toolCall)),
             "Please fix the arguments.",
