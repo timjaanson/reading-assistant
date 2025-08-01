@@ -70,14 +70,14 @@ export const TextPartRenderer = ({
         components={{
           ol: ({ children }) => (
             <ol
-              className={`py-1 pl-3 list-decimal break-all-words whitespace-normal ${textColor}`}
+              className={`py-1 pl-2 ml-2 list-decimal whitespace-normal ${textColor}`}
             >
               {children}
             </ol>
           ),
           ul: ({ children }) => (
             <ul
-              className={`py-1 pl-3 list-disc break-all-words whitespace-normal ${textColor}`}
+              className={`py-1 pl-2 ml-2 list-disc whitespace-normal ${textColor}`}
             >
               {children}
             </ul>
@@ -85,7 +85,7 @@ export const TextPartRenderer = ({
           a: ({ children, href, ...props }) => (
             <a
               href={href}
-              className="text-blue-500 hover:underline"
+              className="text-blue-500 hover:underline break-all-words"
               target="_blank"
               rel="noopener noreferrer"
               {...props}
@@ -94,9 +94,7 @@ export const TextPartRenderer = ({
             </a>
           ),
           li: ({ children }) => (
-            <li
-              className={`my-1 break-all-words whitespace-normal ${textColor}`}
-            >
+            <li className={`my-0.5 whitespace-normal ${textColor}`}>
               {children}
             </li>
           ),
@@ -120,7 +118,7 @@ export const TextPartRenderer = ({
           },
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           table: ({ node, ...props }) => (
-            <div className="max-w-full overflow-x-auto p-2 scrollbar scrollbar-thumb-muted scrollbar-track-background">
+            <div className="max-w-full overflow-x-auto p-1 scrollbar scrollbar-thumb-muted scrollbar-track-background">
               <table
                 className={`border-collapse ${textColor} w-max`}
                 {...props}
@@ -136,7 +134,7 @@ export const TextPartRenderer = ({
           ),
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           th: ({ node, ...props }) => (
-            <th className={`p-3 font-bold ${textColor}`} {...props} />
+            <th className={`p-2 font-bold ${textColor}`} {...props} />
           ),
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           tr: ({ node, children, ...props }) => (
@@ -149,7 +147,7 @@ export const TextPartRenderer = ({
           ),
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           td: ({ node, ...props }) => (
-            <td className={`p-3 max-w-48 ${textColor}`} {...props} />
+            <td className={`p-2 max-w-48 ${textColor}`} {...props} />
           ),
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           p: ({ node, ...props }) => (
