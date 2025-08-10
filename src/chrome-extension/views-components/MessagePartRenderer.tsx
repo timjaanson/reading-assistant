@@ -5,6 +5,7 @@ import { Spinner } from "../common/icons/Spinner";
 
 import { CodeBox } from "./CodeBox";
 import { SourceUrlUIPart, ToolUIPart } from "ai";
+import { Card, CardContent } from "@/components/ui/card";
 const TEXT_COLLAPSE_THRESHOLD = 500;
 
 type CollapsibleSectionProps = {
@@ -41,7 +42,11 @@ export const CollapsableSection = ({
         <span className="mr-1">{isCollapsed ? openIcon : closeIcon}</span>
         <span>{isCollapsed ? openText : closeText}</span>
       </div>
-      {!isCollapsed && children}
+      {!isCollapsed && (
+        <Card className="dark:bg-background">
+          <CardContent>{children}</CardContent>
+        </Card>
+      )}
     </>
   );
 };
@@ -232,7 +237,7 @@ export const ToolPartRenderer = ({
             </div>
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
-              <div className="max-h-40 max-w-full overflow-auto">
+              <div className="max-h-48 max-w-full overflow-auto">
                 <CodeBox code={JSON.stringify(input, null, 2)} />
               </div>
             </div>
@@ -242,7 +247,7 @@ export const ToolPartRenderer = ({
         {state === "output-available" && (
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
-            <div className="max-h-56 max-w-full overflow-auto">
+            <div className="max-h-72 max-w-full overflow-auto">
               <CodeBox
                 code={JSON.stringify(
                   (toolInvocation.state === "output-available"

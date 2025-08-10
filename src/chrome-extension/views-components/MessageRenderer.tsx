@@ -37,9 +37,9 @@ const PartRenderer = ({
       );
 
     case "reasoning":
-      return (
+      return part.text ? (
         <ReasoningPartRenderer content={part.text} textColor={textColor} />
-      );
+      ) : null;
 
     case "source-url":
       return <SourcePartRenderer source={part} textColor={textColor} />;
