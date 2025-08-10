@@ -264,11 +264,19 @@ export const toolParameterFix = (
           const opts = optionsSource as Record<string, unknown>;
 
           // Validate and set timeRange
-          if (
-            typeof opts.timeRange === "string" &&
-            validTimeRanges.includes(opts.timeRange)
-          ) {
-            timeRange = opts.timeRange;
+          if (typeof opts.timeRange === "string") {
+            const candidateTimeRange = opts.timeRange.toLowerCase();
+            if (validTimeRanges.includes(candidateTimeRange)) {
+              timeRange = candidateTimeRange;
+            } else {
+              // Infer from substring match using a priority-ordered list
+              const inferredTimeRange = validTimeRanges.find((value) =>
+                candidateTimeRange.includes(value)
+              );
+              if (inferredTimeRange) {
+                timeRange = inferredTimeRange as typeof timeRange;
+              }
+            }
           }
 
           // Validate and set include_domains

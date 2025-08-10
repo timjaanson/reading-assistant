@@ -123,7 +123,9 @@ export class SettingsStorage {
     const models = providerSettings.all.flatMap((provider) =>
       provider.models.map((model) => ({
         ...model,
-        active: model.modelId === activeModel?.modelId,
+        active:
+          model.modelId === activeModel?.modelId &&
+          model.name === activeModel?.name,
         providerName: provider.name || "",
       }))
     );
@@ -156,12 +158,15 @@ export class SettingsStorage {
     return provider;
   }
 
-  static async findModelByProviderIdAndModelId(
+  static async findModelByProviderIdAndModelIdAndName(
     providerId: ProviderId,
-    modelId: string
+    modelId: string,
+    modelName: string
   ): Promise<Model | undefined> {
     const provider = await this.findProviderById(providerId);
-    return provider.models.find((model) => model.modelId === modelId);
+    return provider.models.find(
+      (model) => model.modelId === modelId && model.name === modelName
+    );
   }
 
   static async getActiveModel(): Promise<Model | null> {
@@ -169,27 +174,32 @@ export class SettingsStorage {
     if (!currentSettings.active) {
       return null;
     }
-    const activeModel = await this.findModelByProviderIdAndModelId(
+    const activeModel = await this.findModelByProviderIdAndModelIdAndName(
       currentSettings.active.providerId,
-      currentSettings.active.modelId
+      currentSettings.active.modelId,
+      currentSettings.active.name
     );
     return activeModel || null;
   }
 
   static async setActiveModel(
     providerId: ProviderId,
-    modelId: string
+    modelId: string,
+    name: string
   ): Promise<ProviderSettings> {
     const currentSettings = await this.loadProviderSettings();
     let activeModel: Model | null = null;
 
-    const model = await this.findModelByProviderIdAndModelId(
+    const model = await this.findModelByProviderIdAndModelIdAndName(
       providerId,
-      modelId
+      modelId,
+      name
     );
 
     if (!model) {
-      throw new Error(`Model ${modelId} not found for provider ${providerId}`);
+      throw new Error(
+        `ModelId ${modelId}, modelName ${name} not found for provider ${providerId}`
+      );
     }
 
     activeModel = model;

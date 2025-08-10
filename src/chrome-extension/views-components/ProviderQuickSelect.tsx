@@ -35,9 +35,13 @@ export const ProviderQuickSelect = ({
   }, []);
 
   const handleModelSelect = async (value: string) => {
-    const [providerId, modelId] = value.split("::");
+    const [providerId, modelId, name] = value.split("::");
     try {
-      await SettingsStorage.setActiveModel(providerId as ProviderId, modelId);
+      await SettingsStorage.setActiveModel(
+        providerId as ProviderId,
+        modelId,
+        name
+      );
       const updatedModels = await SettingsStorage.loadFlatModelsList();
       setAvailableModels(updatedModels);
 
@@ -63,7 +67,7 @@ export const ProviderQuickSelect = ({
   }, {} as Record<string, { providerName: string; models: typeof availableModels.models }>);
 
   const currentValue = activeModel
-    ? `${activeModel.providerId}::${activeModel.modelId}`
+    ? `${activeModel.providerId}::${activeModel.modelId}::${activeModel.name}`
     : undefined;
 
   return (
@@ -84,8 +88,8 @@ export const ProviderQuickSelect = ({
                 <SelectLabel>{providerName}</SelectLabel>
                 {models.map((model) => (
                   <SelectItem
-                    key={`${model.providerId}-${model.modelId}`}
-                    value={`${model.providerId}::${model.modelId}`}
+                    key={`${model.providerId}-${model.modelId}-${model.name}`}
+                    value={`${model.providerId}::${model.modelId}::${model.name}`}
                   >
                     <div className="flex items-center gap-2">
                       {model.name}

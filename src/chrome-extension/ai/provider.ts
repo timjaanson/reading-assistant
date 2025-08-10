@@ -33,10 +33,12 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
   if (!activeProvider) {
     throw new Error("No active provider found");
   }
-  const activeModel = await SettingsStorage.findModelByProviderIdAndModelId(
-    activeProvider.providerId,
-    providerSettings.active.modelId
-  );
+  const activeModel =
+    await SettingsStorage.findModelByProviderIdAndModelIdAndName(
+      activeProvider.providerId,
+      providerSettings.active.modelId,
+      providerSettings.active.name
+    );
   if (!activeModel) {
     throw new Error("No active model found");
   }

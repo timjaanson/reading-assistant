@@ -15,6 +15,7 @@ export interface ProviderSettings {
 export interface ActiveModel {
   providerId: ProviderId;
   modelId: string;
+  name: string;
 }
 
 export interface Provider {

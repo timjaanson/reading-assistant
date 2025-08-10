@@ -39,7 +39,7 @@ export const searchTavily = async (query: string, options: SearchOptions) => {
       }
       const optionsWithDefaults = {
         topic: "general",
-        includeAnswer: true,
+        includeAnswer: false,
         searchDepth: "advanced",
         resultCount: 8,
         timeRange: timeRange,
