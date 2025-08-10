@@ -25,7 +25,6 @@ const PartRenderer = ({
 }) => {
   switch (part.type) {
     case "step-start":
-      // we render every message separately, so we don't need logic to identify the start of a step
       return null;
     case "text":
       return (

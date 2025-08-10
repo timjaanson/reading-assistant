@@ -49,7 +49,7 @@ export const CollapsableSection = ({
         <span>{isCollapsed ? openText : closeText}</span>
       </div>
       {!isCollapsed && (
-        <Card className="dark:bg-background">
+        <Card className="dark:bg-black/10">
           <CardContent>{children}</CardContent>
         </Card>
       )}
