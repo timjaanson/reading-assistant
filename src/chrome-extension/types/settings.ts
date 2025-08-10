@@ -35,7 +35,7 @@ export interface Model {
 }
 
 export interface ModelOptions {
-  maxTokens?: number;
+  maxOutputTokens?: number;
   temperature?: number;
   topK?: number;
   topP?: number;

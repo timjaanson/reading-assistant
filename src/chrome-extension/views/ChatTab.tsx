@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useState } from "react";
 import { ChatPreview } from "../types/chat";
 import { getCompactLocaleDateTime } from "../util/datetime";
-import { Chat } from "../views-components/Chat";
+// import { Chat } from "../views-components/Chat";
 import { Spinner } from "../common/icons/Spinner";
 import { UIMessage } from "ai";
 import {
@@ -285,15 +285,7 @@ export const ChatTab = () => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <Chat
-          key={`display-${chatInstanceKey}`}
-          initialChatId={currentChatSelection.id}
-          initialMessages={currentChatSelection.messages}
-        />
-      </div>
-
-      <div className="shrink-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ChatInput
           key={`input-${chatInstanceKey}`}
           chatId={currentChatSelection.id}

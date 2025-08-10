@@ -1,10 +1,11 @@
 import {
-  APICallError,
   generateObject,
   NoSuchToolError,
+  Schema,
   smoothStream,
   streamText,
   UIMessage,
+  convertToModelMessages,
 } from "ai";
 import { defaultSystemMessage } from "./prompts";
 import { getLanguageModel } from "./provider";
@@ -50,7 +51,6 @@ export const getCustomBackendResponse = async (
   }
 
   let response;
-  let errorMessage = "";
   try {
     const prompt = options.systemPrompt || (await defaultSystemMessage());
     response = streamText({
@@ -58,16 +58,15 @@ export const getCustomBackendResponse = async (
       temperature: languageModel.modelOptions.temperature,
       topK: languageModel.modelOptions.topK,
       topP: languageModel.modelOptions.topP,
-      maxTokens: languageModel.modelOptions.maxTokens,
+      maxOutputTokens: languageModel.modelOptions.maxOutputTokens,
       providerOptions: languageModel.modelOptions.providerOptions,
       frequencyPenalty: languageModel.modelOptions.frequencyPenalty,
       presencePenalty: languageModel.modelOptions.presencePenalty,
       maxRetries: 3,
       system: prompt,
-      messages: messages,
+      messages: convertToModelMessages(messages),
       tools: allTools,
       toolChoice: tooling?.toolChoice,
-      maxSteps: 20,
       abortSignal: options.abortSignal,
       experimental_transform: smoothStream({
         chunking: "word",
@@ -76,7 +75,7 @@ export const getCustomBackendResponse = async (
       experimental_repairToolCall: async ({
         toolCall,
         tools,
-        parameterSchema,
+        inputSchema,
         error,
       }) => {
         console.warn(
@@ -92,7 +91,7 @@ export const getCustomBackendResponse = async (
 
         const toolParameterFixResult = toolParameterFix(
           toolCall.toolName as ToolName,
-          JSON.parse(toolCall.args)
+          JSON.parse(toolCall.input)
         );
 
         if (toolParameterFixResult.fixed) {
@@ -102,7 +101,7 @@ export const getCustomBackendResponse = async (
           );
           return {
             ...toolCall,
-            args: JSON.stringify(toolParameterFixResult.fixedParameters),
+            input: JSON.stringify(toolParameterFixResult.fixedParameters),
           };
         }
 
@@ -110,13 +109,13 @@ export const getCustomBackendResponse = async (
           model: languageModel.model,
           ...languageModel.modelOptions,
           abortSignal: options.abortSignal,
-          schema: tool.parameters,
+          schema: tool.inputSchema as Schema,
           prompt: [
             `The model tried to call the tool "${toolCall.toolName}"` +
               ` with the following arguments:`,
-            toolCall.args,
+            toolCall.input,
             `The tool accepts the following schema:`,
-            JSON.stringify(parameterSchema(toolCall)),
+            JSON.stringify(inputSchema(toolCall)),
             "Please fix the arguments.",
           ].join("\n"),
         });
@@ -130,54 +129,12 @@ export const getCustomBackendResponse = async (
       },
       onError: (error) => {
         console.error("Error getting streamed text response", error);
-        if ("error" in error && APICallError.isInstance(error.error)) {
-          errorMessage = JSON.stringify({
-            url: error.error.url,
-            statusCode: error.error.statusCode,
-            responseHeaders: error.error.responseHeaders,
-            errorData: error.error.data,
-          });
-        } else {
-          errorMessage =
-            error instanceof Error ? error.message : JSON.stringify(error);
-        }
       },
       onFinish: (event) => {
-        console.debug("onFinish", event);
-        mcpClients.forEach((client) => {
-          try {
-            client.close();
-          } catch (error) {
-            console.warn("Error closing MCP client", error);
-          }
-        });
-
-        const saveChat = async () => {
-          try {
-            const chat = await chatDb.getChat(options.chatId);
-
-            const chatName = chat?.name || "New Chat";
-
-            const messagesToSave: UIMessage[] = [
-              ...messages,
-
-              //FIXME: this doesn't have parts for some reason...
-              ...(event.response.messages as UIMessage[]),
-            ];
-
-            await chatDb.saveChat({
-              id: options.chatId,
-              name: chatName,
-              url: chat?.url || "",
-              messages: messagesToSave,
-            });
-            console.debug("Chat saved in onFinish", options.chatId);
-          } catch (error) {
-            console.error("Error saving chat in onFinish", error);
-          }
-        };
-
-        saveChat();
+        console.log(
+          "Token usage total:",
+          JSON.stringify(event.totalUsage, null, 2)
+        );
       },
     });
   } catch (error) {
@@ -185,13 +142,34 @@ export const getCustomBackendResponse = async (
     throw error;
   }
 
-  return response.toDataStreamResponse({
+  return response.toUIMessageStreamResponse({
     sendReasoning: true,
-    sendUsage: true,
-    getErrorMessage: (error) => {
-      console.error("Error getting streamed text response", error);
-      return errorMessage;
-    },
     sendSources: true,
+    originalMessages: messages,
+    generateMessageId: () => crypto.randomUUID(),
+    onFinish: async ({ messages: allMessages }) => {
+      console.debug("onFinish");
+      mcpClients.forEach((client) => {
+        try {
+          client.close();
+        } catch (error) {
+          console.warn("Error closing MCP client", error);
+        }
+      });
+
+      try {
+        const chat = await chatDb.getChat(options.chatId);
+        const chatName = chat?.name || "New Chat";
+        await chatDb.saveChat({
+          id: options.chatId,
+          name: chatName,
+          url: chat?.url || "",
+          messages: allMessages as UIMessage[],
+        });
+        console.debug("Chat saved in onFinish", options.chatId);
+      } catch (error) {
+        console.error("Error saving chat in onFinish", error);
+      }
+    },
   });
 };

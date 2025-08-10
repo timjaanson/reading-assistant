@@ -2,9 +2,9 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Spinner } from "../common/icons/Spinner";
-import { ToolInvocation } from "@ai-sdk/ui-utils";
 
 import { CodeBox } from "./CodeBox";
+import { SourceUrlUIPart, ToolUIPart } from "ai";
 const TEXT_COLLAPSE_THRESHOLD = 500;
 
 type CollapsibleSectionProps = {
@@ -196,22 +196,22 @@ export const ToolPartRenderer = ({
   toolInvocation,
   textColor,
 }: {
-  toolInvocation: ToolInvocation;
+  toolInvocation: ToolUIPart;
   textColor: string;
 }) => {
-  const { state, toolName, toolCallId, args } = toolInvocation;
-  const isLoading = state === "partial-call" || state === "call";
+  const { state, type, toolCallId, input } = toolInvocation;
+  const isLoading = state === "input-streaming" || state === "input-available";
 
   const openText = (
     <div className="flex items-center gap-2">
-      <span>{`Show tool (${toolName})`}</span>
+      <span>{`Show (${type})`}</span>
       {isLoading && <Spinner />}
     </div>
   );
 
   const closeText = (
     <div className="flex items-center gap-2">
-      <span>{`Hide tool (${toolName})`}</span>
+      <span>{`Hide (${type})`}</span>
       {isLoading && <Spinner />}
     </div>
   );
@@ -223,7 +223,9 @@ export const ToolPartRenderer = ({
       textColor={textColor}
     >
       <div className={`mt-2 font-mono ${textColor} overflow-visible`}>
-        {(state === "call" || state === "result") && (
+        {(state === "input-available" ||
+          state === "output-error" ||
+          state === "output-available") && (
           <>
             <div className="mb-1">
               <span className="font-semibold">Call ID:</span> {toolCallId}
@@ -231,22 +233,22 @@ export const ToolPartRenderer = ({
             <div>
               <div className="font-semibold mb-1">Arguments:</div>
               <div className="max-h-40 max-w-full overflow-auto">
-                <CodeBox code={JSON.stringify(args, null, 2)} />
+                <CodeBox code={JSON.stringify(input, null, 2)} />
               </div>
             </div>
           </>
         )}
 
-        {state === "result" && (
+        {state === "output-available" && (
           <div className="mt-3">
             <div className="font-semibold mb-1">Result:</div>
             <div className="max-h-56 max-w-full overflow-auto">
               <CodeBox
                 code={JSON.stringify(
-                  (toolInvocation.state === "result"
+                  (toolInvocation.state === "output-available"
                     ? toolInvocation
                     : { result: "No result" }
-                  ).result,
+                  ).output,
                   null,
                   2
                 )}
@@ -292,11 +294,7 @@ export const SourcePartRenderer = ({
   source,
   textColor,
 }: {
-  source: {
-    id: string;
-    url: string;
-    title?: string;
-  };
+  source: SourceUrlUIPart;
   textColor: string;
 }) => {
   let displayName = source.title || "Source";

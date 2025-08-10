@@ -31,7 +31,7 @@ export const getTooling = async (
     tools[ToolName.WEB_SEARCH] = {
       description:
         "Perform a web search for the given query. Returns an optional answer and a list of search results.",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z
           .string()
           .describe(
@@ -95,7 +95,7 @@ export const getTooling = async (
     tools[ToolName.EXTRACT_URLS_CONTENT] = {
       description:
         "Extract the content from up to 10 URLs at a time. Returns the text and image content for each URL without html tags.",
-      parameters: z.object({
+      inputSchema: z.object({
         urls: z.array(z.string()).describe("The URLs to extract content from"),
       }),
       execute: async (parameters: unknown) => {
@@ -122,7 +122,7 @@ export const getTooling = async (
     tools[ToolName.EXTRACT_ACTIVE_TAB_CONTENT] = {
       description:
         "Extract the content of the user's currently active browser tab. Returns the text content of the tab.",
-      parameters: z.object({}),
+      inputSchema: z.object({}),
     };
   }
 
@@ -147,7 +147,7 @@ const createMemoryTools = (): Record<string, Tool> => {
   tools["addMemory"] = {
     description:
       "Use only if the user asks you to remember something. Add a new memory to the user's memory list. Returns the ID of the new memory if successful.",
-    parameters: z.object({
+    inputSchema: z.object({
       content: z.string().describe("The content of the memory."),
     }),
     execute: async (parameters: unknown) => {
@@ -165,7 +165,7 @@ const createMemoryTools = (): Record<string, Tool> => {
   tools["getMemoryById"] = {
     description:
       "Get a memory by memory ID from the user's memory list. Returns the memory if found.",
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.number().describe("The ID of the memory to get"),
     }),
     execute: async (parameters: unknown) => {
@@ -183,7 +183,7 @@ const createMemoryTools = (): Record<string, Tool> => {
   tools["updateMemory"] = {
     description:
       "Update a memory by memory ID from the user's memory list. Returns true if update was successful.",
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.number().describe("The ID of the memory to update"),
       content: z.string().describe("The new content for the memory"),
     }),
@@ -203,7 +203,7 @@ const createMemoryTools = (): Record<string, Tool> => {
   tools["removeMemory"] = {
     description:
       "Remove/de-activate a memory by memory ID from the user's memory list. Returns true if de-activation was successful.",
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.number().describe("The ID of the memory to remove"),
     }),
     execute: async (parameters: unknown) => {

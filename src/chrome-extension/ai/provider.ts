@@ -1,6 +1,6 @@
 import {
   extractReasoningMiddleware,
-  LanguageModelV1,
+  LanguageModel,
   wrapLanguageModel,
 } from "ai";
 import { SettingsStorage } from "../storage/providerSettings";
@@ -8,9 +8,10 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ModelOptions } from "../types/settings";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 export type LanguageModelWithOptions = {
-  model: LanguageModelV1;
+  model: LanguageModel;
   toolUse: boolean;
   modelOptions: ModelOptions;
   internalCompatibilityOptions: Record<string, unknown>;
@@ -46,7 +47,6 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
     case "openai":
       provider = createOpenAI({
         apiKey: activeProvider.apiKey,
-        compatibility: "strict",
       });
       break;
     case "anthropic":
@@ -69,18 +69,19 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
       };
       break;
     case "openrouter":
-      provider = createOpenAI({
-        compatibility: "compatible",
+      provider = createOpenAICompatible({
+        name: activeProvider.providerId,
         apiKey: activeProvider.apiKey,
-        baseURL: activeProvider.url,
+        baseURL: activeProvider.url!,
+        includeUsage: true,
       });
       break;
     case "openai-compatible":
-      provider = createOpenAI({
-        name: activeProvider.name,
-        baseURL: activeProvider.url,
+      provider = createOpenAICompatible({
+        name: activeProvider.providerId,
+        baseURL: activeProvider.url!,
         apiKey: activeProvider.apiKey,
-        compatibility: "compatible",
+        includeUsage: true,
       });
       break;
     default:
@@ -88,8 +89,10 @@ export const getLanguageModel = async (): Promise<LanguageModelWithOptions> => {
   }
 
   const model = provider.languageModel(
-    providerSettings.active.modelId,
-    compatibilityOptions
+    providerSettings.active.modelId
+
+    //TODO: fix google weirdness
+    //compatibilityOptions
   );
   let wrappedModel = model;
 

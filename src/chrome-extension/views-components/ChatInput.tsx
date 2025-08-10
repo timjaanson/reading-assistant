@@ -17,15 +17,14 @@ import {
 } from "lucide-react";
 import { File as FileIcon } from "lucide-react";
 import { getActiveTabContent } from "../util/pageContent";
-import { LanguageModelUsage, Message, UIMessage } from "ai";
 import {
-  fillMessageParts,
-  prepareAttachmentsForRequest,
-  ToolInvocation,
-} from "@ai-sdk/ui-utils";
+  LanguageModelUsage,
+  UIMessage,
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithToolCalls,
+} from "ai";
 import { Realtime } from "./Realtime";
 import { Toggle } from "@/components/ui/toggle";
-import { messagesHasUnresolvedToolCalls } from "../ai/utils";
 import { ToolName } from "../ai/toolType";
 import {
   Dialog,
@@ -46,6 +45,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
+import { MessageRenderer } from "./MessageRenderer";
 
 type ChatInputProps = {
   chatId: string;
@@ -60,35 +60,44 @@ export const ChatInput = ({ chatId, initialMessages }: ChatInputProps) => {
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUserMessage = useRef<UIMessage[] | null>(null);
-  const lastAssistantMessage = useRef<Message | null>(null);
+  const lastAssistantMessage = useRef<UIMessage | null>(null);
   const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
-  const [modelUsage, setModelUsage] = useState<LanguageModelUsage | null>(null);
+  const [modelUsage] = useState<LanguageModelUsage | null>(null);
+  const [input, setInput] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentToolInvocation, setCurrentToolInvocation] =
-    useState<ToolInvocation | null>(null);
+  const [currentToolCall, setCurrentToolCall] = useState<
+    (Record<string, unknown> & { toolName: string; toolCallId: string }) | null
+  >(null);
 
   const {
-    input,
     messages,
     addToolResult,
-    handleSubmit,
-    append,
-    handleInputChange,
+    sendMessage,
     setMessages,
     stop,
     status,
     error,
   } = useChat({
     id: chatId,
-    initialMessages: initialMessages,
-    fetch: createCustomBackgroundFetch(),
-    onFinish(message, options) {
-      setModelUsage(options.usage);
-      //TODO: this doesn't cover user added tool responses like extract content
-      if (!messagesHasUnresolvedToolCalls([message])) {
-        lastAssistantMessage.current = message;
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
+      // route through extension background
+      fetch: createCustomBackgroundFetch(),
+    }),
+    experimental_throttle: 50,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+
+    async onToolCall({ toolCall }) {
+      if (toolCall.toolName === ToolName.EXTRACT_ACTIVE_TAB_CONTENT) {
+        setCurrentToolCall(
+          toolCall as unknown as {
+            toolName: string;
+            toolCallId: string;
+          }
+        );
       }
+      // Other tools are handled server-side
     },
   });
 
@@ -101,97 +110,71 @@ export const ChatInput = ({ chatId, initialMessages }: ChatInputProps) => {
     }
   }, [error]);
 
+  // Track last assistant message when messages change
   useEffect(() => {
-    const extractActiveTabCallWithoutResult = messages.find(
-      (message) =>
-        message.role === "assistant" &&
-        message.parts.find(
-          (p) =>
-            p.type === "tool-invocation" &&
-            p.toolInvocation.state === "call" &&
-            p.toolInvocation.toolName === ToolName.EXTRACT_ACTIVE_TAB_CONTENT
-        )
-    );
-
-    if (extractActiveTabCallWithoutResult) {
-      console.log(
-        "extractActiveTabCallWithoutResult",
-        extractActiveTabCallWithoutResult
-      );
-
-      const toolInvocationPart = extractActiveTabCallWithoutResult.parts.find(
-        (p) =>
-          p.type === "tool-invocation" &&
-          p.toolInvocation.state === "call" &&
-          p.toolInvocation.toolName === ToolName.EXTRACT_ACTIVE_TAB_CONTENT
-      );
-
-      if (toolInvocationPart && toolInvocationPart.type === "tool-invocation") {
-        setCurrentToolInvocation(toolInvocationPart.toolInvocation);
-      }
+    const lastAssistant = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant");
+    if (lastAssistant) {
+      lastAssistantMessage.current = lastAssistant;
     }
-  }, [messages]);
+  }, [messages, status]);
 
   useEffect(() => {
-    if (currentToolInvocation) {
+    if (currentToolCall) {
       setDialogOpen(true);
     }
-  }, [currentToolInvocation]);
+  }, [currentToolCall]);
 
   const handleExtractRequest = (approved: boolean) => {
-    if (!currentToolInvocation) {
-      return;
-    }
+    if (!currentToolCall) return;
+
     if (!approved) {
       addToolResult({
-        toolCallId: currentToolInvocation.toolCallId,
-        result: {
-          error: "User denied access to the active tab",
-        },
+        tool: currentToolCall.toolName,
+        toolCallId: currentToolCall.toolCallId,
+        output: { error: "User denied access to the active tab" },
       });
       setDialogOpen(false);
+      setCurrentToolCall(null);
       return;
     }
 
     getActiveTabContent()
       .then((r) => {
         addToolResult({
-          toolCallId: currentToolInvocation.toolCallId,
-          result: r,
+          tool: currentToolCall.toolName,
+          toolCallId: currentToolCall.toolCallId,
+          output: r,
         });
       })
       .catch((e) => {
         console.error("Error getting active tab content", e);
         addToolResult({
-          toolCallId: currentToolInvocation.toolCallId,
-          result: {
-            error: JSON.stringify(e),
-          },
+          tool: currentToolCall.toolName,
+          toolCallId: currentToolCall.toolCallId,
+          output: { error: JSON.stringify(e) },
         });
       })
-      .finally(() => setDialogOpen(false));
+      .finally(() => {
+        setDialogOpen(false);
+        setCurrentToolCall(null);
+      });
   };
 
   const submitMessageHandler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setVisualError(null);
-    const attachments = await prepareAttachmentsForRequest(files);
-    const userMessage = fillMessageParts([
-      {
-        id: `user-${Date.now()}`,
-        role: "user",
-        content: input,
-        experimental_attachments: attachments,
-      } satisfies Message,
-    ]);
 
-    currentUserMessage.current = userMessage;
+    currentUserMessage.current = null;
 
-    handleSubmit(e, {
-      experimental_attachments: files,
-    });
+    if (!input.trim() && (!files || files.length === 0)) return;
 
+    setInput("");
     setFiles(undefined);
+
+    await sendMessage({ text: input, files: files });
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -221,16 +204,20 @@ export const ChatInput = ({ chatId, initialMessages }: ChatInputProps) => {
     try {
       const result = await getActiveTabContent();
 
-      // Create a message with the page content
-      const newMessage = {
+      const newMessage: UIMessage = {
         id: `user-${Date.now()}`,
-        role: "user" as const,
-        content: `[URL](${result.url}) ${
-          result.error ? " " + result.error : ""
-        }\n${result.text}`,
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: `[URL](${result.url}) ${
+              result.error ? " " + result.error : ""
+            }\n${result.text}`,
+          },
+        ],
       };
 
-      setMessages((messages) => [...messages, newMessage]);
+      setMessages((msgs) => [...msgs, newMessage]);
     } catch (error) {
       console.error("Error extracting page content:", error);
       setVisualError(
@@ -242,208 +229,232 @@ export const ChatInput = ({ chatId, initialMessages }: ChatInputProps) => {
   };
 
   return (
-    <div className="flex flex-col w-full">
-      {/* Selected Files Indicator */}
-      {files && files.length > 0 && (
-        <div className="flex flex-wrap gap-2 py-1 px-2">
-          {Array.from(files).map((file, index) => (
-            <div
-              key={`${file.name}-${index}`}
-              className="inline-flex gap-1 items-center bg-card/80 rounded-md px-2 py-1 text-xs"
-            >
-              <FileIcon size={8} className="text-foreground" />
-              <span className="truncate max-w-[150px]">{file.name}</span>
-              <button
-                type="button"
-                onClick={() => handleRemoveFile(file)}
-                className="ml-2"
-                aria-label="Remove file"
-              >
-                <span className="text-foreground cursor-pointer">×</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Input Container */}
-      <div className="shrink-0 bg-transparent p-2 border-t">
-        <form onSubmit={submitMessageHandler}>
-          <div className="flex flex-col space-y-2">
-            {/* Textarea Row */}
-            <div className="w-full">
-              <div className="relative flex text-sm max-h-44">
-                <Textarea
-                  disabled={isBusy}
-                  autoFocus
-                  value={input}
-                  onChange={(e) => {
-                    handleInputChange(e);
-                  }}
-                  onKeyDown={(e) => {
-                    e.stopPropagation();
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      submitMessageHandler(
-                        e as unknown as React.FormEvent<HTMLFormElement>
-                      );
-                    }
-                  }}
-                  onKeyUp={(e) => e.stopPropagation()}
-                  onKeyPress={(e) => e.stopPropagation()}
-                  placeholder={isBusy ? "" : "Type your message"}
-                  className="min-h-16 flex-1 border rounded-md p-2 resize-none scrollbar-none text-sm w-full"
-                />
-                {isBusy && (
-                  <div className="absolute top-3 left-4 pointer-events-none">
-                    <LoadingDots size={3} />
-                  </div>
-                )}
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setFiles(e.target.files);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons Row with Left and Right Groups */}
-            <div className="flex items-center space-x-2 w-full">
-              {/* Left Scrollable Group */}
-              <div className="flex-1 min-w-0">
-                <ScrollArea className="w-full">
-                  <div className="flex items-center space-x-3 p-1 min-w-max">
-                    <ProviderQuickSelect disabled={isBusy} />
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={isBusy}
-                        >
-                          <Plus className="h-4 w-4" />
-                          <span>Add</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent avoidCollisions>
-                        <DropdownMenuItem onClick={handleFileButtonClick}>
-                          <Paperclip className="h-4 w-4" />
-                          <span>Attach file</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExtractPageContent}>
-                          <FileText className="h-4 w-4" />
-                          <span>Extract active tab text</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Toggle
-                      pressed={isVoiceChatActive}
-                      onPressedChange={setIsVoiceChatActive}
-                      disabled={isBusy}
-                      size="sm"
-                    >
-                      <Mic className="h-4 w-4" />
-                      <span>Voice</span>
-                    </Toggle>
-                  </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </div>
-
-              {/* Right Always-Visible Group */}
-              <div className="flex items-center flex-shrink-0 space-x-2">
-                {modelUsage && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info size={16} />
-                    </TooltipTrigger>
-                    <TooltipContent avoidCollisions>
-                      <Label>Last Message Tokens</Label>
-                      <p>input: {modelUsage.promptTokens}</p>
-                      <p>output: {modelUsage.completionTokens}</p>
-                      <p>total: {modelUsage.totalTokens}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                <Button
-                  type={isBusy ? "button" : "submit"}
-                  size="icon"
-                  onClick={isBusy ? () => stop() : undefined}
-                >
-                  <span className="px-2 py-1 flex items-center justify-center">
-                    {isBusy ? (
-                      <div
-                        className={`inline-flex items-center justify-center relative`}
-                      >
-                        <Square
-                          size={12}
-                          className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
-                        />
-                        <Square
-                          size={12}
-                          className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
-                        />
-                      </div>
-                    ) : (
-                      <SendHorizontal
-                        size={12}
-                        className="text-background fill-background dark:text-foreground dark:fill-foreground"
-                      />
-                    )}
-                  </span>
-                </Button>
-              </div>
-            </div>
+    <div className="flex flex-col h-full min-h-0 w-full mx-auto relative text-sm">
+      {/* Messages list (scrollable) */}
+      <div className="max-w-full flex-1 overflow-y-auto p-2 space-y-2 bg-transparent">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${
+              message.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <MessageRenderer message={message} />
           </div>
-        </form>
+        ))}
       </div>
-      <div>
-        {visualError && (
-          <div className="text-destructive overflow-y-auto break-all">
-            {visualError}
+
+      {/* Bottom input section (static) */}
+      <div className="shrink-0">
+        {/* Selected Files Indicator */}
+        {files && files.length > 0 && (
+          <div className="flex flex-wrap gap-2 py-1 px-2">
+            {Array.from(files).map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="inline-flex gap-1 items-center bg-card/80 rounded-md px-2 py-1 text-xs"
+              >
+                <FileIcon size={8} className="text-foreground" />
+                <span className="truncate max-w-[150px]">{file.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFile(file)}
+                  className="ml-2"
+                  aria-label="Remove file"
+                >
+                  <span className="text-foreground cursor-pointer">×</span>
+                </button>
+              </div>
+            ))}
           </div>
         )}
+
+        {/* Input Container */}
+        <div className="shrink-0 bg-transparent p-2 border-t">
+          <form onSubmit={submitMessageHandler}>
+            <div className="flex flex-col space-y-2">
+              {/* Textarea Row */}
+              <div className="w-full">
+                <div className="relative flex text-sm max-h-44">
+                  <Textarea
+                    disabled={isBusy}
+                    autoFocus
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submitMessageHandler(
+                          e as unknown as React.FormEvent<HTMLFormElement>
+                        );
+                      }
+                    }}
+                    onKeyUp={(e) => e.stopPropagation()}
+                    onKeyPress={(e) => e.stopPropagation()}
+                    placeholder={isBusy ? "" : "Type your message"}
+                    className="min-h-16 flex-1 border rounded-md p-2 resize-none scrollbar-none text-sm w-full"
+                  />
+                  {isBusy && (
+                    <div className="absolute top-3 left-4 pointer-events-none">
+                      <LoadingDots size={3} />
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setFiles(e.target.files);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons Row with Left and Right Groups */}
+              <div className="flex items-center space-x-2 w-full">
+                {/* Left Scrollable Group */}
+                <div className="flex-1 min-w-0">
+                  <ScrollArea className="w-full">
+                    <div className="flex items-center space-x-3 p-1 min-w-max">
+                      <ProviderQuickSelect disabled={isBusy} />
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={isBusy}
+                          >
+                            <Plus className="h-4 w-4" />
+                            <span>Add</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent avoidCollisions>
+                          <DropdownMenuItem onClick={handleFileButtonClick}>
+                            <Paperclip className="h-4 w-4" />
+                            <span>Attach file</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleExtractPageContent}>
+                            <FileText className="h-4 w-4" />
+                            <span>Extract active tab text</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      <Toggle
+                        pressed={isVoiceChatActive}
+                        onPressedChange={setIsVoiceChatActive}
+                        disabled={isBusy}
+                        size="sm"
+                      >
+                        <Mic className="h-4 w-4" />
+                        <span>Voice</span>
+                      </Toggle>
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </div>
+
+                {/* Right Always-Visible Group */}
+                <div className="flex items-center flex-shrink-0 space-x-2">
+                  {modelUsage && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info size={16} />
+                      </TooltipTrigger>
+                      <TooltipContent avoidCollisions>
+                        <Label>Last Message Tokens</Label>
+                        <p>input: {modelUsage.inputTokens}</p>
+                        <p>output: {modelUsage.outputTokens}</p>
+                        <p>total: {modelUsage.totalTokens}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  <Button
+                    type={isBusy ? "button" : "submit"}
+                    size="icon"
+                    onClick={isBusy ? () => stop() : undefined}
+                  >
+                    <span className="px-2 py-1 flex items-center justify-center">
+                      {isBusy ? (
+                        <div
+                          className={`inline-flex items-center justify-center relative`}
+                        >
+                          <Square
+                            size={12}
+                            className="opacity-80 animate-[pulse_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                          />
+                          <Square
+                            size={12}
+                            className="absolute inset-0 opacity-50 animate-[ping_2s_infinite] text-background bg-background dark:text-foreground dark:bg-foreground"
+                          />
+                        </div>
+                      ) : (
+                        <SendHorizontal
+                          size={12}
+                          className="text-background fill-background dark:text-foreground dark:fill-foreground"
+                        />
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Error */}
+        <div>
+          {visualError && (
+            <div className="text-destructive overflow-y-auto break-all">
+              {visualError}
+            </div>
+          )}
+        </div>
+
+        {/* Realtime */}
+        {isVoiceChatActive && (
+          <Realtime
+            lastMessage={lastAssistantMessage}
+            sendMessage={sendMessage}
+          />
+        )}
+
+        {/* Tool approval dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogTitle>User action required</DialogTitle>
+            <DialogDescription>
+              The assistant is requesting to extract content from your active
+              tab. Would you like to approve this request?
+            </DialogDescription>
+            <DialogFooter>
+              <Button
+                className="mr-4 max-w-32"
+                onClick={() => handleExtractRequest(true)}
+              >
+                Approve
+              </Button>
+              <Button
+                className="max-w-32"
+                variant="destructive"
+                onClick={() => handleExtractRequest(false)}
+              >
+                Deny
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {isVoiceChatActive && (
-        <Realtime lastMessage={lastAssistantMessage} append={append} />
-      )}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogTitle>User action required</DialogTitle>
-          <DialogDescription>
-            The assistant is requesting to extract content from your active tab.
-            Would you like to approve this request?
-          </DialogDescription>
-          <DialogFooter>
-            <Button
-              className="mr-4 max-w-32"
-              onClick={() => handleExtractRequest(true)}
-            >
-              Approve
-            </Button>
-            <Button
-              className="max-w-32"
-              variant="destructive"
-              onClick={() => handleExtractRequest(false)}
-            >
-              Deny
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

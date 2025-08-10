@@ -1,7 +1,7 @@
 import { getOpenAIRealtimeSession } from "./sessionStart";
 import { BASE_URL, MODEL } from "./constants";
 import { RealtimeTools, TOOLS } from "./tools";
-import { Message } from "ai";
+import { UIMessage } from "ai";
 import { UseChatHelpers } from "@ai-sdk/react";
 import { realtimeVoiceSystemMessage } from "../ai/prompts";
 
@@ -34,14 +34,14 @@ export class RealtimeConnection {
   private audioElement: HTMLAudioElement | null = null;
   private mediaStream: MediaStream | null = null;
   private audioTrack: MediaStreamTrack | null = null;
-  private sendMessageToAgent: UseChatHelpers["append"];
+  private sendMessageToAgent: UseChatHelpers<UIMessage>["sendMessage"];
   public lastResponse: string | null = null;
 
   private onStateChange: (state: RealtimeConnectionState) => void;
 
   constructor(
     onStateChange: (state: RealtimeConnectionState) => void,
-    append: UseChatHelpers["append"]
+    append: UseChatHelpers<UIMessage>["sendMessage"]
   ) {
     this.onStateChange = onStateChange;
     this.sendMessageToAgent = append;
@@ -254,8 +254,8 @@ export class RealtimeConnection {
         const realtimeMessage = {
           id: crypto.randomUUID(),
           role: "user",
-          content: args.agentTask,
-        } satisfies Message;
+          parts: [{ type: "text", text: args.agentTask }],
+        } satisfies UIMessage;
 
         this.lastResponse = null;
         // This awaits until message is sent and received, but doesn't return actual response

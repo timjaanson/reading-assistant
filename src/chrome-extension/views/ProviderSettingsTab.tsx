@@ -222,7 +222,7 @@ export const ProviderSettingsTab = () => {
                     enableToolCalls: false,
                     providerId: provider.providerId,
                     options: {
-                      maxTokens: undefined,
+                      maxOutputTokens: undefined,
                       temperature: undefined,
                       topK: undefined,
                       topP: undefined,
@@ -535,7 +535,9 @@ export const ProviderSettingsTab = () => {
                                       <Input
                                         id={`${model.modelId}-maxTokens`}
                                         type="number"
-                                        value={model.options.maxTokens || ""}
+                                        value={
+                                          model.options.maxOutputTokens || ""
+                                        }
                                         onChange={(e) => {
                                           const value =
                                             e.target.value === ""
@@ -544,7 +546,7 @@ export const ProviderSettingsTab = () => {
                                           handleModelOptionChange(
                                             provider.providerId,
                                             modelIndex,
-                                            "maxTokens",
+                                            "maxOutputTokens",
                                             value
                                           );
                                         }}

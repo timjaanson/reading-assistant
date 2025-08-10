@@ -6,14 +6,14 @@ import {
 import { RealtimeControls } from "../realtime/RealtimeControls";
 import { SettingsStorage } from "../storage/providerSettings";
 import { Button } from "@/components/ui/button";
-import { Message, UseChatHelpers } from "@ai-sdk/react";
+import { UIMessage, UseChatHelpers } from "@ai-sdk/react";
 
 type RealtimeProps = {
-  lastMessage: React.RefObject<Message | null>;
-  append: UseChatHelpers["append"];
+  lastMessage: React.RefObject<UIMessage | null>;
+  sendMessage: UseChatHelpers<UIMessage>["sendMessage"];
 };
 
-export const Realtime = ({ lastMessage, append }: RealtimeProps) => {
+export const Realtime = ({ lastMessage, sendMessage }: RealtimeProps) => {
   const realtimeConnection = useRef<RealtimeConnection | null>(null);
   const [connectionState, setConnectionState] =
     useState<RealtimeConnectionState>({
@@ -55,7 +55,7 @@ export const Realtime = ({ lastMessage, append }: RealtimeProps) => {
 
     checkRealtimeAvailability();
 
-    const connection = new RealtimeConnection(setConnectionState, append);
+    const connection = new RealtimeConnection(setConnectionState, sendMessage);
     realtimeConnection.current = connection;
 
     navigator.permissions
