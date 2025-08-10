@@ -4,8 +4,14 @@ import remarkGfm from "remark-gfm";
 import { Spinner } from "../common/icons/Spinner";
 
 import { CodeBox } from "./CodeBox";
-import { SourceUrlUIPart, ToolUIPart } from "ai";
+import {
+  DynamicToolUIPart,
+  SourceDocumentUIPart,
+  SourceUrlUIPart,
+  ToolUIPart,
+} from "ai";
 import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 const TEXT_COLLAPSE_THRESHOLD = 500;
 
 type CollapsibleSectionProps = {
@@ -201,7 +207,7 @@ export const ToolPartRenderer = ({
   toolInvocation,
   textColor,
 }: {
-  toolInvocation: ToolUIPart;
+  toolInvocation: ToolUIPart | DynamicToolUIPart;
   textColor: string;
 }) => {
   const { state, type, toolCallId, input } = toolInvocation;
@@ -299,33 +305,40 @@ export const SourcePartRenderer = ({
   source,
   textColor,
 }: {
-  source: SourceUrlUIPart;
+  source: SourceUrlUIPart | SourceDocumentUIPart;
   textColor: string;
 }) => {
-  let displayName = source.title || "Source";
+  const isUrl = source.type === "source-url";
 
-  try {
-    if (!source.title && source.url) {
-      const url = new URL(source.url);
-      displayName = url.hostname || url.pathname || source.url;
-    }
-  } catch (e) {
-    console.error("Error in SourcePartRenderer:", e);
-    displayName = source.title || source.url || "Source";
-  }
+  // displayName: url or filename -> title -> "unnamed"
+  const displayName = isUrl
+    ? source.url || source.title || "unnamed"
+    : source.filename || source.title || "unnamed";
+
+  // icon choice
+  const Icon = isUrl
+    ? LinkIcon
+    : source.mediaType?.startsWith("image/")
+    ? ImageIcon
+    : FileText;
 
   return (
     <span
       className={`${textColor} text-sm px-2 py-1 rounded-lg bg-black/20 inline-flex items-center`}
     >
-      <a
-        href={source.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${textColor} hover:underline`}
-      >
-        {displayName}
-      </a>
+      <Icon className="w-4 h-4 mr-1" />
+      {isUrl ? (
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${textColor} hover:underline`}
+        >
+          {displayName}
+        </a>
+      ) : (
+        <span className={`${textColor}`}>{displayName}</span>
+      )}
     </span>
   );
 };

@@ -41,8 +41,10 @@ const PartRenderer = ({
         <ReasoningPartRenderer content={part.text} textColor={textColor} />
       ) : null;
 
+    case "source-document":
     case "source-url":
       return <SourcePartRenderer source={part} textColor={textColor} />;
+
     case "file":
       if (part.mediaType?.startsWith("image/")) {
         return (
@@ -60,6 +62,8 @@ const PartRenderer = ({
           <span>Attachment</span>
         </div>
       );
+    case "dynamic-tool":
+      return <ToolPartRenderer toolInvocation={part} textColor={textColor} />;
     default:
       if (isToolUIPart(part)) {
         return <ToolPartRenderer toolInvocation={part} textColor={textColor} />;
