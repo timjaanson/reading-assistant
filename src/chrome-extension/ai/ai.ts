@@ -96,6 +96,10 @@ export const getCustomBackendResponse = async (
         );
 
         if (toolParameterFixResult.fixed) {
+          console.warn(
+            `Fixed tool call args programmatically for ${toolCall.toolName}`,
+            JSON.stringify(toolParameterFixResult.fixedParameters)
+          );
           return {
             ...toolCall,
             args: JSON.stringify(toolParameterFixResult.fixedParameters),
