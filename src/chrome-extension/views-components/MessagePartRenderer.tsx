@@ -163,10 +163,11 @@ export const TextPartRenderer = ({
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           p: ({ node, ...props }) => (
             <p
-              className={`whitespace-pre-line break-all-words ${textColor}`}
+              className={`whitespace-pre-wrap break-all-words ${textColor}`}
               {...props}
             />
           ),
+          hr: ({ node, ...props }) => <hr className={"my-2"} {...props} />,
         }}
       >
         {displayContent}
@@ -192,15 +193,7 @@ export const ReasoningPartRenderer = ({
   content: string;
   textColor: string;
 }) => {
-  return (
-    <CollapsableSection
-      openText="Show reasoning"
-      closeText="Hide reasoning"
-      textColor={textColor}
-    >
-      <TextPartRenderer content={content} textColor={textColor} />
-    </CollapsableSection>
-  );
+  return <TextPartRenderer content={content} textColor={textColor} />;
 };
 
 export const ToolPartRenderer = ({
