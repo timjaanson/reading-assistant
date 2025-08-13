@@ -536,7 +536,7 @@ export const ProviderSettingsTab = () => {
                                         id={`${model.modelId}-maxTokens`}
                                         type="number"
                                         value={
-                                          model.options.maxOutputTokens || ""
+                                          model.options.maxOutputTokens ?? ""
                                         }
                                         onChange={(e) => {
                                           const value =
@@ -562,7 +562,7 @@ export const ProviderSettingsTab = () => {
                                       <Input
                                         id={`${model.modelId}-temperature`}
                                         type="number"
-                                        value={model.options.temperature || ""}
+                                        value={model.options.temperature ?? ""}
                                         onChange={(e) => {
                                           const value =
                                             e.target.value === ""
@@ -575,6 +575,7 @@ export const ProviderSettingsTab = () => {
                                             value
                                           );
                                         }}
+                                        step="any"
                                         placeholder="0 to 1"
                                       />
                                     </div>
@@ -588,7 +589,7 @@ export const ProviderSettingsTab = () => {
                                       <Input
                                         id={`${model.modelId}-topP`}
                                         type="number"
-                                        value={model.options.topP || ""}
+                                        value={model.options.topP ?? ""}
                                         onChange={(e) => {
                                           const value =
                                             e.target.value === ""
@@ -601,6 +602,7 @@ export const ProviderSettingsTab = () => {
                                             value
                                           );
                                         }}
+                                        step="any"
                                         placeholder="0 to 1"
                                       />
                                     </div>
@@ -611,7 +613,7 @@ export const ProviderSettingsTab = () => {
                                       <Input
                                         id={`${model.modelId}-topK`}
                                         type="number"
-                                        value={model.options.topK || ""}
+                                        value={model.options.topK ?? ""}
                                         onChange={(e) => {
                                           const value =
                                             e.target.value === ""
@@ -624,6 +626,7 @@ export const ProviderSettingsTab = () => {
                                             value
                                           );
                                         }}
+                                        step="any"
                                         placeholder="0 to N"
                                       />
                                     </div>
@@ -640,7 +643,7 @@ export const ProviderSettingsTab = () => {
                                         id={`${model.modelId}-frequencyPenalty`}
                                         type="number"
                                         value={
-                                          model.options.frequencyPenalty || ""
+                                          model.options.frequencyPenalty ?? ""
                                         }
                                         onChange={(e) => {
                                           const value =
@@ -654,6 +657,7 @@ export const ProviderSettingsTab = () => {
                                             value
                                           );
                                         }}
+                                        step="any"
                                         placeholder="-1 to 1"
                                       />
                                     </div>
@@ -667,7 +671,7 @@ export const ProviderSettingsTab = () => {
                                         id={`${model.modelId}-presencePenalty`}
                                         type="number"
                                         value={
-                                          model.options.presencePenalty || ""
+                                          model.options.presencePenalty ?? ""
                                         }
                                         onChange={(e) => {
                                           const value =
@@ -681,6 +685,7 @@ export const ProviderSettingsTab = () => {
                                             value
                                           );
                                         }}
+                                        step="any"
                                         placeholder="-1 to 1"
                                       />
                                     </div>
