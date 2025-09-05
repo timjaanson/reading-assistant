@@ -1,6 +1,10 @@
-import { experimental_createMCPClient as createMCPClient } from "ai";
+import {
+  experimental_createMCPClient as createMCPClient,
+  MCPTransport,
+} from "ai";
 import { ToolsSettingsStorage } from "../storage/toolSettings";
 import { LanguageModelWithOptions } from "./provider";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 export const getActiveMCPClients = async (
   languageModel: LanguageModelWithOptions
@@ -15,13 +19,29 @@ export const getActiveMCPClients = async (
   for (const server of mcpServers) {
     if (server.active) {
       try {
-        clients.push(
-          await createMCPClient({
-            transport: {
+        let transport: MCPTransport;
+        switch (server.transport) {
+          case "http-stream":
+            transport = new StreamableHTTPClientTransport(new URL(server.url), {
+              //sessionId: crypto.randomUUID(),
+              requestInit: {
+                headers: server.headers,
+              },
+            });
+            break;
+          case "sse":
+            transport = {
               type: "sse",
               url: server.url,
               headers: server.headers,
-            },
+            } as unknown as MCPTransport; //Missing correct type for SSE transport
+            break;
+          default:
+            throw new Error(`Invalid transport type: ${server.transport}`);
+        }
+        clients.push(
+          await createMCPClient({
+            transport: transport,
             name: server.name,
           })
         );

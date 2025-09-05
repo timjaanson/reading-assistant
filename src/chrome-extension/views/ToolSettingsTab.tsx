@@ -185,6 +185,7 @@ export const ExternalToolSettingsTab = () => {
             active: false,
             name: "New Server",
             url: "",
+            transport: "http-stream",
             headers: {},
           },
         ],
@@ -496,6 +497,28 @@ export const ExternalToolSettingsTab = () => {
                         className="w-full"
                         placeholder="http://localhost:8080/sse"
                       />
+                    </div>
+
+                    <div>
+                      <Label className="block text-sm font-medium mb-1">
+                        Transport
+                      </Label>
+                      <Select
+                        value={server.transport ?? "http-stream"}
+                        onValueChange={(value) =>
+                          handleMCPServerChange(serverIndex, "transport", value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select transport" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="http-stream">
+                            HTTP stream
+                          </SelectItem>
+                          <SelectItem value="sse">SSE</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>

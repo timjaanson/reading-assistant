@@ -1,4 +1,4 @@
-import { ToolSettings } from "../types/settings";
+import { ToolSettings, MCPServer } from "../types/settings";
 import { StorageKeys } from "./settings";
 
 export const defaultExternalToolSettings: ToolSettings = {
@@ -69,6 +69,19 @@ export class ToolsSettingsStorage {
         storedSettings.mcp.servers = [
           ...defaultExternalToolSettings.mcp.servers,
         ];
+      }
+
+      // Ensure default transport for servers missing the field
+      if (storedSettings.mcp.servers && storedSettings.mcp.servers.length > 0) {
+        storedSettings.mcp.servers = storedSettings.mcp.servers.map(
+          (server: MCPServer) => ({
+            ...server,
+            // Default to http-stream if missing
+            transport:
+              (server as unknown as { transport?: string }).transport ??
+              "http-stream",
+          })
+        );
       }
 
       return storedSettings;

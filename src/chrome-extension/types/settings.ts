@@ -64,6 +64,7 @@ export interface ExtensionTool {
 export interface MCPServer {
   active: boolean;
   name: string;
+  transport: "http-stream" | "sse";
   url: string;
   headers: Record<string, string>;
 }

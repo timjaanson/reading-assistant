@@ -204,18 +204,23 @@ export const ToolPartRenderer = ({
   textColor: string;
 }) => {
   const { state, type, toolCallId, input } = toolInvocation;
+  let displayName: string = type;
+  if (type === "dynamic-tool") {
+    displayName = toolInvocation.toolName;
+  }
+
   const isLoading = state === "input-streaming" || state === "input-available";
 
   const openText = (
     <div className="flex items-center gap-2">
-      <span>{`Show (${type})`}</span>
+      <span>{`Show (${displayName})`}</span>
       {isLoading && <Spinner />}
     </div>
   );
 
   const closeText = (
     <div className="flex items-center gap-2">
-      <span>{`Hide (${type})`}</span>
+      <span>{`Hide (${displayName})`}</span>
       {isLoading && <Spinner />}
     </div>
   );
