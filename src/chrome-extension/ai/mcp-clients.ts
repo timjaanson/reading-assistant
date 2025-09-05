@@ -23,7 +23,6 @@ export const getActiveMCPClients = async (
         switch (server.transport) {
           case "http-stream":
             transport = new StreamableHTTPClientTransport(new URL(server.url), {
-              //sessionId: crypto.randomUUID(),
               requestInit: {
                 headers: server.headers,
               },
