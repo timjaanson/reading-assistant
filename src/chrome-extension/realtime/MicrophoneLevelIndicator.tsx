@@ -27,6 +27,7 @@ export const MicrophoneLevelIndicator = ({
     return () => {
       stopAudioAnalysis();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSessionActive, isMuted]);
 
   const startAudioAnalysis = async () => {
@@ -86,7 +87,9 @@ export const MicrophoneLevelIndicator = ({
   const updateAudioLevel = () => {
     if (!analyserRef.current || !dataArrayRef.current) return;
 
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+    analyserRef.current.getByteFrequencyData(
+      dataArrayRef.current as unknown as Uint8Array<ArrayBuffer>
+    );
 
     // Calculate volume level (average of frequency data)
     const average =

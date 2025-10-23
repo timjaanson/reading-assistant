@@ -42,6 +42,7 @@ export const Realtime = ({ lastMessage, sendMessage }: RealtimeProps) => {
         lastMessage.current
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMessage.current]);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export const Realtime = ({ lastMessage, sendMessage }: RealtimeProps) => {
         connection.endSession();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const requestMicrophonePermission = async () => {

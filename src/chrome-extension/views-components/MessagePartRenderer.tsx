@@ -110,8 +110,7 @@ export const TextPartRenderer = ({
             </li>
           ),
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-          code: ({ node, className, children, ...props }: any) => {
+          code: ({ node, className, children, ...props }) => {
             const isInline = !className;
 
             if (isInline) {
@@ -127,7 +126,7 @@ export const TextPartRenderer = ({
 
             return <CodeBox code={String(children).trim()} />;
           },
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           table: ({ node, ...props }) => (
             <div className="max-w-full overflow-x-auto p-1 scrollbar scrollbar-thumb-muted scrollbar-track-background">
               <table
@@ -136,18 +135,18 @@ export const TextPartRenderer = ({
               />
             </div>
           ),
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           thead: ({ node, ...props }) => (
             <thead
               className={`border-b border-gray-500 ${textColor}`}
               {...props}
             />
           ),
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           th: ({ node, ...props }) => (
             <th className={`p-2 font-bold ${textColor}`} {...props} />
           ),
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           tr: ({ node, children, ...props }) => (
             <tr
               className={`border-b border-gray-500 last:border-b-0 ${textColor}`}
@@ -156,17 +155,18 @@ export const TextPartRenderer = ({
               {children}
             </tr>
           ),
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           td: ({ node, ...props }) => (
             <td className={`p-2 max-w-48 ${textColor}`} {...props} />
           ),
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           p: ({ node, ...props }) => (
             <p
               className={`whitespace-pre-wrap break-all-words ${textColor}`}
               {...props}
             />
           ),
+
           hr: ({ node, ...props }) => <hr className={"my-2"} {...props} />,
         }}
       >

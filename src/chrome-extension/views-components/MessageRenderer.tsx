@@ -114,15 +114,15 @@ export const MessageRenderer = ({ message }: MessageRendererProps) => {
   } else {
     for (let i = 0; i < nonSourceParts.length; i++) {
       const current = nonSourceParts[i];
-      if (current.type === "reasoning" && (current as any).text) {
+      if (current.type === "reasoning" && current.text) {
         const texts: string[] = [];
         let j = i;
         while (
           j < nonSourceParts.length &&
           nonSourceParts[j].type === "reasoning" &&
-          (nonSourceParts[j] as any).text
+          (nonSourceParts[j] as { text: string }).text
         ) {
-          texts.push((nonSourceParts[j] as any).text as string);
+          texts.push((nonSourceParts[j] as { text: string }).text);
           j++;
         }
         //const combined = texts.join("\n\n> ——— \n\n");

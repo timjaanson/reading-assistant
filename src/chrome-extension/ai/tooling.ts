@@ -228,7 +228,7 @@ export const toolParameterFix = (
   incorrectParameters: Record<string, unknown>
 ): ToolParameterFixResult => {
   switch (toolName) {
-    case ToolName.WEB_SEARCH:
+    case ToolName.WEB_SEARCH: {
       // Look for query at root level
       let query: string | undefined;
 
@@ -310,7 +310,8 @@ export const toolParameterFix = (
       return {
         fixed: false,
       };
-    case ToolName.EXTRACT_URLS_CONTENT:
+    }
+    case ToolName.EXTRACT_URLS_CONTENT: {
       // Case 1: Direct array (not wrapped in object)
       if (Array.isArray(incorrectParameters)) {
         const urls = incorrectParameters.filter(
@@ -382,14 +383,17 @@ export const toolParameterFix = (
       return {
         fixed: false,
       };
-    case ToolName.EXTRACT_ACTIVE_TAB_CONTENT:
+    }
+    case ToolName.EXTRACT_ACTIVE_TAB_CONTENT: {
       return {
         fixed: true,
         fixedParameters: {},
       };
-    default:
+    }
+    default: {
       return {
         fixed: false,
       };
+    }
   }
 };
